@@ -12,7 +12,7 @@
     <link rel="manifest" href="favicon/site.webmanifest">
     <link rel="icon" type="image/x-icon" href="favicon/favicon.ico">
     <link rel="shortcut icon" type="image/x-icon" href="favicon/favicon.ico">
-    <meta name="theme-color" content="#667eea">
+	    <meta name="theme-color" content="#ffffff">
     
     <!-- PWA Meta Tags -->
     <meta name="mobile-web-app-capable" content="yes">
@@ -30,176 +30,503 @@
       gtag('config', 'G-XEZ049M5R2');
     </script>
     
-    <style>
-        body {
-            font-family: 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', sans-serif;
-            margin: 0;
-            padding: 0;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	    <style>
+		        :root {
+		            --bg: #ffffff;
+		            --surface: #ffffff;
+		            --surface-muted: #f5f5f7;
+		            --text: #1d1d1f;
+		            --muted: #6e6e73;
+		            --border: #d2d2d7;
+		            --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+		            --focus: rgba(0, 0, 0, 0.18);
+		            --unit-select-width: 240px;
+		        }
+	        
+	        body {
+	            font-family: "PingFang SC";
+	            margin: 0;
+	            padding: 0;
+	            min-height: 100vh;
+	            display: flex;
+	            flex-direction: column;
+	            align-items: center;
+	            justify-content: center;
+	            background: var(--bg);
+	            color: var(--text);
+	        }
+        
+        * {
+            font-family: "PingFang SC";
         }
         
-        .container {
-            padding: 50px 50px 30px 50px;
-            text-align: center;
-            transform: scale(1.3);
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
+	        .container {
+	            padding: 50px 50px 30px 50px;
+	            text-align: center;
+	            transform: scale(1.3);
+	            background: var(--surface);
+	            border-radius: 20px;
+	            box-shadow: var(--shadow);
+	            border: 1px solid var(--border);
+	        }
         
-        .field {
-            margin: 20px 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-        }
+	        .field {
+	            margin: 20px 0;
+	            display: flex;
+	            align-items: center;
+	            justify-content: center;
+	            gap: 15px;
+	        }
+	        
+		        .select-wrapper {
+		            position: relative;
+		            display: inline-block;
+		            flex-shrink: 0;
+		            width: var(--unit-select-width);
+		        }
+
+	        /* 自定义下拉（替代系统 select） */
+	        .native-select-hidden {
+	            position: absolute !important;
+	            inset: 0 !important;
+	            opacity: 0 !important;
+	            pointer-events: none !important;
+	        }
+
+		        .dropdown {
+		            position: relative;
+		            width: 100%;
+		            min-width: 0;
+		        }
+
+	        .dropdown-trigger {
+	            width: 100%;
+	            display: flex;
+	            align-items: center;
+	            justify-content: space-between;
+	            gap: 10px;
+	            padding: 15px 45px 15px 20px;
+	            font-size: 16px;
+	            border: 1px solid var(--border);
+	            border-radius: 12px;
+	            background: var(--surface);
+	            color: var(--text);
+	            cursor: pointer;
+	            user-select: none;
+	            transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+	            box-sizing: border-box;
+	        }
+
+	        .dropdown-trigger:hover {
+	            border-color: var(--text);
+	            background: var(--surface-muted);
+	        }
+
+	        .dropdown-trigger:focus {
+	            outline: none;
+	            border-color: var(--text);
+	            box-shadow: 0 0 0 3px var(--focus);
+	        }
+
+		        .dropdown-trigger-left {
+		            display: flex;
+		            align-items: center;
+		            gap: 10px;
+		            overflow: hidden;
+		            min-width: 0;
+		        }
+
+		        .dropdown-logo {
+		            width: 22px;
+		            height: 22px;
+		            border-radius: 50%;
+		            overflow: hidden;
+		            display: flex;
+		            align-items: center;
+		            justify-content: center;
+		            background: var(--surface-muted);
+		            border: 1px solid var(--border);
+		            flex-shrink: 0;
+		        }
+		        
+		        /* Emoji 图标：去除圆框，仅保留内容本身（用于选择框/下拉菜单） */
+		        .dropdown-logo.is-emoji {
+		            background: transparent;
+		            border: none;
+		            border-radius: 0;
+		        }
+
+		        .dropdown-logo.is-emoji .dropdown-logo-emoji {
+		            font-size: 18px;
+		            line-height: 1;
+		        }
+
+	        .dropdown-logo img {
+	            width: 100%;
+	            height: 100%;
+	            object-fit: cover;
+	            display: block;
+	        }
+
+	        .dropdown-logo-emoji {
+	            font-size: 14px;
+	            line-height: 1;
+	        }
+
+		        .dropdown-text {
+		            white-space: nowrap;
+		            overflow: hidden;
+		            text-overflow: ellipsis;
+		            min-width: 0;
+		        }
+
+	        .dropdown-chevron {
+	            width: 16px;
+	            height: 16px;
+	            flex-shrink: 0;
+	            opacity: 0.85;
+	        }
+
+	        .dropdown-menu {
+	            position: fixed;
+	            left: 0;
+	            top: 0;
+	            width: 300px;
+	            overflow: visible; /* 允许箭头超出边界 */
+	            background: var(--surface);
+	            border: 1px solid var(--border);
+	            border-radius: 14px;
+	            box-shadow: var(--shadow);
+	            z-index: 9999;
+	            display: none;
+	        }
+	        
+	        .dropdown-menu-scroll {
+	            max-height: 680px;
+	            overflow: auto;
+	            padding: 8px;
+	            border-radius: 14px;
+	        }
+	        
+	        /* 下拉菜单箭头（指向目标框） */
+	        .dropdown-menu::before,
+	        .dropdown-menu::after {
+	            content: "";
+	            position: absolute;
+	            width: 0;
+	            height: 0;
+	            top: calc(var(--arrow-top, 28px) - 9px);
+	        }
+	        
+	        /* 默认：菜单在目标框右侧，箭头在左边指向目标框 */
+	        .dropdown-menu[data-side="right"]::before {
+	            left: -10px;
+	            border-top: 9px solid transparent;
+	            border-bottom: 9px solid transparent;
+	            border-right: 10px solid var(--border);
+	        }
+	        
+	        .dropdown-menu[data-side="right"]::after {
+	            left: -9px;
+	            border-top: 8px solid transparent;
+	            border-bottom: 8px solid transparent;
+	            border-right: 9px solid var(--surface);
+	            top: calc(var(--arrow-top, 28px) - 8px);
+	        }
+	        
+	        /* 翻转：菜单在目标框左侧，箭头在右边指向目标框 */
+	        .dropdown-menu[data-side="left"]::before {
+	            right: -10px;
+	            border-top: 9px solid transparent;
+	            border-bottom: 9px solid transparent;
+	            border-left: 10px solid var(--border);
+	        }
+	        
+	        .dropdown-menu[data-side="left"]::after {
+	            right: -9px;
+	            border-top: 8px solid transparent;
+	            border-bottom: 8px solid transparent;
+	            border-left: 9px solid var(--surface);
+	            top: calc(var(--arrow-top, 28px) - 8px);
+	        }
+
+	        .dropdown-group {
+	            padding: 8px 10px 6px 10px;
+	            color: var(--muted);
+	            font-size: 12px;
+	            letter-spacing: 0.02em;
+	        }
+
+	        .dropdown-item {
+	            display: flex;
+	            align-items: center;
+	            gap: 10px;
+	            padding: 5px 10px;
+	            border-radius: 10px;
+	            cursor: pointer;
+	            color: var(--text);
+	            transition: background 0.15s ease;
+	        }
+
+	        .dropdown-item:hover {
+	            background: var(--surface-muted);
+	        }
+
+	        .dropdown-item[aria-selected="true"] {
+	            background: var(--surface-muted);
+	        }
+
+	        .dropdown-item-text {
+	            flex: 1;
+	            min-width: 0;
+	            overflow: hidden;
+	            text-overflow: ellipsis;
+	            white-space: nowrap;
+	        }
+
+		        select {
+		            padding: 15px 45px 15px 20px;
+		            font-size: 16px;
+		            border: 1px solid var(--border);
+		            border-radius: 12px;
+		            background: var(--surface);
+		            box-shadow: none;
+		            transition: all 0.3s ease;
+	            cursor: pointer;
+	            min-width: 0;
+	            width: 100%;
+	            appearance: none;
+	            -webkit-appearance: none;
+	            -moz-appearance: none;
+		            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231d1d1f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+	            background-size: 16px 16px;
+	            background-position: calc(100% - 15px) center;
+	            background-repeat: no-repeat;
+	        }
         
-        select {
-            padding: 15px 45px 15px 20px;
-            font-size: 16px;
-            border: 2px solid #e1e8ff;
-            border-radius: 12px;
-            background: linear-gradient(145deg, #ffffff, #f0f4ff);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-            transition: all 0.3s ease;
-            cursor: pointer;
-            min-width: 140px;
-            appearance: none;
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23667eea' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
-            background-size: 16px 16px;
-            background-position: calc(100% - 15px) center;
-            background-repeat: no-repeat;
-        }
+	        select:hover {
+	            border-color: var(--text);
+	            transform: none;
+	            box-shadow: none;
+	            background: var(--surface-muted);
+	        }
         
-        select:hover {
-            border-color: #667eea;
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.15);
-        }
+	        select:focus {
+	            outline: none;
+	            border-color: var(--text);
+	            box-shadow: 0 0 0 3px var(--focus);
+	        }
         
-        select:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-        
-        select option {
+	        select option {
             padding: 12px 20px;
-            background: rgba(255, 255, 255, 0.95);
-            color: #333;
+	            background: var(--surface);
+	            color: var(--text);
             font-size: 16px;
             border: none;
             margin: 2px 0;
         }
         
-        select option:hover {
-            background: linear-gradient(145deg, #667eea, #764ba2);
-            color: white;
-        }
+	        select option:hover {
+	            background: var(--surface-muted);
+	            color: var(--text);
+	        }
         
-        select option:checked {
-            background: linear-gradient(145deg, #667eea, #764ba2);
-            color: white;
-            font-weight: 600;
-        }
+		        select option:checked {
+		            background: var(--surface-muted);
+		            color: var(--text);
+		            font-weight: 400;
+		        }
         
-        select optgroup {
-            font-weight: bold;
-            font-size: 14px;
-            color: #667eea;
-            background: #f0f4ff;
-            padding: 8px 12px;
-            margin: 4px 0;
-        }
+		        select optgroup {
+		            font-weight: 400;
+		            font-size: 14px;
+		            color: var(--muted);
+		            background: var(--surface-muted);
+		            padding: 8px 12px;
+		            margin: 4px 0;
+		        }
         
-        input {
+		        input {
             width: 220px;
             padding: 15px 20px;
             font-size: 16px;
-            border: 2px solid #e1e8ff;
-            border-radius: 12px;
-            background: linear-gradient(145deg, #ffffff, #f9fbff);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-            transition: all 0.3s ease;
-            text-align: right;
-            font-weight: 500;
-        }
+	            border: 1px solid var(--border);
+	            border-radius: 12px;
+	            background: var(--surface);
+	            box-shadow: none;
+	            transition: all 0.3s ease;
+	            text-align: right;
+		            font-weight: 400;
+		            color: var(--text);
+		        }
         
-        input:hover {
-            border-color: #667eea;
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.15);
-        }
+	        input:hover {
+	            border-color: var(--text);
+	            transform: none;
+	            box-shadow: none;
+	            background: var(--surface-muted);
+	        }
         
-        input:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
+	        input:focus {
+	            outline: none;
+	            border-color: var(--text);
+	            box-shadow: 0 0 0 3px var(--focus);
+	        }
         
         input::placeholder {
             color: #a0a0a0;
             font-weight: normal;
         }
         
-        h1 {
-            font-size: 2.8em;
-            margin-bottom: 35px;
-            margin-top: -5px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            font-weight: 600;
-            letter-spacing: -0.5px;
-        }
+		        h1 {
+	            font-size: 2.8em;
+	            margin-bottom: 35px;
+	            margin-top: -5px;
+	            color: var(--text);
+		            font-weight: 400;
+		            letter-spacing: -0.5px;
+		        }
         
-        .author {
-            font-size: 0.8em;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            font-weight: 500;
-            display: block;
-            opacity: 0.8;
-        }
+		        .author {
+	            font-size: 0.8em;
+	            cursor: pointer;
+	            transition: all 0.3s ease;
+	            text-decoration: none;
+		            font-weight: 400;
+		            display: block;
+		            opacity: 0.8;
+		            color: var(--text);
+		        }
+	        
+	        .author svg {
+	            transition: all 0.3s ease;
+	            fill: currentColor;
+	            stroke: none;
+	        }
         
-        .author svg {
-            transition: all 0.3s ease;
-            fill: url(#gradient);
-        }
+	        .author:hover {
+	            opacity: 1;
+	            transform: none;
+	            filter: none;
+	        }
         
-        .author:hover {
-            transform: translateY(-2px);
-            opacity: 1;
-            filter: drop-shadow(0 4px 10px rgba(102, 126, 234, 0.3));
-        }
+	        .author:hover svg {
+	            fill: #000000;
+	        }
         
-        .author:hover svg {
-            fill: url(#gradientHover);
-        }
+	        .social-links {
+	            display: grid;
+	            grid-template-columns: 1fr auto 1fr;
+	            align-items: center;
+	            gap: 12px;
+	            margin-top: 35px;
+	            margin-bottom: 0px;
+	        }
+
+	        .social-actions {
+	            display: flex;
+	            justify-content: flex-end;
+	            gap: 10px;
+	            align-items: center;
+	        }
+
+	        .api-status {
+	            text-align: left;
+	        }
+
+	        .share-center {
+	            display: flex;
+	            justify-content: center;
+	            gap: 10px;
+	        }
+
+	        /* 主页底部按钮 SVG 统一纯黑（与标题一致） */
+	        .social-links .author {
+	            color: #000000;
+	        }
+
+	        .social-actions .author,
+	        .social-actions .add-to-home-btn {
+	            color: #000000;
+	        }
+
+	        .social-actions svg {
+	            fill: #000000;
+	        }
+
+	        /* 分享按钮：文字样式（与右侧图标分离、居中） */
+	        .share-btn {
+	            display: inline-flex;
+	            align-items: center;
+	            justify-content: center;
+	            box-sizing: border-box;
+	            flex: 0 0 100px;
+	            font-size: 14px;
+	            padding: 8px 18px;
+	            width: 100px;
+	            min-width: 0;
+	            border: 1px solid var(--border);
+	            border-radius: 12px;
+	            background: var(--surface);
+	            color: var(--text);
+	            opacity: 1;
+	            cursor: pointer;
+	            transition: background 0.2s ease, border-color 0.2s ease;
+	            text-decoration: none;
+	            white-space: nowrap;
+	            overflow: hidden;
+	            text-overflow: ellipsis;
+	            line-height: 1;
+	            -webkit-appearance: none;
+	            appearance: none;
+	        }
+	        
+	        .share-btn .btn-content {
+	            display: inline-flex;
+	            align-items: center;
+	            justify-content: center;
+	            gap: 8px;
+	        }
+	        
+	        .share-btn svg {
+	            width: 16px;
+	            height: 16px;
+	            fill: none;
+	            stroke: currentColor;
+	            stroke-width: 2;
+	            stroke-linecap: round;
+	            stroke-linejoin: round;
+	        }
+
+	        .share-btn:hover {
+	            background: var(--surface-muted);
+	            border-color: var(--text);
+	        }
+
+	        .share-btn:active {
+	            background: var(--surface-muted);
+	            border-color: var(--text);
+	        }
+
+	        .share-btn.primary {
+	            background: var(--text);
+	            color: #ffffff;
+	            border-color: var(--text);
+	        }
+
+	        .share-btn.primary:hover {
+	            background: #000000;
+	            border-color: #000000;
+	        }
+
+	        .share-btn:focus-visible {
+	            outline: none;
+	            border-color: var(--text);
+	            box-shadow: 0 0 0 3px var(--focus);
+	        }
         
-        .social-links {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 20px;
-            margin-top: 35px;
-            margin-bottom: 0px;
-        }
-        
-        /* 移动端响应式设计 */
-        @media screen and (max-width: 768px) {
+	        /* 移动端响应式设计 */
+		        @media screen and (max-width: 768px) {
             body {
                 padding: 10px;
             }
@@ -221,26 +548,47 @@
                 font-size: 0.7em;
             }
             
-            .social-links {
-                margin-top: 30px;
-                margin-bottom: 0px;
-                gap: 15px;
-            }
+	            .social-links {
+	                margin-top: 30px;
+	                margin-bottom: 0px;
+	                gap: 10px;
+	            }
+
+	            .share-btn {
+	                font-size: 13px;
+	                padding: 10px 12px;
+	                width: 100px;
+	                flex: 0 0 100px;
+	            }
             
-            .field {
-                margin: 15px 0;
-                flex-direction: row;
-                align-items: center;
-                gap: 12px;
-            }
+		            .field {
+		                margin: 15px 0;
+		                flex-direction: row;
+		                align-items: center;
+		                gap: 12px;
+		            }
+		            
+		            .select-wrapper {
+		                width: 40%;
+		            }
             
-            select {
-                min-width: 130px;
-                width: 40%;
-                padding: 10px 35px 10px 12px;
-                font-size: 13px;
-                margin-bottom: 0;
-            }
+		            select {
+		                min-width: 0;
+		                width: 100%;
+		                padding: 10px 35px 10px 12px;
+		                font-size: 13px;
+		                margin-bottom: 0;
+		            }
+
+		            .dropdown {
+		                width: 100%;
+		                min-width: 0;
+		            }
+
+	            .dropdown-trigger {
+	                padding: 10px 35px 10px 12px;
+	                font-size: 13px;
+	            }
             
             input {
                 width: 55%;
@@ -250,7 +598,7 @@
             }
         }
         
-        @media screen and (max-width: 480px) {
+		        @media screen and (max-width: 480px) {
             .container {
                 padding: 20px 15px 20px 15px;
                 margin: 5px;
@@ -265,23 +613,44 @@
                 font-size: 0.6em;
             }
             
-            .social-links {
-                margin-top: 20px;
-                margin-bottom: 0px;
-                gap: 12px;
-            }
+	            .social-links {
+	                margin-top: 20px;
+	                margin-bottom: 0px;
+	                gap: 8px;
+	            }
+
+	            .share-btn {
+	                font-size: 12px;
+	                padding: 9px 10px;
+	                width: 100px;
+	                flex: 0 0 100px;
+	            }
             
-            .field {
-                margin: 10px 0;
-                gap: 8px;
-            }
+		            .field {
+		                margin: 10px 0;
+		                gap: 8px;
+		            }
+		            
+		            .select-wrapper {
+		                width: 50%;
+		            }
             
-            select {
-                min-width: 110px;
-                width: 50%;
-                padding: 8px 30px 8px 10px;
-                font-size: 12px;
-            }
+		            select {
+		                min-width: 0;
+		                width: 100%;
+		                padding: 8px 30px 8px 10px;
+		                font-size: 12px;
+		            }
+
+		            .dropdown {
+		                width: 100%;
+		                min-width: 0;
+		            }
+
+	            .dropdown-trigger {
+	                padding: 8px 30px 8px 10px;
+	                font-size: 12px;
+	            }
             
             input {
                 width: 46%;
@@ -292,7 +661,7 @@
         }
         
         /* 自定义代币弹窗样式 */
-        .modal {
+	        .modal {
             display: none;
             position: fixed;
             z-index: 1000;
@@ -300,21 +669,21 @@
             top: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(5px);
-        }
+	            background-color: rgba(0, 0, 0, 0.55);
+	            backdrop-filter: blur(5px);
+	        }
         
-        .modal-content {
-            background: linear-gradient(145deg, #ffffff, #f8faff);
-            margin: 5% auto;
-            padding: 0;
-            border-radius: 20px;
-            width: 90%;
-            max-width: 600px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            animation: modalSlideIn 0.3s ease-out;
-        }
+	        .modal-content {
+	            background: var(--surface);
+	            margin: 5% auto;
+	            padding: 0;
+	            border-radius: 20px;
+	            width: 90%;
+	            max-width: 600px;
+	            box-shadow: var(--shadow);
+	            border: 1px solid var(--border);
+	            animation: modalSlideIn 0.3s ease-out;
+	        }
         
         @keyframes modalSlideIn {
             from {
@@ -327,27 +696,28 @@
             }
         }
         
-        .modal-header {
+	        .modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 25px 30px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 20px 20px 0 0;
-        }
+	            padding: 18px 24px;
+	            background: var(--surface);
+	            color: var(--text);
+	            border-bottom: 1px solid var(--border);
+	            border-radius: 20px 20px 0 0;
+	        }
         
         .modal-header h3 {
             margin: 0;
             font-size: 18px;
-            font-weight: 600;
+            font-weight: 400;
         }
         
         .close {
-            color: white;
+            color: var(--text);
             float: right;
             font-size: 28px;
-            font-weight: bold;
+            font-weight: 400;
             cursor: pointer;
             transition: opacity 0.2s;
         }
@@ -356,54 +726,116 @@
             opacity: 0.7;
         }
         
-        .modal-body {
-            padding: 30px;
+	        .modal-body {
+	            padding: 18px 24px;
+	        }
+
+	        /* 分享图预览弹窗 */
+	        .share-modal-content {
+	            padding: 14px 18px 14px 18px;
+	        }
+
+		        .share-preview {
+		            width: 100%;
+		            border: 1px solid var(--border);
+		            border-radius: 16px;
+		            background: var(--surface-muted);
+		            overflow: hidden;
+		        }
+
+		        .share-preview img {
+		            width: 100%;
+		            max-width: 100%;
+		            max-height: 70vh;
+		            height: auto;
+		            display: block;
+		        }
+
+	        .share-actions {
+	            display: flex;
+	            gap: 12px;
+	            margin-top: 16px;
+	        }
+
+        .share-actions button {
+	            flex: 1;
+	            border: 1px solid var(--border);
+	            background: var(--surface);
+	            color: var(--text);
+	            padding: 12px 14px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 400;
+            cursor: pointer;
+            transition: background 0.2s ease, border-color 0.2s ease;
         }
+
+	        .share-actions button:hover {
+	            background: var(--surface-muted);
+	            border-color: var(--text);
+	        }
+
+	        .share-actions button.primary {
+	            background: var(--text);
+	            color: #ffffff;
+	            border-color: var(--text);
+	        }
+
+	        .share-actions button.primary svg {
+	            fill: currentColor;
+	        }
+
+	        .share-actions button.primary:hover {
+	            background: #000000;
+	            border-color: #000000;
+	        }
         
         .search-container {
             margin-bottom: 25px;
         }
         
-        .search-container input {
+	        .search-container input {
             width: 100%;
             padding: 15px 20px;
             font-size: 16px;
-            border: 2px solid #e1e8ff;
-            border-radius: 12px;
-            background: linear-gradient(145deg, #ffffff, #f0f4ff);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-            transition: all 0.3s ease;
-            box-sizing: border-box;
-        }
+	            border: 1px solid var(--border);
+	            border-radius: 12px;
+	            background: var(--surface);
+	            box-shadow: none;
+	            transition: all 0.3s ease;
+	            box-sizing: border-box;
+	            color: var(--text);
+	        }
         
-        .search-container input:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
+	        .search-container input:focus {
+	            outline: none;
+	            border-color: var(--text);
+	            box-shadow: 0 0 0 3px var(--focus);
+	        }
         
         .search-results {
             max-height: 400px;
             overflow-y: auto;
         }
         
-        .token-result {
+	        .token-result {
             display: flex;
             align-items: center;
             padding: 15px;
             margin: 10px 0;
-            background: linear-gradient(145deg, #ffffff, #f8faff);
-            border: 2px solid #e1e8ff;
+	            background: var(--surface);
+	            border: 1px solid var(--border);
             border-radius: 12px;
             cursor: pointer;
             transition: all 0.3s ease;
         }
         
-        .token-result:hover {
-            border-color: #667eea;
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.15);
-        }
+	        .token-result:hover {
+	            border-color: var(--text);
+	            transform: none;
+	            box-shadow: none;
+	            background: var(--surface-muted);
+	        }
         
         .token-logo {
             width: 40px;
@@ -424,8 +856,8 @@
         }
         
         .token-name {
-            font-weight: 600;
-            color: #333;
+            font-weight: 400;
+            color: var(--text);
         }
         
         .token-bottom-row {
@@ -434,28 +866,28 @@
             align-items: center;
         }
         
-        .token-symbol {
-            color: #667eea;
-            font-weight: 500;
-            text-transform: uppercase;
-        }
+		        .token-symbol {
+		            color: var(--muted);
+		            font-weight: 400;
+		            text-transform: uppercase;
+		        }
         
         .token-price {
-            color: #27ae60;
-            font-weight: 600;
+            color: var(--muted);
+            font-weight: 400;
         }
         
-        .loading {
-            text-align: center;
-            padding: 40px 20px;
-            color: #667eea;
-        }
+	        .loading {
+	            text-align: center;
+	            padding: 40px 20px;
+	            color: var(--muted);
+	        }
         
-        .spinner {
+	        .spinner {
             width: 40px;
             height: 40px;
-            border: 4px solid #e1e8ff;
-            border-top: 4px solid #667eea;
+	            border: 4px solid var(--border);
+	            border-top: 4px solid var(--text);
             border-radius: 50%;
             animation: spin 1s linear infinite;
             margin: 0 auto 15px;
@@ -466,84 +898,85 @@
             100% { transform: rotate(360deg); }
         }
         
-        .no-results {
+	        .no-results {
             text-align: center;
             padding: 40px 20px;
-            color: #7f8c8d;
-            font-style: italic;
-        }
+	            color: var(--muted);
+	            font-style: italic;
+	        }
         
-        /* 添加到主屏幕按钮和分享按钮样式 */
-        .add-to-home-btn, .share-btn {
-            background: none;
-            border: none;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            font-weight: 500;
-            display: block;
-            opacity: 0.8;
-            font-size: 24px;
-            padding: 0;
-            line-height: 1;
-        }
+	        /* 添加到主屏幕按钮样式 */
+		        .add-to-home-btn {
+	            background: none;
+	            border: none;
+	            cursor: pointer;
+	            transition: all 0.3s ease;
+	            text-decoration: none;
+	            font-weight: 400;
+	            display: block;
+	            opacity: 0.8;
+	            font-size: 24px;
+	            padding: 0;
+	            line-height: 1;
+	            color: var(--text);
+	        }
 
-        .add-to-home-btn svg, .share-btn svg {
-            transition: all 0.3s ease;
-            fill: url(#gradient);
-        }
+		        .add-to-home-btn svg {
+		            transition: all 0.3s ease;
+		            fill: currentColor;
+		            stroke: none;
+		        }
 
-        .add-to-home-btn:hover, .share-btn:hover {
-            transform: translateY(-2px);
-            opacity: 1;
-            filter: drop-shadow(0 4px 10px rgba(102, 126, 234, 0.3));
-        }
+		        .add-to-home-btn:hover {
+		            opacity: 1;
+		            transform: none;
+		            filter: none;
+		        }
 
-        .add-to-home-btn:hover svg, .share-btn:hover svg {
-            fill: url(#gradientHover);
-        }
+		        .add-to-home-btn:hover svg {
+		            fill: #000000;
+		        }
 
-        /* Toast 提示样式 */
-        .toast {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) scale(0.7);
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px 40px;
-            border-radius: 15px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-            z-index: 10000;
-            opacity: 0;
-            pointer-events: none;
-            transition: all 0.3s ease;
-            font-size: 16px;
-            font-weight: 500;
-            text-align: center;
-            max-width: 90%;
-        }
+	        /* Toast 提示样式 */
+		        .toast {
+	            position: fixed;
+	            bottom: 32px;
+	            left: 50%;
+	            transform: translate(-50%, 12px);
+		            background: rgba(255, 255, 255, 0.82);
+		            color: #1d1d1f;
+		            border: 1px solid rgba(0, 0, 0, 0.12);
+		            backdrop-filter: blur(12px);
+	            padding: 10px 14px;
+	            border-radius: 999px;
+	            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+	            z-index: 10000;
+	            opacity: 0;
+	            pointer-events: none;
+	            transition: opacity 0.2s ease, transform 0.2s ease;
+	            font-size: 13px;
+		            font-weight: 400;
+		            text-align: center;
+		            max-width: 80vw;
+		            letter-spacing: -0.2px;
+		        }
 
-        .toast.show {
-            opacity: 1;
-            transform: translate(-50%, -50%) scale(1);
-        }
+	        .toast.show {
+	            opacity: 1;
+	            transform: translate(-50%, 0);
+	        }
 
-        .toast-icon {
-            font-size: 40px;
-            margin-bottom: 10px;
-        }
+	        .toast-icon {
+	            display: none;
+	        }
 
-        @media screen and (max-width: 768px) {
-            .toast {
-                font-size: 14px;
-                padding: 18px 30px;
-            }
-
-            .toast-icon {
-                font-size: 35px;
-            }
-        }
+	        @media screen and (max-width: 768px) {
+	            .toast {
+	                bottom: 20px;
+	                font-size: 12px;
+	                padding: 9px 12px;
+	            }
+	        }
     </style>
 </head>
 <body>
@@ -551,283 +984,676 @@
         <h1>价值观纠正器</h1>
         
         <div class="field">
-        <select id="currency1">
-            <optgroup label="加密货币">
-                <option value="BTC" selected>🟠 BTC</option>
-                <option value="ETH">♦️ ETH</option>
-                <option value="SOL">🟣 SOL</option>
-                <option value="BNB">🟡 BNB</option>
-                <option value="OKB">⚫ OKB</option>
-                <option value="CUSTOM">🔍 自定义代币</option>
-                <option value="TEMP_CUSTOM_PLACEHOLDER" style="display: none;"></option>
-            </optgroup>
-            <optgroup label="法币">
-                <option value="USD">🇺🇸 USD</option>
-                <option value="CNY">🇨🇳 CNY</option>
-                <option value="JPY">🇯🇵 JPY</option>
-                <option value="KRW">🇰🇷 KRW</option>
-                <option value="SGD">🇸🇬 SGD</option>
-                <option value="AED">🇦🇪 AED</option>
-                <option value="HKD">🇭🇰 HKD</option>
-                <option value="MYR">🇲🇾 MYR</option>
-            </optgroup>
+	        <div class="select-wrapper">
+	        <select id="currency1">
+	            <optgroup label="加密货币">
+	                <option value="BTC" selected>🟠 BTC</option>
+	                <option value="ETH">♦️ ETH</option>
+	                <option value="SOL">🟣 SOL</option>
+	                <option value="BNB">🟡 BNB</option>
+	                <option value="OKB">⚫ OKB</option>
+	                <option value="CUSTOM">🔍 自定义代币</option>
+	                <option value="TEMP_CUSTOM_PLACEHOLDER" style="display: none;"></option>
+	            </optgroup>
+	            <optgroup label="法币">
+	                <option value="USD">🇺🇸 USD</option>
+	                <option value="CNY">🇨🇳 CNY</option>
+	                <option value="TWD">🇹🇼 TWD</option>
+	                <option value="JPY">🇯🇵 JPY</option>
+	                <option value="KRW">🇰🇷 KRW</option>
+	                <option value="SGD">🇸🇬 SGD</option>
+	                <option value="AED">🇦🇪 AED</option>
+	                <option value="HKD">🇭🇰 HKD</option>
+	                <option value="MYR">🇲🇾 MYR</option>
+	            </optgroup>
             <optgroup label="实物">
                 <option value="ZHUJIAO">🍚 猪脚饭</option>
                 <option value="KFC">🍗 KFC</option>
                 <option value="IN11">💃 in11嫩模</option>
                 <option value="IPHONE17">📱 iPhone17</option>
                 <option value="MACBOOK">💻 MacBook Air</option>
-                <option value="ROLEX">⌚ Rolex</option>
+                <option value="ROLEX">⌚ 劳力士</option>
                 <option value="XIAOMISU7">🏎️ Xiaomi Su7</option>
                 <option value="PORSCHE">🏎️ Porsche 718</option>
                 <option value="FERRARI">🏎️ Ferrari Roma</option>
-            </optgroup>
-        </select>
-        <input type="text" id="amount1" placeholder="输入金额">
-    </div>
-    
-    <div class="field">
-        <select id="currency2">
-            <optgroup label="加密货币">
-                <option value="BTC">🟠 BTC</option>
-                <option value="ETH" selected>♦️ ETH</option>
-                <option value="SOL">🟣 SOL</option>
-                <option value="BNB">🟡 BNB</option>
-                <option value="OKB">⚫ OKB</option>
-                <option value="CUSTOM">🔍 自定义代币</option>
-                <option value="TEMP_CUSTOM_PLACEHOLDER" style="display: none;"></option>
-            </optgroup>
-            <optgroup label="法币">
-                <option value="USD">🇺🇸 USD</option>
-                <option value="CNY">🇨🇳 CNY</option>
-                <option value="JPY">🇯🇵 JPY</option>
-                <option value="KRW">🇰🇷 KRW</option>
-                <option value="SGD">🇸🇬 SGD</option>
-                <option value="AED">🇦🇪 AED</option>
-                <option value="HKD">🇭🇰 HKD</option>
-                <option value="MYR">🇲🇾 MYR</option>
-            </optgroup>
+	            </optgroup>
+	        </select>
+	        </div>
+	        <input type="text" id="amount1" placeholder="输入金额">
+	    </div>
+	    
+	    <div class="field">
+	        <div class="select-wrapper">
+	        <select id="currency2">
+	            <optgroup label="加密货币">
+	                <option value="BTC">🟠 BTC</option>
+	                <option value="ETH" selected>♦️ ETH</option>
+	                <option value="SOL">🟣 SOL</option>
+	                <option value="BNB">🟡 BNB</option>
+	                <option value="OKB">⚫ OKB</option>
+	                <option value="CUSTOM">🔍 自定义代币</option>
+	                <option value="TEMP_CUSTOM_PLACEHOLDER" style="display: none;"></option>
+	            </optgroup>
+	            <optgroup label="法币">
+	                <option value="USD">🇺🇸 USD</option>
+	                <option value="CNY">🇨🇳 CNY</option>
+	                <option value="TWD">🇹🇼 TWD</option>
+	                <option value="JPY">🇯🇵 JPY</option>
+	                <option value="KRW">🇰🇷 KRW</option>
+	                <option value="SGD">🇸🇬 SGD</option>
+	                <option value="AED">🇦🇪 AED</option>
+	                <option value="HKD">🇭🇰 HKD</option>
+	                <option value="MYR">🇲🇾 MYR</option>
+	            </optgroup>
             <optgroup label="实物">
                 <option value="ZHUJIAO">🍚 猪脚饭</option>
                 <option value="KFC">🍗 KFC</option>
                 <option value="IN11">💃 in11嫩模</option>
                 <option value="IPHONE17">📱 iPhone17</option>
                 <option value="MACBOOK">💻 MacBook Air</option>
-                <option value="ROLEX">⌚ Rolex</option>
+                <option value="ROLEX">⌚ 劳力士</option>
                 <option value="XIAOMISU7">🏎️ Xiaomi Su7</option>
                 <option value="PORSCHE">🏎️ Porsche 718</option>
                 <option value="FERRARI">🏎️ Ferrari Roma</option>
-            </optgroup>
-        </select>
-        <input type="text" id="amount2" placeholder="输入金额">
-    </div>
-    
-    <div class="field">
-        <select id="currency3">
-            <optgroup label="加密货币">
-                <option value="BTC">🟠 BTC</option>
-                <option value="ETH">♦️ ETH</option>
-                <option value="SOL" selected>🟣 SOL</option>
-                <option value="BNB">🟡 BNB</option>
-                <option value="OKB">⚫ OKB</option>
-                <option value="CUSTOM">🔍 自定义代币</option>
-                <option value="TEMP_CUSTOM_PLACEHOLDER" style="display: none;"></option>
-            </optgroup>
-            <optgroup label="法币">
-                <option value="USD">🇺🇸 USD</option>
-                <option value="CNY">🇨🇳 CNY</option>
-                <option value="JPY">🇯🇵 JPY</option>
-                <option value="KRW">🇰🇷 KRW</option>
-                <option value="SGD">🇸🇬 SGD</option>
-                <option value="AED">🇦🇪 AED</option>
-                <option value="HKD">🇭🇰 HKD</option>
-                <option value="MYR">🇲🇾 MYR</option>
-            </optgroup>
+	            </optgroup>
+	        </select>
+	        </div>
+	        <input type="text" id="amount2" placeholder="输入金额">
+	    </div>
+	    
+	    <div class="field">
+	        <div class="select-wrapper">
+	        <select id="currency3">
+	            <optgroup label="加密货币">
+	                <option value="BTC">🟠 BTC</option>
+	                <option value="ETH">♦️ ETH</option>
+	                <option value="SOL" selected>🟣 SOL</option>
+	                <option value="BNB">🟡 BNB</option>
+	                <option value="OKB">⚫ OKB</option>
+	                <option value="CUSTOM">🔍 自定义代币</option>
+	                <option value="TEMP_CUSTOM_PLACEHOLDER" style="display: none;"></option>
+	            </optgroup>
+	            <optgroup label="法币">
+	                <option value="USD">🇺🇸 USD</option>
+	                <option value="CNY">🇨🇳 CNY</option>
+	                <option value="TWD">🇹🇼 TWD</option>
+	                <option value="JPY">🇯🇵 JPY</option>
+	                <option value="KRW">🇰🇷 KRW</option>
+	                <option value="SGD">🇸🇬 SGD</option>
+	                <option value="AED">🇦🇪 AED</option>
+	                <option value="HKD">🇭🇰 HKD</option>
+	                <option value="MYR">🇲🇾 MYR</option>
+	            </optgroup>
             <optgroup label="实物">
                 <option value="ZHUJIAO">🍚 猪脚饭</option>
                 <option value="KFC">🍗 KFC</option>
                 <option value="IN11">💃 in11嫩模</option>
                 <option value="IPHONE17">📱 iPhone17</option>
                 <option value="MACBOOK">💻 MacBook Air</option>
-                <option value="ROLEX">⌚ Rolex</option>
+                <option value="ROLEX">⌚ 劳力士</option>
                 <option value="XIAOMISU7">🏎️ Xiaomi Su7</option>
                 <option value="PORSCHE">🏎️ Porsche 718</option>
                 <option value="FERRARI">🏎️ Ferrari Roma</option>
-            </optgroup>
-        </select>
-        <input type="text" id="amount3" placeholder="输入金额">
-    </div>
-    
-    <div class="field">
-        <select id="currency4">
-            <optgroup label="加密货币">
-                <option value="BTC">🟠 BTC</option>
-                <option value="ETH">♦️ ETH</option>
-                <option value="SOL">🟣 SOL</option>
-                <option value="BNB">🟡 BNB</option>
-                <option value="OKB">⚫ OKB</option>
-                <option value="CUSTOM">🔍 自定义代币</option>
-                <option value="TEMP_CUSTOM_PLACEHOLDER" style="display: none;"></option>
-            </optgroup>
-            <optgroup label="法币">
-                <option value="USD" selected>🇺🇸 USD</option>
-                <option value="CNY">🇨🇳 CNY</option>
-                <option value="JPY">🇯🇵 JPY</option>
-                <option value="KRW">🇰🇷 KRW</option>
-                <option value="SGD">🇸🇬 SGD</option>
-                <option value="AED">🇦🇪 AED</option>
-                <option value="HKD">🇭🇰 HKD</option>
-                <option value="MYR">🇲🇾 MYR</option>
-            </optgroup>
+	            </optgroup>
+	        </select>
+	        </div>
+	        <input type="text" id="amount3" placeholder="输入金额">
+	    </div>
+	    
+	    <div class="field">
+	        <div class="select-wrapper">
+	        <select id="currency4">
+	            <optgroup label="加密货币">
+	                <option value="BTC">🟠 BTC</option>
+	                <option value="ETH">♦️ ETH</option>
+	                <option value="SOL">🟣 SOL</option>
+	                <option value="BNB">🟡 BNB</option>
+	                <option value="OKB">⚫ OKB</option>
+	                <option value="CUSTOM">🔍 自定义代币</option>
+	                <option value="TEMP_CUSTOM_PLACEHOLDER" style="display: none;"></option>
+	            </optgroup>
+	            <optgroup label="法币">
+	                <option value="USD" selected>🇺🇸 USD</option>
+	                <option value="CNY">🇨🇳 CNY</option>
+	                <option value="TWD">🇹🇼 TWD</option>
+	                <option value="JPY">🇯🇵 JPY</option>
+	                <option value="KRW">🇰🇷 KRW</option>
+	                <option value="SGD">🇸🇬 SGD</option>
+	                <option value="AED">🇦🇪 AED</option>
+	                <option value="HKD">🇭🇰 HKD</option>
+	                <option value="MYR">🇲🇾 MYR</option>
+	            </optgroup>
             <optgroup label="实物">
                 <option value="ZHUJIAO">🍚 猪脚饭</option>
                 <option value="KFC">🍗 KFC</option>
                 <option value="IN11">💃 in11嫩模</option>
                 <option value="IPHONE17">📱 iPhone17</option>
                 <option value="MACBOOK">💻 MacBook Air</option>
-                <option value="ROLEX">⌚ Rolex</option>
+                <option value="ROLEX">⌚ 劳力士</option>
                 <option value="XIAOMISU7">🏎️ Xiaomi Su7</option>
                 <option value="PORSCHE">🏎️ Porsche 718</option>
                 <option value="FERRARI">🏎️ Ferrari Roma</option>
-            </optgroup>
-        </select>
-        <input type="text" id="amount4" placeholder="输入金额">
-    </div>
-    
-    <div class="field">
-        <select id="currency5">
-            <optgroup label="加密货币">
-                <option value="BTC">🟠 BTC</option>
-                <option value="ETH">♦️ ETH</option>
-                <option value="SOL">🟣 SOL</option>
-                <option value="BNB">🟡 BNB</option>
-                <option value="OKB">⚫ OKB</option>
-                <option value="CUSTOM">🔍 自定义代币</option>
-                <option value="TEMP_CUSTOM_PLACEHOLDER" style="display: none;"></option>
-            </optgroup>
-            <optgroup label="法币">
-                <option value="USD">🇺🇸 USD</option>
-                <option value="CNY" selected>🇨🇳 CNY</option>
-                <option value="JPY">🇯🇵 JPY</option>
-                <option value="KRW">🇰🇷 KRW</option>
-                <option value="SGD">🇸🇬 SGD</option>
-                <option value="AED">🇦🇪 AED</option>
-                <option value="HKD">🇭🇰 HKD</option>
-                <option value="MYR">🇲🇾 MYR</option>
-            </optgroup>
+	            </optgroup>
+	        </select>
+	        </div>
+	        <input type="text" id="amount4" placeholder="输入金额">
+	    </div>
+	    
+	    <div class="field">
+	        <div class="select-wrapper">
+	        <select id="currency5">
+	            <optgroup label="加密货币">
+	                <option value="BTC">🟠 BTC</option>
+	                <option value="ETH">♦️ ETH</option>
+	                <option value="SOL">🟣 SOL</option>
+	                <option value="BNB">🟡 BNB</option>
+	                <option value="OKB">⚫ OKB</option>
+	                <option value="CUSTOM">🔍 自定义代币</option>
+	                <option value="TEMP_CUSTOM_PLACEHOLDER" style="display: none;"></option>
+	            </optgroup>
+	            <optgroup label="法币">
+	                <option value="USD">🇺🇸 USD</option>
+	                <option value="CNY" selected>🇨🇳 CNY</option>
+	                <option value="TWD">🇹🇼 TWD</option>
+	                <option value="JPY">🇯🇵 JPY</option>
+	                <option value="KRW">🇰🇷 KRW</option>
+	                <option value="SGD">🇸🇬 SGD</option>
+	                <option value="AED">🇦🇪 AED</option>
+	                <option value="HKD">🇭🇰 HKD</option>
+	                <option value="MYR">🇲🇾 MYR</option>
+	            </optgroup>
             <optgroup label="实物">
                 <option value="ZHUJIAO">🍚 猪脚饭</option>
                 <option value="KFC">🍗 KFC</option>
                 <option value="IN11">💃 in11嫩模</option>
                 <option value="IPHONE17">📱 iPhone17</option>
                 <option value="MACBOOK">💻 MacBook Air</option>
-                <option value="ROLEX">⌚ Rolex</option>
+                <option value="ROLEX">⌚ 劳力士</option>
                 <option value="XIAOMISU7">🏎️ Xiaomi Su7</option>
                 <option value="PORSCHE">🏎️ Porsche 718</option>
                 <option value="FERRARI">🏎️ Ferrari Roma</option>
-            </optgroup>
-        </select>
-        <input type="text" id="amount5" placeholder="输入金额">
-    </div>
-    
-    <div class="field">
-        <select id="currency6">
-            <optgroup label="加密货币">
-                <option value="BTC">🟠 BTC</option>
-                <option value="ETH">♦️ ETH</option>
-                <option value="SOL">🟣 SOL</option>
-                <option value="BNB">🟡 BNB</option>
-                <option value="OKB">⚫ OKB</option>
-                <option value="CUSTOM">🔍 自定义代币</option>
-                <option value="TEMP_CUSTOM_PLACEHOLDER" style="display: none;"></option>
-            </optgroup>
-            <optgroup label="法币">
-                <option value="USD">🇺🇸 USD</option>
-                <option value="CNY">🇨🇳 CNY</option>
-                <option value="JPY">🇯🇵 JPY</option>
-                <option value="KRW">🇰🇷 KRW</option>
-                <option value="SGD">🇸🇬 SGD</option>
-                <option value="AED">🇦🇪 AED</option>
-                <option value="HKD" selected>🇭🇰 HKD</option>
-                <option value="MYR">🇲🇾 MYR</option>
-            </optgroup>
+	            </optgroup>
+	        </select>
+	        </div>
+	        <input type="text" id="amount5" placeholder="输入金额">
+	    </div>
+	    
+	    <div class="field">
+	        <div class="select-wrapper">
+	        <select id="currency6">
+	            <optgroup label="加密货币">
+	                <option value="BTC">🟠 BTC</option>
+	                <option value="ETH">♦️ ETH</option>
+	                <option value="SOL">🟣 SOL</option>
+	                <option value="BNB">🟡 BNB</option>
+	                <option value="OKB">⚫ OKB</option>
+	                <option value="CUSTOM">🔍 自定义代币</option>
+	                <option value="TEMP_CUSTOM_PLACEHOLDER" style="display: none;"></option>
+	            </optgroup>
+	            <optgroup label="法币">
+	                <option value="USD">🇺🇸 USD</option>
+	                <option value="CNY">🇨🇳 CNY</option>
+	                <option value="TWD">🇹🇼 TWD</option>
+	                <option value="JPY">🇯🇵 JPY</option>
+	                <option value="KRW">🇰🇷 KRW</option>
+	                <option value="SGD">🇸🇬 SGD</option>
+	                <option value="AED">🇦🇪 AED</option>
+	                <option value="HKD" selected>🇭🇰 HKD</option>
+	                <option value="MYR">🇲🇾 MYR</option>
+	            </optgroup>
             <optgroup label="实物">
                 <option value="ZHUJIAO">🍚 猪脚饭</option>
                 <option value="KFC">🍗 KFC</option>
                 <option value="IN11">💃 in11嫩模</option>
                 <option value="IPHONE17">📱 iPhone17</option>
                 <option value="MACBOOK">💻 MacBook Air</option>
-                <option value="ROLEX">⌚ Rolex</option>
+                <option value="ROLEX">⌚ 劳力士</option>
                 <option value="XIAOMISU7">🏎️ Xiaomi Su7</option>
                 <option value="PORSCHE">🏎️ Porsche 718</option>
                 <option value="FERRARI">🏎️ Ferrari Roma</option>
-            </optgroup>
-        </select>
-        <input type="text" id="amount6" placeholder="输入金额">
-    </div>
+	            </optgroup>
+	        </select>
+	        </div>
+	        <input type="text" id="amount6" placeholder="输入金额">
+	    </div>
     
-    <div class="social-links" style="display: flex; justify-content: space-between; align-items: center;">
-        <!-- API状态指示器 -->
-        <div id="apiStatus" class="api-status" style="font-size: 11px; color: #6c757d;">
-            正在初始化汇率服务...
-        </div>
-        
-        <!-- 按钮组 -->
-        <div style="display: flex; gap: 10px; align-items: center;">
-            <svg width="0" height="0" style="position: absolute;">
-                <defs>
-                    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stop-color="#667eea"/>
-                        <stop offset="100%" stop-color="#764ba2"/>
-                    </linearGradient>
-                    <linearGradient id="gradientHover" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stop-color="#764ba2"/>
-                        <stop offset="100%" stop-color="#667eea"/>
-                    </linearGradient>
-                </defs>
-            </svg>
+	    <div class="social-links">
+	        <!-- API状态指示器 -->
+	        <div id="apiStatus" class="api-status" style="font-size: 11px; color: #6c757d; text-align: left;">
+	            正在初始化汇率服务...
+	        </div>
 
-            <!-- 分享按钮 -->
-            <button id="shareBtn" class="author share-btn" title="分享链接">
-                <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z" fill="url(#gradient)"/>
-                </svg>
-            </button>
+	        <!-- 分享结果（居中） -->
+	        <div class="share-center">
+	            <button id="shareBtn" class="share-btn primary" title="生成分享图">
+	                <span class="btn-content">
+	                    <svg viewBox="0 0 24 24" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+	                        <rect x="4" y="5" width="16" height="14" rx="3"></rect>
+	                        <path d="M8.5 14.5l2.5-3 3 3.5 2-2 2 2.5"></path>
+	                        <path d="M9 10.5h.01"></path>
+	                    </svg>
+	                    分享结果&nbsp;
+	                </span>
+	            </button>
+	            <button id="shareSiteBtn" class="share-btn" type="button" title="复制网站分享文案">
+	                <span class="btn-content">
+	                    <svg viewBox="0 0 24 24" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+	                        <path d="M10 13a5 5 0 0 1 0-7l.7-.7a5 5 0 0 1 7.1 7.1l-.7.7"></path>
+	                        <path d="M14 11a5 5 0 0 1 0 7l-.7.7a5 5 0 0 1-7.1-7.1l.7-.7"></path>
+	                    </svg>
+	                    复制网址&nbsp;
+	                </span>
+	            </button>
+	        </div>
+	        
+	        <!-- 右侧按钮组 -->
+	        <div class="social-actions">
+	            <a href="https://x.com/wolfyxbt" target="_blank" class="author">
+	                <!-- X 官方标志（简化版路径） -->
+	                <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+	                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zM17.083 19.77h1.833L7.084 4.126H5.117z"/>
+	                </svg>
+	            </a>
+	            <a href="https://github.com/WolfyXBT/ValuesCorrector" target="_blank" class="author">
+	                <!-- GitHub 官方 Octocat 标志（经典轮廓） -->
+	                <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+	                    <path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.44 9.8 8.21 11.39.6.11.82-.26.82-.58v-2.02c-3.34.73-4.03-1.41-4.03-1.41-.55-1.39-1.33-1.76-1.33-1.76-1.09-.75.08-.73.08-.73 1.2.08 1.84 1.24 1.84 1.24 1.07 1.83 2.81 1.3 3.49 1 .11-.78.42-1.3.76-1.6-2.66-.31-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.12-.31-.54-1.53.12-3.18 0 0 1.01-.32 3.3 1.23.96-.27 1.98-.4 3-.41 1.02.01 2.05.14 3.01.41 2.29-1.55 3.3-1.23 3.3-1.23.65 1.65.24 2.87.12 3.18.77.84 1.23 1.91 1.23 3.22 0 4.61-2.81 5.62-5.49 5.92.43.37.82 1.1.82 2.22v3.29c0 .32.22.69.83.58C20.57 21.8 24 17.3 24 12 24 5.37 18.63 0 12 0z"/>
+	                </svg>
+	            </a>
+	            <!-- 添加到主屏幕按钮 -->
+	            <button id="addToHomeBtn" class="author add-to-home-btn" title="添加到主屏幕">
+	                <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+	                    <path d="M8 1.5h8A3.5 3.5 0 0 1 19.5 5v14A3.5 3.5 0 0 1 16 22.5H8A3.5 3.5 0 0 1 4.5 19V5A3.5 3.5 0 0 1 8 1.5zm0 2A1.5 1.5 0 0 0 6.5 5v14A1.5 1.5 0 0 0 8 20.5h8A1.5 1.5 0 0 0 17.5 19V5A1.5 1.5 0 0 0 16 3.5H8z"/>
+	                    <path d="M12 7.5c.55 0 1 .45 1 1v2.5h2.5a1 1 0 1 1 0 2H13v2.5a1 1 0 1 1-2 0V13H8.5a1 1 0 1 1 0-2H11V8.5c0-.55.45-1 1-1z"/>
+	                </svg>
+	            </button>
+	        </div>
+	    </div>
 
-            <a href="https://x.com/Wolfy_XBT" target="_blank" class="author">
-                <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                </svg>
-            </a>
-            <a href="https://github.com/WolfyXBT/ValuesCorrector" target="_blank" class="author">
-                <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.30.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-                </svg>
-            </a>
-            <!-- 添加到主屏幕按钮 -->
-            <button id="addToHomeBtn" class="author add-to-home-btn" title="添加到主屏幕">
-                <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M17 1H7c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2zM7 4V3h10v1H7zM7 18V6h10v12H7zM7 21v-1h10v1H7z" fill="url(#gradient)"/>
-                    <path d="M12 8l-4 4h2.5v3h3v-3H16l-4-4z" fill="url(#gradient)"/>
-                </svg>
-            </button>
-        </div>
-    </div>
+		    <script>
+		        let rates = {};
+		        let updating = false;
+		        let lastInputField = 1; // 记录最后一次输入数字的栏位
+		        let localStorageAvailable = false;
+		        let loadRatesInFlight = null;
 
-    <script>
-        let rates = {};
-        let updating = false;
-        let lastInputField = 1; // 记录最后一次输入数字的栏位
-        
-        // PWA 添加到主屏幕功能
-        let deferredPrompt;
-        const addToHomeBtn = document.getElementById('addToHomeBtn');
-        const shareBtn = document.getElementById('shareBtn');
+		        // ===== 数字显示格式化（用于结果展示）=====
+		        function toPlainDecimalString(num) {
+		            const s = String(num);
+		            if (!/[eE]/.test(s)) return s;
+
+		            const [coeffRaw, expRaw] = s.toLowerCase().split('e');
+		            const exp = parseInt(expRaw, 10);
+
+		            let coeff = coeffRaw;
+		            let sign = '';
+		            if (coeff.startsWith('-')) {
+		                sign = '-';
+		                coeff = coeff.slice(1);
+		            }
+
+		            const parts = coeff.split('.');
+		            const intPart = parts[0] || '0';
+		            const fracPart = parts[1] || '';
+		            const digits = (intPart + fracPart).replace(/^0+(?=\d)/, '') || '0';
+
+		            if (exp >= 0) {
+		                const zeros = exp - fracPart.length;
+		                if (zeros >= 0) return sign + digits + '0'.repeat(zeros);
+		                const idx = intPart.length + exp;
+		                return sign + digits.slice(0, idx) + '.' + digits.slice(idx);
+		            }
+
+		            const zeros = (-exp) - intPart.length;
+		            if (zeros >= 0) return sign + '0.' + '0'.repeat(zeros) + digits;
+		            const idx = intPart.length + exp; // exp 为负
+		            return sign + digits.slice(0, idx) + '.' + digits.slice(idx);
+		        }
+
+		        function formatNumberForDisplay(input) {
+		            const n = typeof input === 'number' ? input : Number(input);
+		            if (!Number.isFinite(n) || n === 0) return '0';
+
+		            const sign = n < 0 ? '-' : '';
+		            const abs = Math.abs(n);
+
+		            const groupThousands = (intStr) => intStr.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+		            // 规则 1：>= 1，最多 2 位小数（四舍五入），不固定小数位
+		            if (abs >= 1) {
+		                const rounded = Math.round((abs + Number.EPSILON) * 100) / 100;
+		                let s = rounded.toFixed(2).replace(/\.?0+$/, '');
+		                const [i, f] = s.split('.');
+		                return sign + groupThousands(i) + (f ? `.${f}` : '');
+		            }
+
+		            // 规则 2：0 < n < 1，显示到 2 个有效数字（按示例：截断到第 2 个有效数字，不使用科学计数法）
+		            const plain = toPlainDecimalString(abs);
+		            const frac = (plain.split('.')[1] || '').replace(/[^\d]/g, '');
+		            const firstNonZero = frac.search(/[1-9]/);
+		            if (firstNonZero === -1) return '0';
+
+		            const cut = Math.min(frac.length, firstNonZero + 2);
+		            const shown = frac.slice(0, cut);
+		            return sign + '0.' + shown;
+		        }
+		        
+		        // ===== API / 缓存工具 =====
+		        const CACHE_VERSION = 1;
+		        const CACHE_KEYS = {
+	            presetCryptoPrices: `valueConverter:caches:v${CACHE_VERSION}:presetCryptoPrices`,
+	            binanceSpotPrices: `valueConverter:caches:v${CACHE_VERSION}:binanceSpotPrices`,
+	            okxSpotPrices: `valueConverter:caches:v${CACHE_VERSION}:okxSpotPrices`,
+	            fiatRates: `valueConverter:caches:v${CACHE_VERSION}:fiatRates`,
+	            coingeckoTokenPrice: `valueConverter:caches:v${CACHE_VERSION}:coingeckoTokenPrice`
+	        };
+	        
+	        const memoryCache = new Map();
+	        
+	        function nowMs() {
+	            return Date.now();
+	        }
+	        
+	        function readCache(key, maxAgeMs) {
+	            const raw = (() => {
+	                if (localStorageAvailable) {
+	                    try {
+	                        return localStorage.getItem(key);
+	                    } catch (e) {
+	                        return null;
+	                    }
+	                }
+	                return memoryCache.get(key) || null;
+	            })();
+	            
+	            if (!raw) return null;
+	            
+	            try {
+	                const payload = typeof raw === 'string' ? JSON.parse(raw) : raw;
+	                if (!payload || typeof payload.ts !== 'number') return null;
+	                if (typeof maxAgeMs === 'number' && maxAgeMs >= 0) {
+	                    if (nowMs() - payload.ts > maxAgeMs) return null;
+	                }
+	                return payload;
+	            } catch (e) {
+	                return null;
+	            }
+	        }
+	        
+	        function writeCache(key, data) {
+	            const payload = { ts: nowMs(), data };
+	            if (localStorageAvailable) {
+	                try {
+	                    localStorage.setItem(key, JSON.stringify(payload));
+	                } catch (e) {
+	                    // localStorage 满了或不可用时，退回内存缓存
+	                    memoryCache.set(key, payload);
+	                }
+	            } else {
+	                memoryCache.set(key, payload);
+	            }
+	        }
+	        
+	        function formatAge(ts) {
+	            const diffSec = Math.max(0, Math.floor((nowMs() - ts) / 1000));
+	            if (diffSec < 60) return `${diffSec}秒前`;
+	            const diffMin = Math.floor(diffSec / 60);
+	            if (diffMin < 60) return `${diffMin}分钟前`;
+	            const diffHr = Math.floor(diffMin / 60);
+	            return `${diffHr}小时前`;
+	        }
+	        
+	        async function fetchJsonWithTimeout(url, options = {}, timeoutMs = 8000) {
+	            const controller = new AbortController();
+	            const timeout = setTimeout(() => controller.abort(), timeoutMs);
+	            try {
+	                const res = await fetch(url, { ...options, signal: controller.signal });
+	                return res;
+	            } finally {
+	                clearTimeout(timeout);
+	            }
+	        }
+	        
+	        // ===== 预设币种实时价格（Binance + OKX） =====
+	        // 说明：网页端 OKX REST 通常缺少 CORS 头，无法直接 fetch，因此这里使用 OKX WebSocket 公共频道获取 SOL/OKB。
+	        // 价格使用 USDT 报价，默认按 1 USDT ≈ 1 USD 处理（对大多数场景足够；如需更精确可再加 USDT/USD 校准）。
+	        let okxWs = null;
+	        let okxWsBackoffMs = 1000;
+	        let okxWsLastConnectAttempt = 0;
+	        let scheduledRatesRefreshTimer = null;
+	        
+	        // { SOL: { price, ts }, OKB: { price, ts } }
+	        const okxLivePrices = new Map();
+	        
+	        function scheduleRatesRefresh(reason) {
+	            if (scheduledRatesRefreshTimer) return;
+	            scheduledRatesRefreshTimer = setTimeout(async () => {
+	                scheduledRatesRefreshTimer = null;
+	                try {
+	                    await loadRates({ forceRefresh: false, reason: reason || 'scheduledRefresh' });
+	                    // 若页面上已有输入，刷新后以最后输入栏位为基准重算
+	                    const lastAmount = document.getElementById(`amount${lastInputField}`)?.value?.trim?.() || '';
+	                    if (lastAmount !== '') convert(lastInputField);
+	                } catch (e) {
+	                    console.log('计划内刷新失败:', e);
+	                }
+	            }, 1500); // 防抖：避免 OKX 高频推送导致反复重算
+	        }
+	        
+	        function startOkxWebSocket() {
+	            // 若已连接/正在连接，直接返回
+	            if (okxWs && (okxWs.readyState === WebSocket.OPEN || okxWs.readyState === WebSocket.CONNECTING)) return;
+	            
+	            const now = nowMs();
+	            if (now - okxWsLastConnectAttempt < okxWsBackoffMs) return;
+	            okxWsLastConnectAttempt = now;
+	            
+	            try {
+	                okxWs = new WebSocket('wss://ws.okx.com:8443/ws/v5/public');
+	            } catch (e) {
+	                console.log('OKX WebSocket 初始化失败:', e);
+	                okxWs = null;
+	                okxWsBackoffMs = Math.min(30_000, okxWsBackoffMs * 2);
+	                return;
+	            }
+	            
+	            okxWs.onopen = () => {
+	                okxWsBackoffMs = 1000;
+	                apiStatus.okx = true;
+	                const sub = {
+	                    op: 'subscribe',
+	                    args: [
+	                        { channel: 'tickers', instId: 'SOL-USDT' },
+	                        { channel: 'tickers', instId: 'OKB-USDT' }
+	                    ]
+	                };
+	                okxWs.send(JSON.stringify(sub));
+	            };
+	            
+	            okxWs.onmessage = (evt) => {
+	                try {
+	                    const msg = JSON.parse(evt.data);
+	                    if (msg?.event) return;
+	                    const channel = msg?.arg?.channel;
+	                    if (channel !== 'tickers') return;
+	                    
+	                    const instId = msg?.arg?.instId;
+	                    const last = msg?.data?.[0]?.last;
+	                    const price = typeof last === 'string' ? parseFloat(last) : (typeof last === 'number' ? last : NaN);
+	                    if (!instId || !Number.isFinite(price) || price <= 0) return;
+	                    
+	                    const symbol = instId.startsWith('SOL-') ? 'SOL' : instId.startsWith('OKB-') ? 'OKB' : null;
+	                    if (!symbol) return;
+	                    
+	                    okxLivePrices.set(symbol, { price, ts: nowMs() });
+	                    writeCache(CACHE_KEYS.okxSpotPrices, Object.fromEntries(okxLivePrices.entries()));
+	                    scheduleRatesRefresh('okxWsUpdate');
+	                } catch (e) {
+	                    // 忽略解析错误
+	                }
+	            };
+	            
+	            okxWs.onerror = () => {
+	                apiStatus.okx = false;
+	            };
+	            
+	            okxWs.onclose = () => {
+	                apiStatus.okx = false;
+	                okxWs = null;
+	                okxWsBackoffMs = Math.min(30_000, okxWsBackoffMs * 2);
+	                setTimeout(() => startOkxWebSocket(), okxWsBackoffMs);
+	            };
+	        }
+	        
+	        async function getBinancePresetPrices({ forceRefresh = false } = {}) {
+	            const TTL_MS = 30 * 1000; // 30秒
+	            if (!forceRefresh) {
+	                const cached = readCache(CACHE_KEYS.binanceSpotPrices, TTL_MS);
+	                if (cached?.data) return { prices: cached.data, source: 'cache', ts: cached.ts };
+	            }
+	            
+	            const url = 'https://api.binance.com/api/v3/ticker/price?symbols=%5B%22BTCUSDT%22,%22ETHUSDT%22,%22BNBUSDT%22%5D';
+	            const res = await fetchJsonWithTimeout(url, { method: 'GET' }, 8000);
+	            
+	            if (!res.ok) {
+	                const error = new Error(`Binance 请求失败: ${res.status}`);
+	                error.status = res.status;
+	                throw error;
+	            }
+	            
+	            const arr = await res.json();
+	            if (!Array.isArray(arr)) throw new Error('Binance 返回数据异常');
+	            
+	            const out = {};
+	            for (const item of arr) {
+	                const sym = item?.symbol;
+	                const priceStr = item?.price;
+	                const price = typeof priceStr === 'string' ? parseFloat(priceStr) : NaN;
+	                if (sym === 'BTCUSDT') out.BTC = price;
+	                if (sym === 'ETHUSDT') out.ETH = price;
+	                if (sym === 'BNBUSDT') out.BNB = price;
+	            }
+	            
+	            for (const k of ['BTC', 'ETH', 'BNB']) {
+	                if (!Number.isFinite(out[k]) || out[k] <= 0) throw new Error(`Binance 返回数据不完整，缺少 ${k} 价格`);
+	            }
+	            
+	            writeCache(CACHE_KEYS.binanceSpotPrices, out);
+	            return { prices: out, source: 'realtime', ts: nowMs() };
+	        }
+	        
+	        function getOkxPresetPrices({ forceRefresh = false } = {}) {
+	            // OKX WebSocket 价格的“实时”判断窗口更短
+	            const LIVE_MAX_AGE_MS = 15 * 1000; // 15秒内视为实时
+	            
+	            const sol = okxLivePrices.get('SOL');
+	            const okb = okxLivePrices.get('OKB');
+	            const bothLive =
+	                sol && okb &&
+	                (nowMs() - sol.ts <= LIVE_MAX_AGE_MS) &&
+	                (nowMs() - okb.ts <= LIVE_MAX_AGE_MS);
+	            
+	            if (!forceRefresh && bothLive) {
+	                return { prices: { SOL: sol.price, OKB: okb.price }, source: 'realtime', ts: Math.min(sol.ts, okb.ts) };
+	            }
+	            
+	            // 用持久化缓存兜底（即使不是实时，也比“不可用”强）
+	            const cached = readCache(CACHE_KEYS.okxSpotPrices, -1);
+	            if (cached?.data) {
+	                const cachedSol = cached.data?.SOL?.price;
+	                const cachedOkb = cached.data?.OKB?.price;
+	                if (Number.isFinite(cachedSol) && Number.isFinite(cachedOkb)) {
+	                    return { prices: { SOL: cachedSol, OKB: cachedOkb }, source: 'cache', ts: cached.ts };
+	                }
+	            }
+	            
+	            throw new Error('OKX 价格尚未就绪（WebSocket 未连接或未收到数据）');
+	        }
+	        
+	        async function getPresetCryptoPrices({ forceRefresh = false } = {}) {
+	            const TTL_MS = 30 * 1000; // 30秒：组合价格缓存
+	            if (!forceRefresh) {
+	                const cached = readCache(CACHE_KEYS.presetCryptoPrices, TTL_MS);
+	                if (cached?.data) return { prices: cached.data, source: 'cache', ts: cached.ts };
+	            }
+	            
+	            // 确保 OKX WS 在后台启动（不会阻塞）
+	            startOkxWebSocket();
+	            
+	            const [binanceRes, okxRes] = await Promise.all([
+	                (async () => {
+	                    try {
+	                        const r = await getBinancePresetPrices({ forceRefresh });
+	                        apiStatus.binance = true;
+	                        return r;
+	                    } catch (e) {
+	                        apiStatus.binance = false;
+	                        throw e;
+	                    }
+	                })(),
+	                (async () => {
+	                    try {
+	                        const r = getOkxPresetPrices({ forceRefresh });
+	                        apiStatus.okx = true;
+	                        return r;
+	                    } catch (e) {
+	                        apiStatus.okx = false;
+	                        throw e;
+	                    }
+	                })()
+	            ]);
+	            
+	            const prices = {
+	                ...binanceRes.prices,
+	                ...okxRes.prices
+	            };
+	            
+	            for (const k of ['BTC', 'ETH', 'BNB', 'SOL', 'OKB']) {
+	                if (!Number.isFinite(prices[k]) || prices[k] <= 0) throw new Error(`预设币种价格不完整，缺少 ${k}`);
+	            }
+	            
+	            writeCache(CACHE_KEYS.presetCryptoPrices, prices);
+	            return { prices, source: 'realtime', ts: nowMs() };
+	        }
+	        
+	        async function getFiatRates({ forceRefresh = false } = {}) {
+	            const TTL_MS = 6 * 60 * 60 * 1000; // 6小时：法币汇率更新没那么频繁
+	            if (!forceRefresh) {
+	                const cached = readCache(CACHE_KEYS.fiatRates, TTL_MS);
+	                if (cached?.data) {
+	                    return { fiatData: cached.data, source: 'cache', ts: cached.ts };
+	                }
+	            }
+	            
+	            const url = 'https://api.exchangerate-api.com/v4/latest/USD';
+	            const res = await fetchJsonWithTimeout(url, { method: 'GET' }, 8000);
+	            if (!res.ok) {
+	                const error = new Error(`ExchangeRate 请求失败: ${res.status}`);
+	                error.status = res.status;
+	                throw error;
+	            }
+	            
+	            const fiatData = await res.json();
+	            if (!fiatData?.rates) throw new Error('ExchangeRate 返回数据异常');
+	            
+	            writeCache(CACHE_KEYS.fiatRates, fiatData);
+	            return { fiatData, source: 'realtime', ts: nowMs() };
+	        }
+	        
+	        // PWA 添加到主屏幕功能
+	        let deferredPrompt;
+	        const addToHomeBtn = document.getElementById('addToHomeBtn');
+	        const shareBtn = document.getElementById('shareBtn');
 
         // 显示 Toast 提示
-        function showToast() {
+        function showToast(message) {
             const toast = document.getElementById('shareToast');
             if (toast) {
+	                if (message) {
+	                    const textEl = toast.querySelector('.toast-text');
+	                    if (textEl) textEl.textContent = message;
+	                }
+
                 // 显示 toast
                 toast.classList.add('show');
 
@@ -837,54 +1663,629 @@
                 }, 3000);
             }
         }
+        
+	        function getShareRows() {
+	            const rows = [];
+	            const presetCryptoSet = new Set(['BTC', 'ETH', 'SOL', 'BNB', 'OKB']);
+	            for (let i = 1; i <= 6; i++) {
+	                const amountEl = document.getElementById(`amount${i}`);
+	                const selectEl = document.getElementById(`currency${i}`);
+	                if (!amountEl || !selectEl) continue;
+                
+                const rawAmount = (amountEl.value || '').trim();
+                if (!rawAmount) continue;
+                
+                let label = '';
+	                let logoType = 'none';
+	                let logo = '';
+	                let value = selectEl.value;
+	                const isCrypto = (value === 'CUSTOM') || presetCryptoSet.has(value);
+	                
+	                if (value === 'CUSTOM') {
+	                    const customOption = selectEl.querySelector('option[value="CUSTOM"]');
+	                    const displayText = customOption?.getAttribute('data-display-text');
+	                    label = displayText ? `${displayText}` : '自定义代币';
+	                    // 分享图：加密货币不展示 Logo（按需只在 ticker 前加 $）
+	                    logoType = 'none';
+	                    logo = '';
+	                } else {
+	                    // 优先使用与界面一致的映射（emoji/logo + 显示文本）
+	                    const mapped = (typeof currencyLogos !== 'undefined') ? currencyLogos[value] : null;
+	                    if (mapped) {
+	                        label = mapped.text || value;
+	                        // 分享图：加密货币不展示 Logo；非加密按原来的 emoji 展示
+	                        if (presetCryptoSet.has(value)) {
+	                            logoType = 'none';
+	                            logo = '';
+	                        } else if (mapped.type === 'emoji') {
+	                            logoType = 'emoji';
+	                            logo = mapped.logo || '';
+	                        } else {
+	                            logoType = 'none';
+	                            logo = '';
+	                        }
+	                    } else {
+	                        const opt = selectEl.querySelector(`option[value="${CSS.escape(value)}"]`);
+	                        label = (opt?.textContent || value).trim();
+	                    }
+	                }
+	                
+	                rows.push({
+	                    index: i,
+	                    label,
+	                    amount: rawAmount,
+	                    value,
+	                    isCrypto,
+	                    logoType,
+	                    logo
+	                });
+	            }
+	            return rows;
+	        }
+        
+	        function formatShareTimestamp() {
+	            const d = new Date();
+	            const pad = (n) => String(n).padStart(2, '0');
+	            return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())} ･ ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+	        }
+        
+        function roundRect(ctx, x, y, w, h, r) {
+            const radius = Math.min(r, w / 2, h / 2);
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.arcTo(x + w, y, x + w, y + h, radius);
+            ctx.arcTo(x + w, y + h, x, y + h, radius);
+            ctx.arcTo(x, y + h, x, y, radius);
+            ctx.arcTo(x, y, x + w, y, radius);
+            ctx.closePath();
+        }
 
-        // 分享按钮功能
-        if (shareBtn) {
-            shareBtn.addEventListener('click', async () => {
-                const shareText = '快来跟我一起使用价值观纠正器：https://wolfyxbt.github.io/ValuesCorrector/';
+	        function drawCircleLogo(ctx, { x, y, size, logoType, logo, bitmap, isDark }) {
+	            const r = size / 2;
+	            ctx.save();
+            
+            // 背景圆
+            roundRect(ctx, x - r, y - r, size, size, r);
+            ctx.fillStyle = isDark ? 'rgba(255,255,255,0.18)' : '#ffffff';
+            ctx.fill();
+            ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.28)' : '#d2d2d7';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // 内容
+            if (logoType === 'image' && bitmap) {
+                ctx.beginPath();
+                ctx.arc(x, y, r - 2, 0, Math.PI * 2);
+                ctx.closePath();
+                ctx.clip();
+                ctx.drawImage(bitmap, x - (r - 2), y - (r - 2), (r - 2) * 2, (r - 2) * 2);
+            } else if (logoType === 'emoji' && logo) {
+                ctx.fillStyle = isDark ? '#ffffff' : '#1d1d1f';
+                ctx.font = `400 ${Math.floor(size * 0.52)}px "PingFang SC"`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(logo, x, y + 1);
+            } else {
+                ctx.fillStyle = isDark ? '#ffffff' : '#1d1d1f';
+                ctx.font = `400 ${Math.floor(size * 0.34)}px "PingFang SC"`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('•', x, y);
+            }
+            
+	            ctx.restore();
+	        }
 
-                try {
-                    // 尝试使用现代 Clipboard API
-                    await navigator.clipboard.writeText(shareText);
+	        // 分享图专用：绘制无圆框的 Logo（仅绘制内容本身）
+	        function drawInlineLogo(ctx, { x, y, size, logoType, logo, bitmap }) {
+	            ctx.save();
+	            if (logoType === 'image' && bitmap) {
+	                ctx.drawImage(bitmap, x - size / 2, y - size / 2, size, size);
+	            } else if (logoType === 'emoji' && logo) {
+	                ctx.font = `400 ${Math.floor(size * 0.9)}px "PingFang SC"`;
+	                ctx.textAlign = 'center';
+	                ctx.textBaseline = 'middle';
+	                ctx.fillText(logo, x, y + 1);
+	            }
+	            ctx.restore();
+	        }
+        
+	        async function generateSharePngBlob() {
+	            const rows = getShareRows();
+	            if (rows.length === 0) {
+	                throw new Error('没有可分享的换算结果（请先输入任意金额）');
+	            }
 
-                    // 复制成功，显示 toast 提示
-                    showToast();
+			            // 横向分享图（landscape）
+			            const BASE_W = 1350;
+			            const MAX_W = 20000; // 允许更宽的分享图（受浏览器/设备画布上限影响）
+			            let W = BASE_W;
+			            const scale = 2;
+			            const ACCENT = '#FF9F0A'; // Apple 系统橘色（偏计算器风格）
+		            const BG = '#000000';
+		            const SURFACE = '#000000';
+		            const TEXT = '#F5F5F7';
+		            const MUTED = '#8E8E93';
+		            const BORDER = '#2C2C2E';
+			            const PILL_BG = '#1C1C1E';
 
-                    // 添加按钮动画效果
-                    shareBtn.style.transform = 'scale(1.2)';
-                    setTimeout(() => {
-                        shareBtn.style.transform = '';
-                    }, 200);
+			            // 动态高度：根据实际有值的行数收缩画布，避免底部大段空白
+			            const marginScale = 0.5; // 留白减少 50%
+			            const pad = Math.round(72 * marginScale);
+			            const sideInset = Math.round(56 * marginScale);
+			            const metaTopOffset = 30;
+				            const metaLineStep = 37;
+			            const titleBaselineOffset = 130; // 避免与左上角信息重叠
+			            const afterTitleToRows = 70;
+				            const baseLineH = 104;
+				            const basePillH = 86;
+				            const SOURCE_ROW_SCALE = 2; // 第一行（源值）整体放大倍数
+				            const SECONDARY_AMOUNT_SCALE = 1.44; // 第2～6行数字放大比例（缩小 20%）
+				            const PRIMARY_TEXT_SCALE = 2;
+				            const primaryAmountFontSizeForLayout = Math.round(36 * SOURCE_ROW_SCALE * PRIMARY_TEXT_SCALE);
+				            const primaryTickerFontSizeForLayout = Math.round(34 * SOURCE_ROW_SCALE * 0.7 * PRIMARY_TEXT_SCALE);
+				            const primaryPillHForLayout = Math.max(
+				                basePillH * SOURCE_ROW_SCALE,
+				                Math.round(primaryAmountFontSizeForLayout * 1.05 + primaryTickerFontSizeForLayout * 1.05 + 28)
+				            );
+						            const maxRows = Math.min(6, rows.length);
+					            const colGap = Math.round(56 * marginScale);
+					            const baseTotalInnerW = BASE_W - pad * 2 - sideInset * 2;
+					            const minLeftColW = 420;
+					            const minRightColW = 320;
+					            const leftColWBase = Math.max(minLeftColW, Math.floor((baseTotalInnerW - colGap) * 0.55));
+					            const rightColWBase = Math.max(minRightColW, baseTotalInnerW - colGap - leftColWBase);
 
-                    console.log('✅ 分享链接已复制到剪贴板');
-                } catch (err) {
-                    console.error('复制失败:', err);
+					            // 动态增宽：当主体/副体出现大位数数字时，图片宽度随之变宽以保证完整显示
+					            const chainForMeasure = rows.slice(0, maxRows);
+					            const primaryForMeasure = chainForMeasure[0];
+					            const secondaryForMeasure = chainForMeasure.slice(1);
 
-                    // 降级方案：使用传统方法
-                    const textArea = document.createElement('textarea');
-                    textArea.value = shareText;
-                    textArea.style.position = 'fixed';
-                    textArea.style.left = '-999999px';
-                    document.body.appendChild(textArea);
-                    textArea.select();
+					            const mctx = document.createElement('canvas').getContext('2d');
+					            const measureText = (font, text) => {
+					                mctx.font = font;
+					                return mctx.measureText(String(text ?? '')).width;
+					            };
 
-                    try {
-                        const success = document.execCommand('copy');
-                        document.body.removeChild(textArea);
+					            let requiredLeftColW = leftColWBase;
+					            let requiredRightColW = rightColWBase;
 
-                        if (success) {
-                            // 复制成功，显示 toast
-                            showToast();
-                        } else {
-                            alert('❌ 复制失败，请手动复制：\n\n' + shareText);
-                        }
-                    } catch (err2) {
-                        document.body.removeChild(textArea);
-                        alert('❌ 复制失败，请手动复制：\n\n' + shareText);
-                    }
-                }
+						            if (primaryForMeasure) {
+						                const shouldDrawLogo = !primaryForMeasure.isCrypto;
+						                const amountFont = `400 ${primaryAmountFontSizeForLayout}px "PingFang SC"`;
+						                const tickerFont = `400 ${primaryTickerFontSizeForLayout}px "PingFang SC"`;
+						                const amountW = measureText(amountFont, primaryForMeasure.amount);
+						                const tickerLabel = primaryForMeasure.isCrypto ? `$${primaryForMeasure.label}` : primaryForMeasure.label;
+						                const tickerW = measureText(tickerFont, tickerLabel);
+						                const logoW = shouldDrawLogo ? ((44 * SOURCE_ROW_SCALE) + (12 * SOURCE_ROW_SCALE)) : 0;
+						                const rowW = Math.max(amountW, logoW + tickerW) + 20;
+						                requiredLeftColW = Math.max(requiredLeftColW, rowW);
+						            }
+
+						            if (secondaryForMeasure.length > 0) {
+						                const prefixFont = '400 30px "PingFang SC"';
+						                const tickerFont = '400 34px "PingFang SC"';
+						                const amountFont = `400 ${Math.round(36 * SECONDARY_AMOUNT_SCALE)}px "PingFang SC"`;
+						                const padX = 22;
+						                const iconSize = 44;
+						                const iconGap = 12;
+					                const prefix = '约等于 ≈';
+					                const prefixW = measureText(prefixFont, prefix) + 14;
+
+					                for (const r of secondaryForMeasure) {
+					                    const shouldDrawLogo = !r.isCrypto;
+					                    const amountW = measureText(amountFont, r.amount) + 14;
+					                    const tickerLabel = r.isCrypto ? `$${r.label}` : r.label;
+					                    const tickerW = measureText(tickerFont, tickerLabel);
+					                    const logoW = shouldDrawLogo ? (iconSize + iconGap) : 0;
+					                    const rowW = padX + prefixW + amountW + logoW + tickerW + padX + 20;
+					                    requiredRightColW = Math.max(requiredRightColW, rowW);
+					                }
+					            }
+
+					            const requiredTotalInnerW = requiredLeftColW + colGap + requiredRightColW;
+					            if (requiredTotalInnerW > baseTotalInnerW) {
+					                W = Math.min(MAX_W, BASE_W + Math.ceil(requiredTotalInnerW - baseTotalInnerW));
+					            }
+
+					            const totalInnerW = W - pad * 2 - sideInset * 2;
+					            let rightColW = Math.max(
+					                minRightColW,
+					                Math.min(totalInnerW - colGap - minLeftColW, requiredRightColW)
+					            );
+					            let leftColW = totalInnerW - colGap - rightColW;
+					            if (leftColW < requiredLeftColW) {
+					                leftColW = Math.max(requiredLeftColW, minLeftColW);
+					                rightColW = totalInnerW - colGap - leftColW;
+					                if (rightColW < minRightColW) {
+					                    rightColW = minRightColW;
+					                    leftColW = totalInnerW - colGap - rightColW;
+					                }
+					            }
+
+					            const rowsStartY = pad + titleBaselineOffset + afterTitleToRows;
+					            const lineGap = 18;
+					            const primaryLineH = Math.max(baseLineH, primaryPillHForLayout + lineGap);
+				            const secondaryLineH = Math.max(baseLineH, basePillH + lineGap);
+				            const secondaryCount = Math.max(0, maxRows - 1);
+				            const leftHeight = primaryLineH;
+				            const rightHeight = secondaryCount * secondaryLineH;
+			            const rowsHeight = Math.max(leftHeight, rightHeight);
+			            const bottomInside = Math.round(56 * marginScale * 0.5); // 下方留白再减少 50%
+			            const cardH = Math.max(360, Math.ceil((rowsStartY - pad) + rowsHeight + bottomInside));
+			            const H = cardH + pad * 2;
+	            
+	            const canvas = document.createElement('canvas');
+	            canvas.width = W * scale;
+	            canvas.height = H * scale;
+	            const ctx = canvas.getContext('2d');
+	            ctx.scale(scale, scale);
+            
+            // 背景
+	            ctx.fillStyle = BG;
+	            ctx.fillRect(0, 0, W, H);
+            
+	            // 画布内容区域（不再绘制外层卡片边框）
+		            const cardX = pad;
+		            const cardY = pad;
+		            const cardW = W - pad * 2;
+		            // cardH 已按内容动态计算
+            
+		            // 标题
+			            const titleX = cardX + sideInset;
+			            const titleRightX = cardX + cardW - sideInset;
+			            let cursorY = cardY + titleBaselineOffset;
+			            
+					            const shareTitle = '价值观纠正器';
+					            const titleFontSize = 101;
+					            ctx.fillStyle = TEXT;
+					            ctx.font = `400 ${titleFontSize}px "PingFang SC"`;
+					            ctx.fillText(shareTitle, titleX, cursorY);
+				            
+				            // 右上角信息（与标题最顶部对齐）
+				            const titleMetrics = ctx.measureText(shareTitle);
+				            const titleAscent = titleMetrics.actualBoundingBoxAscent ?? Math.round(titleFontSize * 0.85);
+				            const titleTopY = cursorY - titleAscent;
+					            const metaYOffset = Math.round(titleFontSize * 0.1); // 日期 + GitHub 整体下移 10%
+					            
+					            ctx.textAlign = 'right';
+				            ctx.fillStyle = 'rgba(245,245,247,0.7)';
+					            const githubLine = 'https://github.com/wolfyxbt/ValuesCorrector';
+					            const dateLine = `${formatShareTimestamp()}`;
+				            
+				            const dateFontSize = 28; // 日期字体缩小 5%（约 29 -> 28）
+				            const githubFontSize = 24; // GitHub 字体放大 10%（约 22 -> 24）
+				            
+				            ctx.font = `400 ${dateFontSize}px "PingFang SC"`;
+				            const dateMetrics = ctx.measureText(dateLine);
+				            const dateAscent = dateMetrics.actualBoundingBoxAscent ?? Math.round(dateFontSize * 0.85);
+				            const dateY = titleTopY + dateAscent + metaYOffset;
+				            ctx.fillText(dateLine, titleRightX, dateY);
+				            
+				            ctx.font = `400 ${githubFontSize}px "PingFang SC"`;
+				            ctx.fillText(githubLine, titleRightX, dateY + metaLineStep);
+			            
+				            // 梯形/阶梯布局：第一行源值，其余行以“约等于 ≈”开头并逐行右移
+				            cursorY += afterTitleToRows;
+				            const rowsBottomLimit = cardY + cardH - bottomInside;
+				            // 结构：第一行（主体）在左侧，其余行（副体）在右侧
+				            const leftX = titleX;
+				            const rightX = titleRightX - rightColW;
+			            // 顺序：严格保持与 UI 显示一致（1→6）
+			            const chain = rows.slice(0, maxRows);
+			            const primaryRow = chain[0];
+			            const secondaryRows = chain.slice(1);
+			            // baseLineH/basePillH/SOURCE_ROW_SCALE 已在上方用于动态高度计算
+			            
+			            function ellipsize(text, maxWidth) {
+			                if (ctx.measureText(text).width <= maxWidth) return text;
+			                let t = text;
+		                while (t.length > 1 && ctx.measureText(t + '…').width > maxWidth) {
+		                    t = t.slice(0, -1);
+		                }
+		                return t + '…';
+		            }
+		            
+					            function drawRow({ row, x, yTop, w, scale, showPrefix }) {
+					                const primaryTextScale = showPrefix ? 1 : PRIMARY_TEXT_SCALE; // 第一个换算单位“数字+单位”放大 200%
+					                const amountFontSize = Math.round(36 * scale * (showPrefix ? SECONDARY_AMOUNT_SCALE : 1) * primaryTextScale);
+					                const tickerFontSize = Math.round(34 * scale * (showPrefix ? 1 : 0.7) * primaryTextScale);
+					                const pillH = showPrefix
+					                    ? (basePillH * scale)
+					                    : Math.max(basePillH * scale, Math.round(amountFontSize * 1.05 + tickerFontSize * 1.05 + 28));
+					                const yMid = yTop + pillH / 2;
+					                // 主体行（不显示 prefix）需要与标题左边缘对齐：去掉左侧内缩
+					                const padX = showPrefix ? (22 * scale) : 0;
+					                const iconSize = 44 * scale;
+					                const iconGap = 12 * scale;
+					                const textStartX = x + padX;
+					                const textY = yMid + (12 * scale) + (showPrefix ? 0 : Math.round(pillH * 0.2)); // 主体行下移 20%
+				                const shouldDrawLogo = !row.isCrypto;
+				                const prefix = showPrefix ? '约等于 ≈' : '';
+				                
+				                ctx.textAlign = 'left';
+				                ctx.textBaseline = 'alphabetic';
+				                let cursorX = textStartX;
+				                
+					                if (prefix) {
+					                    ctx.fillStyle = TEXT;
+					                    ctx.font = '400 30px "PingFang SC"';
+					                    ctx.fillText(prefix, cursorX, textY);
+					                    cursorX += ctx.measureText(prefix).width + 14;
+					                }
+				                
+						                // amount
+						                ctx.fillStyle = ACCENT;
+						                ctx.font = `400 ${amountFontSize}px "PingFang SC"`;
+						                let reservedTail = 0;
+						                const tickerLabel = row.isCrypto ? `$${row.label}` : row.label;
+						                if (showPrefix) {
+						                    const prevFont = ctx.font;
+						                    ctx.font = `400 ${tickerFontSize}px "PingFang SC"`;
+						                    const tickerW = ctx.measureText(tickerLabel).width;
+						                    ctx.font = prevFont;
+						                    reservedTail = (shouldDrawLogo ? (iconSize + iconGap) : 0) + tickerW + 20;
+						                }
+					                const amountMaxW = Math.max(140, w - (cursorX - x) - reservedTail);
+					                const amountText = ellipsize(row.amount, amountMaxW);
+					                ctx.fillText(amountText, cursorX, textY);
+				                cursorX += ctx.measureText(amountText).width + 14;
+
+					                // ticker：主体行换行到下方；副体行保持同一行
+					                ctx.fillStyle = TEXT;
+					                ctx.font = `400 ${tickerFontSize}px "PingFang SC"`;
+
+					                if (!showPrefix) {
+					                    const unitY = textY + Math.round(amountFontSize * 0.92);
+					                    let unitCursorX = textStartX;
+					                    if (shouldDrawLogo) {
+					                        const iconCx = unitCursorX + iconSize / 2;
+					                        const iconCy = unitY - Math.round(iconSize * 0.1);
+					                        drawInlineLogo(ctx, {
+					                            x: iconCx,
+					                            y: iconCy,
+					                            size: iconSize,
+					                            logoType: row.logoType,
+					                            logo: row.logo,
+					                            bitmap: null
+					                        });
+					                        unitCursorX += iconSize + iconGap;
+					                    }
+					                    const tickerMaxW = Math.max(120, (x + w - padX) - unitCursorX);
+					                    const ticker = ellipsize(tickerLabel, tickerMaxW);
+					                    ctx.fillText(ticker, unitCursorX, unitY);
+					                } else {
+					                    if (shouldDrawLogo) {
+					                        const iconCx = cursorX + iconSize / 2;
+					                        const iconCy = yMid;
+					                        drawInlineLogo(ctx, {
+					                            x: iconCx,
+					                            y: iconCy,
+					                            size: iconSize,
+					                            logoType: row.logoType,
+					                            logo: row.logo,
+					                            bitmap: null
+					                        });
+					                        cursorX += iconSize + iconGap;
+					                    }
+
+					                    const tickerMaxW = Math.max(120, (x + w - padX) - cursorX);
+					                    const ticker = ellipsize(tickerLabel, tickerMaxW);
+					                    ctx.fillText(ticker, cursorX, textY);
+					                }
+					            }
+				            
+						            // 左侧：主体（第一行）
+						            if (primaryRow) {
+						                const primaryPillH = primaryPillHForLayout;
+						                const primaryYTopOffset = -Math.round(H * 0.1); // 主体整体上移 10%
+						                const primaryYTopIdeal = Math.round((H - primaryPillH) / 2) + primaryYTopOffset;
+						                const primaryYTopMin = cursorY;
+						                const primaryYTopMax = Math.max(primaryYTopMin, rowsBottomLimit - primaryPillH);
+						                const primaryYTop = Math.min(primaryYTopMax, Math.max(primaryYTopMin, primaryYTopIdeal));
+					                drawRow({
+					                    row: primaryRow,
+					                    x: leftX,
+				                    yTop: primaryYTop,
+				                    w: leftColW,
+				                    scale: SOURCE_ROW_SCALE,
+				                    showPrefix: false
+				                });
+				            }
+				            
+				            // 右侧：副体（其余行）
+				            let rightCursorY = cursorY;
+				            for (let i = 0; i < secondaryRows.length; i++) {
+				                drawRow({
+				                    row: secondaryRows[i],
+				                    x: rightX,
+				                    yTop: rightCursorY,
+				                    w: rightColW,
+				                    scale: 1,
+				                    showPrefix: true
+				                });
+				                rightCursorY += secondaryLineH;
+				            }
+	            
+		            // 右上角已展示 GitHub 链接，底部不再显示网址
+	            
+	            return await new Promise((resolve, reject) => {
+                canvas.toBlob((blob) => {
+                    if (!blob) reject(new Error('生成图片失败'));
+                    else resolve(blob);
+                }, 'image/png', 0.92);
             });
         }
+
+        let shareImageBlob = null;
+        let shareImageObjectUrl = null;
+
+        function closeShareImageModal() {
+            const modal = document.getElementById('shareImageModal');
+            if (modal) modal.style.display = 'none';
+            const img = document.getElementById('shareImagePreview');
+            if (img) img.src = '';
+            if (shareImageObjectUrl) {
+                URL.revokeObjectURL(shareImageObjectUrl);
+                shareImageObjectUrl = null;
+            }
+            shareImageBlob = null;
+        }
+
+	        function openShareImageModal(blob) {
+	            shareImageBlob = blob;
+	            const modal = document.getElementById('shareImageModal');
+	            const img = document.getElementById('shareImagePreview');
+	            if (!modal || !img) return;
+
+	            if (shareImageObjectUrl) URL.revokeObjectURL(shareImageObjectUrl);
+	            shareImageObjectUrl = URL.createObjectURL(blob);
+	            img.src = shareImageObjectUrl;
+	            modal.style.display = 'block';
+	        }
+
+        async function copyShareImageToClipboard() {
+            if (!shareImageBlob) throw new Error('图片未就绪');
+
+            if (!navigator.clipboard || typeof ClipboardItem === 'undefined') {
+                throw new Error('当前浏览器不支持复制图片（请使用下载）');
+            }
+
+            const item = new ClipboardItem({ 'image/png': shareImageBlob });
+            await navigator.clipboard.write([item]);
+        }
+
+        function downloadShareImage() {
+            if (!shareImageBlob) throw new Error('图片未就绪');
+
+            const filename = `价值观纠正器-换算结果-${Date.now()}.png`;
+            const url = URL.createObjectURL(shareImageBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        }
+
+	        function setupShareImageModalListeners() {
+            const modal = document.getElementById('shareImageModal');
+            const copyBtn = document.getElementById('copyShareImageBtn');
+            const downloadBtn = document.getElementById('downloadShareImageBtn');
+            if (!modal || !copyBtn || !downloadBtn) return;
+
+            if (!copyBtn.dataset.bound) {
+                copyBtn.dataset.bound = '1';
+                copyBtn.addEventListener('click', async () => {
+                    try {
+                        await copyShareImageToClipboard();
+                        showToast('图片已复制');
+                        console.log('✅ 图片已复制到剪贴板');
+                    } catch (e) {
+                        console.log('复制图片失败:', e);
+                        alert(`❌ 复制图片失败：\n\n${e?.message || e}\n\n你可以点击“下载图片”保存后再分享。`);
+                    }
+                });
+            }
+
+            if (!downloadBtn.dataset.bound) {
+                downloadBtn.dataset.bound = '1';
+                downloadBtn.addEventListener('click', () => {
+                    try {
+                        downloadShareImage();
+                        showToast('图片已下载');
+                        console.log('✅ 图片已下载');
+                    } catch (e) {
+                        console.log('下载图片失败:', e);
+                        alert(`❌ 下载图片失败：\n\n${e?.message || e}`);
+                    }
+                });
+            }
+
+            if (!modal.dataset.bound) {
+                modal.dataset.bound = '1';
+
+                // 点击遮罩关闭
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) closeShareImageModal();
+                });
+
+                // ESC 关闭
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape' && modal.style.display === 'block') {
+                        closeShareImageModal();
+                    }
+                });
+            }
+        }
+
+        // 全局：点击空白处关闭所有自定义下拉
+        window.addEventListener('click', (e) => {
+            const target = e.target;
+            if (!(target instanceof Element)) return;
+            if (target.closest('.dropdown')) return;
+            if (target.closest('.dropdown-menu')) return;
+            closeAllDropdowns();
+        });
+
+        // ESC：关闭下拉
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeAllDropdowns();
+        });
+
+        // 滚动/缩放：重定位已打开的下拉菜单
+        window.addEventListener('scroll', () => {
+            document.querySelectorAll('.dropdown.open').forEach((dd) => positionDropdownMenu(dd));
+        }, { passive: true });
+
+        window.addEventListener('resize', () => {
+            document.querySelectorAll('.dropdown.open').forEach((dd) => positionDropdownMenu(dd));
+        });
+
+	        // 分享按钮功能：生成换算结果分享图 PNG，并打开预览弹窗
+	        if (shareBtn) {
+		            shareBtn.addEventListener('click', async () => {
+			                try {
+			                    const blob = await generateSharePngBlob();
+
+			                    openShareImageModal(blob);
+			                    console.log('✅ 分享图已生成（PNG），已打开预览');
+			                } catch (err) {
+	                    console.error('生成/分享失败:', err);
+	                    alert(`❌ 生成分享图失败：\n\n${err?.message || err}`);
+	                }
+	            });
+	        }
+
+	        // 分享网站按钮：复制分享文案
+	        const shareSiteBtn = document.getElementById('shareSiteBtn');
+	        if (shareSiteBtn) {
+	            shareSiteBtn.addEventListener('click', async () => {
+	                const text = '价值观纠正器：https://wolfyxbt.github.io/ValuesCorrector/';
+	                try {
+	                    if (navigator.clipboard?.writeText) {
+	                        await navigator.clipboard.writeText(text);
+	                    } else {
+	                        const ta = document.createElement('textarea');
+	                        ta.value = text;
+	                        ta.setAttribute('readonly', '');
+	                        ta.style.position = 'fixed';
+	                        ta.style.left = '-9999px';
+	                        ta.style.top = '0';
+	                        document.body.appendChild(ta);
+	                        ta.select();
+	                        document.execCommand('copy');
+	                        ta.remove();
+	                    }
+	                    showToast('网址已复制');
+	                    console.log('✅ 网站分享文案已复制');
+	                } catch (e) {
+	                    console.log('复制网站分享文案失败:', e);
+	                    alert(`❌ 复制失败：\n\n${e?.message || e}\n\n你可以手动复制：\n${text}`);
+	                }
+	            });
+	        }
 
         // 监听beforeinstallprompt事件
         window.addEventListener('beforeinstallprompt', (e) => {
@@ -941,7 +2342,7 @@
                     justify-content: center;
                     align-items: center;
                     z-index: 10000;
-                    font-family: 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', sans-serif;
+	                    font-family: "PingFang SC";
                     animation: fadeIn 0.3s ease-out;
                 ">
                     <div style="
@@ -956,23 +2357,23 @@
                     ">
                         <div style="margin-bottom: 20px;">
                             <svg width="60" height="60" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M17 1H7c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2zM7 4V3h10v1H7zM7 18V6h10v12H7zM7 21v-1h10v1H7z" fill="#667eea"/>
-                                <path d="M12 8l-4 4h2.5v3h3v-3H16l-4-4z" fill="#667eea"/>
-                            </svg>
-                        </div>
-                        <h3 style="margin: 0 0 15px 0; color: #667eea; font-size: 24px;">移动设备专享</h3>
-                        <p style="color: #666; font-size: 16px; line-height: 1.6; margin: 15px 0;">
-                            添加到主屏幕功能需要在手机上使用
-                        </p>
-                        <p style="color: #999; font-size: 14px; line-height: 1.5; margin: 15px 0;">
-                            请用手机浏览器打开本网站，<br>
-                            即可将价值观纠正器添加到手机主屏幕
-                        </p>
-                        <button onclick="this.parentElement.parentElement.remove()" style="
-                            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                            color: white;
-                            border: none;
-                            padding: 12px 30px;
+	                                <path d="M17 1H7c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2zM7 4V3h10v1H7zM7 18V6h10v12H7zM7 21v-1h10v1H7z" fill="#1d1d1f"/>
+	                                <path d="M12 8l-4 4h2.5v3h3v-3H16l-4-4z" fill="#1d1d1f"/>
+	                            </svg>
+	                        </div>
+	                        <h3 style="margin: 0 0 15px 0; color: #1d1d1f; font-size: 24px;">移动设备专享</h3>
+	                        <p style="color: #6e6e73; font-size: 16px; line-height: 1.6; margin: 15px 0;">
+	                            添加到主屏幕功能需要在手机上使用
+	                        </p>
+	                        <p style="color: #6e6e73; font-size: 14px; line-height: 1.5; margin: 15px 0;">
+	                            请用手机浏览器打开本网站，<br>
+	                            即可将价值观纠正器添加到手机主屏幕
+	                        </p>
+	                        <button onclick="this.parentElement.parentElement.remove()" style="
+	                            background: #1d1d1f;
+	                            color: white;
+	                            border: none;
+	                            padding: 12px 30px;
                             border-radius: 25px;
                             font-size: 16px;
                             cursor: pointer;
@@ -1017,7 +2418,7 @@
                     justify-content: center;
                     align-items: center;
                     z-index: 10000;
-                    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+                    font-family: "PingFang SC";
                     animation: fadeIn 0.3s ease-out;
                 ">
                     <div style="
@@ -1032,28 +2433,28 @@
                     ">
                         <div style="margin-bottom: 15px;">
                             <svg width="50" height="50" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M17 1H7c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2zM7 4V3h10v1H7zM7 18V6h10v12H7zM7 21v-1h10v1H7z" fill="#007AFF"/>
-                                <path d="M12 8l-4 4h2.5v3h3v-3H16l-4-4z" fill="#007AFF"/>
-                            </svg>
-                        </div>
-                        <h3 style="margin: 0 0 15px 0; color: #007AFF; font-size: 20px;">添加到主屏幕</h3>
-                        <p style="color: #333; font-size: 14px; line-height: 1.5; margin: 10px 0;">
-                            <span style="display: inline-block; width: 20px; height: 20px; background: #007AFF; color: white; border-radius: 50%; text-align: center; line-height: 20px; font-size: 12px; margin-right: 8px;">1</span>
-                            点击底部的"分享"按钮
-                        </p>
-                        <p style="color: #333; font-size: 14px; line-height: 1.5; margin: 10px 0;">
-                            <span style="display: inline-block; width: 20px; height: 20px; background: #007AFF; color: white; border-radius: 50%; text-align: center; line-height: 20px; font-size: 12px; margin-right: 8px;">2</span>
-                            选择"添加到主屏幕"
-                        </p>
-                        <p style="color: #333; font-size: 14px; line-height: 1.5; margin: 10px 0 20px 0;">
-                            <span style="display: inline-block; width: 20px; height: 20px; background: #007AFF; color: white; border-radius: 50%; text-align: center; line-height: 20px; font-size: 12px; margin-right: 8px;">3</span>
-                            点击"添加"完成
-                        </p>
-                        <button onclick="this.parentElement.parentElement.remove()" style="
-                            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                            color: white;
-                            border: none;
-                            padding: 12px 30px;
+	                                <path d="M17 1H7c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2zM7 4V3h10v1H7zM7 18V6h10v12H7zM7 21v-1h10v1H7z" fill="#1d1d1f"/>
+	                                <path d="M12 8l-4 4h2.5v3h3v-3H16l-4-4z" fill="#1d1d1f"/>
+	                            </svg>
+	                        </div>
+	                        <h3 style="margin: 0 0 15px 0; color: #1d1d1f; font-size: 20px;">添加到主屏幕</h3>
+	                        <p style="color: #1d1d1f; font-size: 14px; line-height: 1.5; margin: 10px 0;">
+	                            <span style="display: inline-block; width: 20px; height: 20px; background: #1d1d1f; color: white; border-radius: 50%; text-align: center; line-height: 20px; font-size: 12px; margin-right: 8px;">1</span>
+	                            点击底部的"分享"按钮
+	                        </p>
+	                        <p style="color: #1d1d1f; font-size: 14px; line-height: 1.5; margin: 10px 0;">
+	                            <span style="display: inline-block; width: 20px; height: 20px; background: #1d1d1f; color: white; border-radius: 50%; text-align: center; line-height: 20px; font-size: 12px; margin-right: 8px;">2</span>
+	                            选择"添加到主屏幕"
+	                        </p>
+	                        <p style="color: #1d1d1f; font-size: 14px; line-height: 1.5; margin: 10px 0 20px 0;">
+	                            <span style="display: inline-block; width: 20px; height: 20px; background: #1d1d1f; color: white; border-radius: 50%; text-align: center; line-height: 20px; font-size: 12px; margin-right: 8px;">3</span>
+	                            点击"添加"完成
+	                        </p>
+	                        <button onclick="this.parentElement.parentElement.remove()" style="
+	                            background: #1d1d1f;
+	                            color: white;
+	                            border: none;
+	                            padding: 12px 30px;
                             border-radius: 25px;
                             font-size: 16px;
                             cursor: pointer;
@@ -1119,84 +2520,111 @@
         }, 500);
         
         // API状态跟踪
-        let apiStatus = {
-            coingecko: true,
-            lastCheck: 0,
-            rateLimited: false,
-            usingBackup: false
-        };
+	        let apiStatus = {
+	            preset: true,
+	            binance: true,
+	            okx: true,
+	            exchangerate: true,
+	            coingecko: true, // 仅用于“自定义代币”相关功能（搜索/价格）
+	            rateLimited: false,
+	            backoffUntil: 0
+	        };
 
-        // 更新API状态显示
-        function updateApiStatusDisplay(isRealTime, errorMessage) {
-            const statusElement = document.getElementById('apiStatus');
-            if (!statusElement) return;
+	        // 更新API状态显示
+	        function updateApiStatusDisplay(isRealTime, errorMessage) {
+	            const statusElement = document.getElementById('apiStatus');
+	            if (!statusElement) return;
             
             // 确保状态元素始终可见
             statusElement.style.display = 'block';
             
-            if (isRealTime) {
-                statusElement.innerHTML = '实时汇率已加载';
-                statusElement.style.color = '#28a745';
-            } else {
-                // 使用传入的错误消息，如果没有则使用默认消息
-                const displayMessage = errorMessage || '已超过汇率服务 API 访问限制次数，请稍后再试';
-                statusElement.innerHTML = displayMessage;
-                statusElement.style.color = '#dc3545';
-            }
-        }
+	            // 新版：允许传入对象以自定义文案
+	            if (typeof isRealTime === 'object' && isRealTime) {
+	                statusElement.innerHTML = isRealTime.message || '汇率状态未知';
+	                statusElement.style.color = isRealTime.color || '#6c757d';
+	                return;
+	            }
+	            
+	            if (isRealTime) {
+	                statusElement.innerHTML = '实时汇率已加载';
+	                statusElement.style.color = '#28a745';
+	                return;
+	            }
+	            
+	            // 使用传入的错误消息，如果没有则使用默认消息
+	            const displayMessage = errorMessage || '已超过汇率服务 API 访问限制次数，请稍后再试';
+	            statusElement.innerHTML = displayMessage;
+	            statusElement.style.color = '#dc3545';
+	        }
 
-        // 获取真实汇率
-        async function loadRates() {
-            // 显示加载状态
-            const statusElement = document.getElementById('apiStatus');
-            if (statusElement) {
-                statusElement.innerHTML = '正在加载汇率数据...';
+	        // 获取真实汇率
+	        async function loadRates({ forceRefresh = false, reason = 'unknown' } = {}) {
+	            if (loadRatesInFlight) return loadRatesInFlight;
+	            
+	            loadRatesInFlight = (async () => {
+	            // 显示加载状态
+	            const statusElement = document.getElementById('apiStatus');
+	            if (statusElement) {
+	                statusElement.innerHTML = '正在加载汇率数据...';
                 statusElement.style.color = '#6c757d';
                 statusElement.style.display = 'block';
-            }
-            
-            try {
-                // 获取加密货币价格 (USD)
-                const cryptoResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana,binancecoin,okb&vs_currencies=usd');
-                
-                if (cryptoResponse.status === 429) {
-                    console.warn('CoinGecko API 达到调用限制 (429)');
-                    apiStatus.rateLimited = true;
-                    apiStatus.lastCheck = Date.now();
-                    throw new Error('CoinGecko API Rate Limited');
-                }
-                
-                const cryptoData = await cryptoResponse.json();
-                apiStatus.coingecko = true;
-                apiStatus.rateLimited = false;
-                apiStatus.usingBackup = false;
-                
-                // 获取法币汇率 (USD基准)
-                const fiatResponse = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
-                
-                if (fiatResponse.status === 429 || !fiatResponse.ok) {
-                    console.warn('ExchangeRate API 达到调用限制或请求失败');
-                    apiStatus.rateLimited = true;
-                    apiStatus.lastCheck = Date.now();
-                    throw new Error('ExchangeRate API Rate Limited');
-                }
-                
-                const fiatData = await fiatResponse.json();
-                
-                const btcPrice = cryptoData.bitcoin.usd;
-                const ethPrice = cryptoData.ethereum.usd;
-                const solPrice = cryptoData.solana.usd;
-                const bnbPrice = cryptoData.binancecoin.usd;
-                const okbPrice = cryptoData.okb.usd;
-                
-                const currencies = ['CNY', 'JPY', 'KRW', 'SGD', 'AED', 'HKD', 'MYR'];
-                const cryptos = ['BTC', 'ETH', 'SOL', 'BNB', 'OKB'];
-                const products = ['ZHUJIAO', 'KFC', 'IN11', 'IPHONE17', 'FERRARI', 'PORSCHE', 'XIAOMISU7', 'ROLEX', 'MACBOOK'];
-                const cryptoPrices = { BTC: btcPrice, ETH: ethPrice, SOL: solPrice, BNB: bnbPrice, OKB: okbPrice };
-                const productPrices = { 
-                    ZHUJIAO: 20 / fiatData.rates.CNY,       // 20 CNY 转换为 USD
-                    KFC: 50 / fiatData.rates.CNY,           // 50 CNY 转换为 USD
-                    IN11: 3000 / fiatData.rates.CNY,        // 3000 CNY 转换为 USD
+	            }
+	            
+	            try {
+	                console.log(`loadRates 开始，原因: ${reason}, forceRefresh: ${forceRefresh}`);
+	                
+	                // 如果正在退避（例如被限流），强制走缓存，避免雪上加霜
+	                if (apiStatus.backoffUntil && nowMs() < apiStatus.backoffUntil) {
+	                    forceRefresh = false;
+	                }
+	                
+	                const [{ prices: cryptoPrices, source: cryptoSource, ts: cryptoTs }, { fiatData, source: fiatSource, ts: fiatTs }] =
+	                    await Promise.all([
+		                        (async () => {
+		                            try {
+		                                const r = await getPresetCryptoPrices({ forceRefresh });
+		                                apiStatus.preset = true;
+		                                apiStatus.rateLimited = false;
+		                                return r;
+		                            } catch (e) {
+		                                console.warn('预设币种价格获取失败，尝试使用缓存:', e);
+		                                apiStatus.preset = false;
+		                                if (e?.status === 429) {
+		                                    apiStatus.rateLimited = true;
+		                                    apiStatus.backoffUntil = nowMs() + 10 * 60 * 1000; // 10分钟退避
+		                                }
+	                                const stale = readCache(CACHE_KEYS.presetCryptoPrices, -1);
+	                                if (stale?.data) return { prices: stale.data, source: 'stale-cache', ts: stale.ts };
+	                                throw e;
+	                            }
+	                        })(),
+		                        (async () => {
+		                            try {
+		                                const r = await getFiatRates({ forceRefresh });
+		                                apiStatus.exchangerate = true;
+		                                apiStatus.rateLimited = false;
+		                                return r;
+		                            } catch (e) {
+		                                console.warn('ExchangeRate 获取失败，尝试使用缓存:', e);
+		                                apiStatus.exchangerate = false;
+		                                if (e?.status === 429) {
+		                                    apiStatus.rateLimited = true;
+		                                    apiStatus.backoffUntil = nowMs() + 10 * 60 * 1000; // 10分钟退避
+		                                }
+	                                const stale = readCache(CACHE_KEYS.fiatRates, -1);
+	                                if (stale?.data) return { fiatData: stale.data, source: 'stale-cache', ts: stale.ts };
+	                                throw e;
+	                            }
+	                        })()
+	                    ]);
+	                
+	                const currencies = ['CNY', 'JPY', 'KRW', 'SGD', 'AED', 'HKD', 'MYR', 'TWD'];
+	                const cryptos = ['BTC', 'ETH', 'SOL', 'BNB', 'OKB'];
+	                const products = ['ZHUJIAO', 'KFC', 'IN11', 'IPHONE17', 'FERRARI', 'PORSCHE', 'XIAOMISU7', 'ROLEX', 'MACBOOK'];
+	                const productPrices = { 
+	                    ZHUJIAO: 20 / fiatData.rates.CNY,       // 20 CNY 转换为 USD
+	                    KFC: 50 / fiatData.rates.CNY,           // 50 CNY 转换为 USD
+	                    IN11: 3000 / fiatData.rates.CNY,        // 3000 CNY 转换为 USD
                     IPHONE17: 799,                          // 799 USD
                     FERRARI: 1750000 / fiatData.rates.CNY,  // 1,750,000 CNY 转换为 USD
                     PORSCHE: 550000 / fiatData.rates.CNY,   // 550,000 CNY 转换为 USD
@@ -1298,70 +2726,106 @@
                             rates[from][to] = productPrices[from] / productPrices[to];
                         }
                     });
-                });
-                
-                console.log('汇率加载成功:', rates);
-                updateApiStatusDisplay(true);
-                
-                // 设置定期刷新汇率状态（每5分钟检查一次）
-                if (!window.rateRefreshInterval) {
-                    window.rateRefreshInterval = setInterval(async () => {
-                        try {
-                            await loadRates();
-                        } catch (error) {
-                            console.log('定期刷新失败，将在下次尝试');
-                        }
-                    }, 5 * 60 * 1000); // 5分钟
-                }
-            } catch (error) {
-                console.error('汇率加载失败:', error);
-                apiStatus.coingecko = false;
-                apiStatus.usingBackup = false;
-                
-                // 根据错误类型显示不同的提示信息
-                let errorMessage = '';
-                if (error.message.includes('CoinGecko API Rate Limited')) {
-                    errorMessage = '已超过 CoinGecko API 访问限制次数，请稍后再试';
-                } else if (error.message.includes('ExchangeRate API Rate Limited')) {
-                    errorMessage = 'ExchangeRate 服务 API 访问限制次数，请稍后再试';
-                } else {
-                    errorMessage = '已超过汇率服务 API 访问限制次数，请稍后再试';
-                }
-                
-                console.error(errorMessage);
-                updateApiStatusDisplay(false, errorMessage);
-                
-                // 清空汇率，表示服务不可用
-                rates = {};
-            }
-        }
-        
-        // 检测 localStorage 是否可用
-        function checkLocalStorage() {
-            try {
+	                });
+	                
+	                console.log('汇率加载成功:', rates);
+	                
+	                const parts = [];
+	                if (cryptoSource === 'realtime') parts.push('预设币种（Binance + OKX 实时）');
+	                else if (cryptoSource === 'cache') parts.push(`预设币种（Binance + OKX 缓存 ${formatAge(cryptoTs)}）`);
+	                else if (cryptoSource === 'stale-cache') parts.push(`预设币种（Binance + OKX 旧缓存 ${formatAge(cryptoTs)}）`);
+	                else parts.push(`预设币种（未知来源 ${cryptoSource || 'unknown'}）`);
+	                
+		                if (fiatSource === 'realtime') parts.push('ExchangeRate 实时');
+		                else if (fiatSource === 'cache') parts.push(`ExchangeRate 缓存（${formatAge(fiatTs)}）`);
+		                else parts.push(`ExchangeRate 旧缓存（${formatAge(fiatTs)}）`);
+		                
+		                const allRealtime = (cryptoSource === 'realtime') && (fiatSource === 'realtime');
+		                const detailMessage = `汇率已加载（${parts.join(' + ')}）`;
+		                console.log(detailMessage);
+		                updateApiStatusDisplay({
+		                    message: '汇率已加载',
+		                    color: allRealtime ? '#1d1d1f' : '#6e6e73'
+		                });
+	                
+	                // 设置定期刷新汇率状态（每5分钟检查一次）
+	                if (!window.rateRefreshInterval) {
+	                    window.rateRefreshInterval = setInterval(async () => {
+	                        try {
+	                            await loadRates({ forceRefresh: true, reason: 'interval' });
+	                        } catch (error) {
+	                            console.log('定期刷新失败，将在下次尝试');
+	                        }
+	                    }, 5 * 60 * 1000); // 5分钟
+	                }
+		            } catch (error) {
+		                console.error('汇率加载失败:', error);
+		                
+		                // 根据错误类型显示不同的提示信息
+		                let errorMessage = '';
+	                if (error?.status === 429 || apiStatus.rateLimited) {
+	                    errorMessage = '汇率服务触发访问频率限制，正在使用缓存或请稍后再试';
+	                } else if (!apiStatus.preset && !apiStatus.exchangerate) {
+	                    errorMessage = '汇率服务暂时不可用（预设币价与法币汇率均失败）';
+	                } else if (!apiStatus.preset) {
+	                    errorMessage = '预设币种价格服务暂时不可用（Binance/OKX）';
+	                } else if (!apiStatus.exchangerate) {
+	                    errorMessage = 'ExchangeRate 法币汇率服务暂时不可用';
+	                } else {
+	                    errorMessage = '汇率加载失败，请稍后再试';
+	                }
+	                
+	                console.error(errorMessage);
+	                updateApiStatusDisplay(false, errorMessage);
+	                
+	                // 清空汇率，表示服务不可用
+	                rates = {};
+	            }
+	            })().finally(() => {
+	                loadRatesInFlight = null;
+	            });
+	            
+	            return loadRatesInFlight;
+	        }
+	        
+	        // 检测 localStorage 是否可用
+	        function checkLocalStorage() {
+	            try {
                 const testKey = '__localStorage_test__';
-                localStorage.setItem(testKey, 'test');
-                localStorage.removeItem(testKey);
-                console.log('✅ localStorage 可用');
-                return true;
-            } catch (e) {
-                console.error('❌ localStorage 不可用:', e);
-                alert('浏览器的 localStorage 功能不可用。状态记忆功能将无法使用。\n\n可能原因：\n1. 使用了隐私/无痕模式\n2. 浏览器设置阻止了本地存储\n3. 使用 file:// 协议打开（请使用 HTTP 服务器）');
-                return false;
-            }
-        }
+	                localStorage.setItem(testKey, 'test');
+	                localStorage.removeItem(testKey);
+	                localStorageAvailable = true;
+	                console.log('✅ localStorage 可用');
+	                return true;
+	            } catch (e) {
+	                localStorageAvailable = false;
+	                console.error('❌ localStorage 不可用:', e);
+	                alert('浏览器的 localStorage 功能不可用。状态记忆功能将无法使用。\n\n可能原因：\n1. 使用了隐私/无痕模式\n2. 浏览器设置阻止了本地存储\n3. 使用 file:// 协议打开（请使用 HTTP 服务器）');
+	                return false;
+	            }
+	        }
 
         // 初始化函数
-        function initApp() {
-            console.log('🚀 开始初始化应用...');
+	        function initApp() {
+	            console.log('🚀 开始初始化应用...');
 
-            checkLocalStorage();
+	            checkLocalStorage();
+	            
+	            // 尽早启动 OKX WebSocket（用于 SOL/OKB 实时价格）
+	            startOkxWebSocket();
 
-            // 先设置事件监听器
-            setupBasicEventListeners();
+		            // 先设置事件监听器
+		            setupBasicEventListeners();
+		            setupShareImageModalListeners();
+		            
+		            // 初始化自定义下拉（替代系统下拉菜单）
+		            for (let i = 1; i <= 6; i++) {
+		                const select = document.getElementById(`currency${i}`);
+		                if (select) buildCustomDropdown(select);
+		            }
 
-            // 然后恢复状态
-            restoreState();
+	            // 然后恢复状态
+	            restoreState();
 
             // 在页面关闭前保存状态
             window.addEventListener('beforeunload', function() {
@@ -1547,8 +3011,8 @@
             console.log('rates对象存在:', !!rates, '包含货币数量:', rates ? Object.keys(rates).length : 0);
             
             if (!sourceAmount || sourceAmount === '') {
-                for (let i = 1; i <= 6; i++) {
-                    if (i !== sourceIndex) {
+	            for (let i = 1; i <= 6; i++) {
+	                if (i !== sourceIndex) {
                         document.getElementById(`amount${i}`).value = '';
                     }
                 }
@@ -1578,36 +3042,37 @@
                     
                     let result;
                     
-                    if (sourceCurrency === targetCurrency) {
-                        result = amount;
-                    } else if (rates[sourceCurrency] && rates[sourceCurrency][targetCurrency]) {
-                        result = amount * rates[sourceCurrency][targetCurrency];
-                    } else {
-                        result = 0;
-                    }
-                    
-                    document.getElementById(`amount${i}`).value = result.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                }
-            }
+	                    if (sourceCurrency === targetCurrency) {
+	                        result = amount;
+	                    } else if (rates[sourceCurrency] && rates[sourceCurrency][targetCurrency]) {
+	                        result = amount * rates[sourceCurrency][targetCurrency];
+	                    } else {
+	                        result = 0;
+	                    }
+	                    
+	                    document.getElementById(`amount${i}`).value = formatNumberForDisplay(result);
+	                }
+	            }
             
             updating = false;
         }
         
-        // 所有货币的logo和显示文本映射
-        const currencyLogos = {
-            // 加密货币 - 使用真实logo
-            'BTC': { logo: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png', text: 'BTC', type: 'image' },
-            'ETH': { logo: 'https://assets.coingecko.com/coins/images/279/large/ethereum.png', text: 'ETH', type: 'image' },
-            'SOL': { logo: 'https://assets.coingecko.com/coins/images/4128/large/solana.png', text: 'SOL', type: 'image' },
-            'BNB': { logo: 'https://assets.coingecko.com/coins/images/825/large/bnb-icon2_2x.png', text: 'BNB', type: 'image' },
-            'OKB': { logo: 'https://assets.coingecko.com/coins/images/4463/large/WeChat_Image_20220118095654.png', text: 'OKB', type: 'image' },
+	        // 所有货币的logo和显示文本映射
+	        const currencyLogos = {
+	            // 加密货币 - UI 使用图片 logo（注意：分享图仍使用 emoji，避免 canvas/CORS 问题）
+	            'BTC': { logo: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png', text: 'BTC', type: 'image' },
+	            'ETH': { logo: 'https://assets.coingecko.com/coins/images/279/large/ethereum.png', text: 'ETH', type: 'image' },
+	            'SOL': { logo: 'https://assets.coingecko.com/coins/images/4128/large/solana.png', text: 'SOL', type: 'image' },
+	            'BNB': { logo: 'https://assets.coingecko.com/coins/images/825/large/bnb-icon2_2x.png', text: 'BNB', type: 'image' },
+	            'OKB': { logo: 'https://assets.coingecko.com/coins/images/4463/large/WeChat_Image_20220118095654.png', text: 'OKB', type: 'image' },
             // 法币 - 使用emoji
-            'USD': { logo: '🇺🇸', text: 'USD', type: 'emoji' },
-            'CNY': { logo: '🇨🇳', text: 'CNY', type: 'emoji' },
-            'HKD': { logo: '🇭🇰', text: 'HKD', type: 'emoji' },
-            'JPY': { logo: '🇯🇵', text: 'JPY', type: 'emoji' },
-            'KRW': { logo: '🇰🇷', text: 'KRW', type: 'emoji' },
-            'SGD': { logo: '🇸🇬', text: 'SGD', type: 'emoji' },
+	            'USD': { logo: '🇺🇸', text: 'USD', type: 'emoji' },
+	            'CNY': { logo: '🇨🇳', text: 'CNY', type: 'emoji' },
+	            'TWD': { logo: '🇹🇼', text: 'TWD', type: 'emoji' },
+	            'HKD': { logo: '🇭🇰', text: 'HKD', type: 'emoji' },
+	            'JPY': { logo: '🇯🇵', text: 'JPY', type: 'emoji' },
+	            'KRW': { logo: '🇰🇷', text: 'KRW', type: 'emoji' },
+	            'SGD': { logo: '🇸🇬', text: 'SGD', type: 'emoji' },
             'AED': { logo: '🇦🇪', text: 'AED', type: 'emoji' },
             'MYR': { logo: '🇲🇾', text: 'MYR', type: 'emoji' },
             // 实物 - 使用emoji
@@ -1616,28 +3081,37 @@
             'IN11': { logo: '💃', text: 'in11嫩模', type: 'emoji' },
             'IPHONE17': { logo: '📱', text: 'iPhone17', type: 'emoji' },
             'MACBOOK': { logo: '💻', text: 'MacBook Air', type: 'emoji' },
-            'ROLEX': { logo: '⌚', text: 'Rolex', type: 'emoji' },
+            'ROLEX': { logo: '⌚', text: '劳力士', type: 'emoji' },
             'XIAOMISU7': { logo: '🏎️', text: 'Xiaomi Su7', type: 'emoji' },
             'PORSCHE': { logo: '🏎️', text: 'Porsche 718', type: 'emoji' },
             'FERRARI': { logo: '🏎️', text: 'Ferrari Roma', type: 'emoji' }
         };
 
-        // 更新下拉菜单的外部显示
-        function updateSelectDisplay(selectElement) {
-            const selectedValue = selectElement.value;
-            
-            // 处理自定义代币
-            const customOption = selectElement.querySelector('option[value="CUSTOM"]');
-            if (selectedValue === 'CUSTOM' && customOption) {
-                const displayText = customOption.getAttribute('data-display-text');
-                const logoUrl = customOption.getAttribute('data-token-logo');
-                
-                if (displayText && logoUrl) {
-                    createSelectOverlay(selectElement, logoUrl, displayText, 'image');
-                } else {
-                    restoreOriginalDisplay(selectElement);
-                }
-            }
+	        // 更新下拉菜单的外部显示
+	        function updateSelectDisplay(selectElement) {
+	            // 若已启用自定义下拉，改为更新自定义触发器文本，不再使用覆盖层方案
+	            const wrapper = selectElement.parentElement;
+	            const dropdown = wrapper ? wrapper.querySelector('.dropdown') : null;
+	            if (dropdown) {
+	                updateCustomDropdownTrigger(selectElement);
+	                return;
+	            }
+
+	            const selectedValue = selectElement.value;
+	            
+	            // 处理自定义代币
+	            const customOption = selectElement.querySelector('option[value="CUSTOM"]');
+	            if (selectedValue === 'CUSTOM' && customOption) {
+	                const displayText = customOption.getAttribute('data-display-text');
+	                const logoUrl = customOption.getAttribute('data-token-logo');
+	                
+	                if (displayText && logoUrl) {
+	                    // UI 使用图片 Logo
+	                    createSelectOverlay(selectElement, logoUrl, displayText, 'image');
+	                } else {
+	                    restoreOriginalDisplay(selectElement);
+	                }
+	            }
             // 处理所有预设货币
             else if (currencyLogos[selectedValue]) {
                 const currencyData = currencyLogos[selectedValue];
@@ -1647,13 +3121,13 @@
             }
         }
         
-        // 创建选择框覆盖层
-        function createSelectOverlay(selectElement, logoUrl, displayText, logoType = 'image') {
-            // 创建一个临时的显示层来覆盖原始的select显示
-            let displayOverlay = selectElement.nextElementSibling;
-            if (!displayOverlay || !displayOverlay.classList.contains('custom-select-display')) {
-                displayOverlay = document.createElement('div');
-                displayOverlay.className = 'custom-select-display';
+	        // 创建选择框覆盖层
+	        function createSelectOverlay(selectElement, logoUrl, displayText, logoType = 'image') {
+	            // 创建一个临时的显示层来覆盖原始的select显示
+	            let displayOverlay = selectElement.nextElementSibling;
+	            if (!displayOverlay || !displayOverlay.classList.contains('custom-select-display')) {
+	                displayOverlay = document.createElement('div');
+	                displayOverlay.className = 'custom-select-display';
                 
                 // 获取select元素的精确位置和样式
                 const selectStyles = window.getComputedStyle(selectElement);
@@ -1669,29 +3143,38 @@
                     adjustedRightMargin = '35px'; // 中等屏幕
                 }
                 
-                displayOverlay.style.cssText = `
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    right: ${adjustedRightMargin};
-                    height: 100%;
-                    pointer-events: none;
-                    z-index: 1;
-                    padding: 0;
-                    margin: 0;
-                    font-size: ${selectStyles.fontSize};
-                    font-family: ${selectStyles.fontFamily};
-                    line-height: ${selectStyles.lineHeight};
-                    color: #333;
-                    background: transparent;
-                    box-sizing: border-box;
-                    display: flex;
-                    align-items: center;
-                    justify-content: flex-start;
-                `;
-                selectElement.parentNode.style.position = 'relative';
-                selectElement.parentNode.insertBefore(displayOverlay, selectElement.nextSibling);
-            }
+	                displayOverlay.style.cssText = `
+	                    position: absolute;
+	                    top: 0;
+	                    left: 0;
+	                    right: ${adjustedRightMargin};
+	                    height: 100%;
+	                    pointer-events: none;
+	                    z-index: 1;
+	                    padding: 0;
+	                    margin: 0;
+	                    font-size: ${selectStyles.fontSize};
+	                    font-family: "PingFang SC";
+	                    line-height: ${selectStyles.lineHeight};
+	                    color: #333;
+	                    background: transparent;
+	                    box-sizing: border-box;
+	                    display: flex;
+	                    align-items: center;
+	                    justify-content: flex-start;
+	                `;
+	                
+	                // 覆盖层应当相对 select 的包装容器定位（避免在 .field 这个 flex 容器内错位）
+	                const wrapper = selectElement.parentElement;
+	                if (wrapper) {
+	                    wrapper.style.position = 'relative';
+	                    wrapper.insertBefore(displayOverlay, selectElement.nextSibling);
+	                } else {
+	                    // 极端兜底：仍插回原父节点
+	                    selectElement.parentNode.style.position = 'relative';
+	                    selectElement.parentNode.insertBefore(displayOverlay, selectElement.nextSibling);
+	                }
+	            }
             
             // 清空内容并添加Logo + 文本
             displayOverlay.innerHTML = '';
@@ -1779,7 +3262,7 @@
         }
         
         // 恢复原始显示
-        function restoreOriginalDisplay(selectElement) {
+	        function restoreOriginalDisplay(selectElement) {
             selectElement.style.color = '';
             const displayOverlay = selectElement.nextElementSibling;
             if (displayOverlay && displayOverlay.classList.contains('custom-select-display')) {
@@ -1787,16 +3270,68 @@
             }
         }
 
-        // 基础换算功能事件监听器
-        function setupBasicEventListeners() {
-            for (let i = 1; i <= 6; i++) {
-                // 金额输入事件
-                document.getElementById(`amount${i}`).addEventListener('input', () => {
-                    console.log('Input event triggered for amount' + i);
-                    lastInputField = i;
-                    convert(i);
-                    saveState();
-                });
+	        // 基础换算功能事件监听器
+		        function setupBasicEventListeners() {
+	            function formatNumberWithThousands(value) {
+	                const raw = String(value ?? '');
+	                if (!raw) return '';
+	
+	                // 仅保留数字与小数点（保留第一个小数点）
+	                const cleaned = raw.replace(/[^\d.]/g, '');
+	                if (!cleaned) return '';
+	
+	                const firstDot = cleaned.indexOf('.');
+	                const hasDot = firstDot !== -1;
+	                const integerPartRaw = hasDot ? cleaned.slice(0, firstDot) : cleaned;
+	                const decimalPartRaw = hasDot ? cleaned.slice(firstDot + 1).replace(/\./g, '') : '';
+	
+	                // 允许用户输入以 "." 开头的情况
+	                const integerDigits = integerPartRaw.replace(/^0+(?=\d)/, '') || (integerPartRaw === '' ? '' : '0');
+	                const groupedInt = integerDigits.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+	
+	                if (hasDot) {
+	                    return `${groupedInt}${integerPartRaw === '' ? '' : ''}.${decimalPartRaw}`;
+	                }
+	                return groupedInt;
+	            }
+	
+	            function applyThousandsSeparatorsToInput(inputEl) {
+	                const original = inputEl.value;
+	                if (!original) return;
+	
+	                const selStart = inputEl.selectionStart ?? original.length;
+	                const leftRaw = original.slice(0, selStart);
+	                const leftDigitsCount = leftRaw.replace(/[^\d.]/g, '').length;
+	
+	                const formatted = formatNumberWithThousands(original);
+	                if (formatted === original) return;
+	                inputEl.value = formatted;
+	
+	                // 还原光标位置：保持“光标左侧的数字/小数点字符数量”一致
+	                let seen = 0;
+	                let newPos = formatted.length;
+	                for (let i = 0; i < formatted.length; i++) {
+	                    const ch = formatted[i];
+	                    if ((ch >= '0' && ch <= '9') || ch === '.') seen++;
+	                    if (seen >= leftDigitsCount) {
+	                        newPos = i + 1;
+	                        break;
+	                    }
+	                }
+	                try {
+	                    inputEl.setSelectionRange(newPos, newPos);
+	                } catch {}
+	            }
+	
+	            for (let i = 1; i <= 6; i++) {
+	                // 金额输入事件
+	                document.getElementById(`amount${i}`).addEventListener('input', (e) => {
+	                    console.log('Input event triggered for amount' + i);
+	                    applyThousandsSeparatorsToInput(e.target);
+	                    lastInputField = i;
+	                    convert(i);
+	                    saveState();
+	                });
                 
                 // 货币选择事件
                 document.getElementById(`currency${i}`).addEventListener('change', function() {
@@ -1898,9 +3433,283 @@
             }
         }
         
-        // 自定义代币功能
-        let currentSelectId = null;
-        let customTokens = new Map(); // 存储自定义代币数据
+	        // 自定义代币功能
+	        let currentSelectId = null;
+	        let customTokens = new Map(); // 存储自定义代币数据
+	        const tokenSearchSessionCache = new Map(); // 本次页面会话内的搜索缓存（降低 CoinGecko 搜索频率）
+
+	        // ===== 自定义下拉（替代系统 select）=====
+	        function getSelectDisplayInfo(selectElement) {
+	            const value = selectElement.value;
+	            if (value === 'CUSTOM') {
+	                const customOption = selectElement.querySelector('option[value="CUSTOM"]');
+	                const displayText = customOption?.getAttribute('data-display-text') || '自定义代币';
+	                const logoUrl = customOption?.getAttribute('data-token-logo');
+	                if (logoUrl) return { type: 'image', logo: logoUrl, text: displayText };
+	                return { type: 'emoji', logo: '🪙', text: displayText };
+	            }
+
+	            const mapped = currencyLogos?.[value];
+	            if (mapped) return { type: mapped.type, logo: mapped.logo, text: mapped.text || value };
+
+	            const opt = selectElement.querySelector(`option[value="${CSS.escape(value)}"]`);
+	            return { type: 'none', logo: '', text: (opt?.textContent || value).trim() };
+	        }
+
+		        function updateCustomDropdownTrigger(selectElement) {
+		            const wrapper = selectElement.parentElement;
+		            if (!wrapper) return;
+		            const dropdown = wrapper.querySelector('.dropdown');
+		            if (!dropdown) return;
+
+		            const { type, logo, text } = getSelectDisplayInfo(selectElement);
+		            const logoBox = dropdown.querySelector('.dropdown-logo');
+		            const textBox = dropdown.querySelector('.dropdown-text');
+		            if (!logoBox || !textBox) return;
+
+		            textBox.textContent = text;
+		            logoBox.innerHTML = '';
+		            logoBox.classList.toggle('is-emoji', type === 'emoji');
+		            logoBox.classList.toggle('is-image', type === 'image');
+
+		            if (type === 'image' && logo) {
+		                const img = document.createElement('img');
+		                img.src = logo;
+		                img.alt = text;
+		                img.onerror = () => {
+		                    logoBox.classList.remove('is-image');
+		                    logoBox.classList.add('is-emoji');
+		                    logoBox.innerHTML = `<span class="dropdown-logo-emoji">•</span>`;
+		                };
+		                logoBox.appendChild(img);
+		            } else if (type === 'emoji' && logo) {
+		                const span = document.createElement('span');
+		                span.className = 'dropdown-logo-emoji';
+		                span.textContent = logo;
+		                logoBox.appendChild(span);
+		            } else {
+		                logoBox.classList.add('is-emoji');
+		                logoBox.classList.remove('is-image');
+		                const span = document.createElement('span');
+		                span.className = 'dropdown-logo-emoji';
+		                span.textContent = '•';
+		                logoBox.appendChild(span);
+		            }
+
+	            // 同步选中态
+	            dropdown.querySelectorAll('.dropdown-item').forEach((item) => {
+	                const v = item.getAttribute('data-value');
+	                const selected = v === selectElement.value;
+	                item.setAttribute('aria-selected', selected ? 'true' : 'false');
+	            });
+	        }
+
+	        function closeAllDropdowns(except) {
+	            document.querySelectorAll('.dropdown.open').forEach((dd) => {
+	                if (except && dd === except) return;
+	                dd.classList.remove('open');
+	                const trigger = dd.querySelector('.dropdown-trigger');
+	                if (trigger) trigger.setAttribute('aria-expanded', 'false');
+	                const menu = dd._menu;
+	                if (menu) menu.style.display = 'none';
+	            });
+	        }
+	        
+	        function positionDropdownMenu(dropdown) {
+	            const trigger = dropdown.querySelector('.dropdown-trigger');
+	            const menu = dropdown._menu || dropdown.querySelector('.dropdown-menu');
+	            if (!trigger || !menu) return;
+	            const scroll = menu.querySelector('.dropdown-menu-scroll');
+	            
+	            // 打开时菜单是 display:block 才能测量尺寸
+	            const wasHidden = menu.style.display === '' || menu.style.display === 'none';
+	            if (wasHidden) menu.style.display = 'block';
+	            menu.style.visibility = 'hidden';
+	            
+	            const triggerRect = trigger.getBoundingClientRect();
+	            const menuRect = menu.getBoundingClientRect();
+	            const gap = 12;
+	            const margin = 12;
+	            
+	            // 约束范围：优先保证菜单完全展示在页面主卡片（.container）内部
+	            // 若获取失败则退回到视口范围
+	            const containerEl = document.querySelector('.container');
+	            const containerRect = containerEl ? containerEl.getBoundingClientRect() : null;
+	            const bounds = containerRect
+	                ? {
+	                        left: containerRect.left,
+	                        right: containerRect.right,
+	                        top: containerRect.top,
+	                        bottom: containerRect.bottom
+	                  }
+	                : {
+	                        left: margin,
+	                        right: window.innerWidth - margin,
+	                        top: margin,
+	                        bottom: window.innerHeight - margin
+	                  };
+	            
+	            // 额外兜底：同时不能超出视口
+	            bounds.left = Math.max(bounds.left, margin);
+	            bounds.top = Math.max(bounds.top, margin);
+	            bounds.right = Math.min(bounds.right, window.innerWidth - margin);
+	            bounds.bottom = Math.min(bounds.bottom, window.innerHeight - margin);
+	            
+	            // 目标：点击目标框后，从右侧“侧弹”出现，并允许滚动选择。
+	            // 视觉上更接近把原本“向下弹出”改成“向右弹出”：菜单与目标框垂直居中对齐。
+	            let side = 'right';
+	            let left = triggerRect.right + gap;
+	            let top = triggerRect.top;
+	            
+	            // 宽度：略大于目标框，但不超过卡片/视口
+	            let width = Math.max(260, Math.min(360, Math.max(triggerRect.width, menuRect.width || 300)));
+	            width = Math.min(width, Math.max(220, bounds.right - bounds.left));
+	            
+	            if (left + width > bounds.right) {
+	                left = triggerRect.left - gap - width;
+	                side = 'left';
+	            }
+	            
+	            left = Math.max(bounds.left, Math.min(left, bounds.right - width));
+	            
+	            // 高度：限制最大高度并允许滚动；优先保证不超出卡片范围
+	            const maxHeight = Math.min(680, Math.max(200, bounds.bottom - bounds.top - margin * 2));
+	            const desiredHeight = Math.min(menuRect.height || 520, maxHeight);
+	            top = triggerRect.top + (triggerRect.height - desiredHeight) / 2;
+	            top = Math.max(bounds.top, Math.min(top, bounds.bottom - desiredHeight));
+	            // 再兜底一次，确保不会越出视口
+	            top = Math.max(margin, Math.min(top, window.innerHeight - margin - desiredHeight));
+	            
+	            // 箭头位置：指向触发器的垂直中心
+	            const arrowCenterY = triggerRect.top + triggerRect.height / 2;
+	            let arrowTop = arrowCenterY - top;
+	            arrowTop = Math.max(20, Math.min(arrowTop, desiredHeight - 20));
+	            menu.style.setProperty('--arrow-top', `${Math.floor(arrowTop)}px`);
+	            menu.setAttribute('data-side', side);
+	            
+	            menu.style.width = `${Math.floor(width)}px`;
+	            menu.style.left = `${Math.floor(left)}px`;
+	            menu.style.top = `${Math.floor(top)}px`;
+	            if (scroll) scroll.style.maxHeight = `${Math.floor(maxHeight)}px`;
+	            menu.style.visibility = '';
+	            if (wasHidden) menu.style.display = 'block';
+	        }
+
+	        function buildCustomDropdown(selectElement) {
+	            const wrapper = selectElement.parentElement;
+	            if (!wrapper) return;
+	            if (wrapper.querySelector('.dropdown')) return;
+
+	            // 隐藏原生 select，但保留其事件/状态/存储逻辑
+	            selectElement.classList.add('native-select-hidden');
+
+	            const dropdown = document.createElement('div');
+	            dropdown.className = 'dropdown';
+
+	            const trigger = document.createElement('button');
+	            trigger.type = 'button';
+	            trigger.className = 'dropdown-trigger';
+	            trigger.setAttribute('aria-haspopup', 'listbox');
+	            trigger.setAttribute('aria-expanded', 'false');
+
+	            trigger.innerHTML = `
+	                <span class="dropdown-trigger-left">
+	                    <span class="dropdown-logo"></span>
+	                    <span class="dropdown-text"></span>
+	                </span>
+	                <svg class="dropdown-chevron" viewBox="0 0 24 24" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+	                    <path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+	                </svg>
+	            `;
+
+	            const menu = document.createElement('div');
+	            menu.className = 'dropdown-menu';
+	            menu.setAttribute('role', 'listbox');
+	            // 关键：menu 使用 fixed 定位时，如果在 transform 容器内会发生偏移
+	            // 将 menu portal 到 body，保证 fixed 相对视口定位
+	            const scroll = document.createElement('div');
+	            scroll.className = 'dropdown-menu-scroll';
+	            menu.appendChild(scroll);
+	            document.body.appendChild(menu);
+	            dropdown._menu = menu;
+
+	            // 根据 optgroup/option 构建菜单
+	            const children = Array.from(selectElement.children);
+	            for (const child of children) {
+	                if (child.tagName === 'OPTGROUP') {
+	                    const groupLabel = child.getAttribute('label') || '';
+	                    const groupTitle = document.createElement('div');
+	                    groupTitle.className = 'dropdown-group';
+	                    groupTitle.textContent = groupLabel;
+	                    scroll.appendChild(groupTitle);
+
+	                    const opts = Array.from(child.querySelectorAll('option'));
+	                    for (const opt of opts) {
+	                        const value = opt.value;
+	                        if (value === 'TEMP_CUSTOM_PLACEHOLDER') continue;
+	                        const item = document.createElement('div');
+	                        item.className = 'dropdown-item';
+	                        item.setAttribute('role', 'option');
+	                        item.setAttribute('data-value', value);
+	                        item.setAttribute('aria-selected', value === selectElement.value ? 'true' : 'false');
+
+	                        // 显示内容：优先用 currencyLogos（图片/emoji），否则用 option 文本
+	                        let displayText = (opt.textContent || value).trim();
+	                        let logoType = 'none';
+	                        let logo = '';
+	                        if (value === 'CUSTOM') {
+	                            displayText = '自定义代币';
+	                            logoType = 'emoji';
+	                            logo = '🔍';
+	                        } else if (currencyLogos?.[value]) {
+	                            const mapped = currencyLogos[value];
+	                            logoType = mapped.type;
+	                            logo = mapped.logo;
+	                            displayText = mapped.text || value;
+	                        }
+
+		                        const logoHtml = (() => {
+		                            if (logoType === 'image' && logo) return `<span class="dropdown-logo is-image"><img src="${logo}" alt="${displayText}" onerror="this.remove()"></span>`;
+		                            if (logoType === 'emoji' && logo) return `<span class="dropdown-logo is-emoji"><span class="dropdown-logo-emoji">${logo}</span></span>`;
+		                            return `<span class="dropdown-logo is-emoji"><span class="dropdown-logo-emoji">•</span></span>`;
+		                        })();
+
+	                        item.innerHTML = `${logoHtml}<span class="dropdown-item-text">${displayText}</span>`;
+
+	                        item.addEventListener('click', () => {
+	                            closeAllDropdowns();
+	                            trigger.setAttribute('aria-expanded', 'false');
+	                            selectElement.value = value;
+	                            selectElement.dispatchEvent(new Event('change', { bubbles: true }));
+	                            updateCustomDropdownTrigger(selectElement);
+	                        });
+
+	                        scroll.appendChild(item);
+	                    }
+	                }
+	            }
+
+	            trigger.addEventListener('click', (e) => {
+	                e.preventDefault();
+	                const willOpen = !dropdown.classList.contains('open');
+	                closeAllDropdowns(willOpen ? dropdown : null);
+	                dropdown.classList.toggle('open', willOpen);
+	                trigger.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+	                if (willOpen) {
+	                    menu.style.display = 'block';
+	                    positionDropdownMenu(dropdown);
+	                } else {
+	                    menu.style.display = 'none';
+	                }
+	            });
+
+	            // 监听 select 的变化（包括 restoreState / 自定义代币选择后的更新）
+	            selectElement.addEventListener('change', () => updateCustomDropdownTrigger(selectElement));
+
+	            dropdown.appendChild(trigger);
+	            wrapper.appendChild(dropdown);
+	            updateCustomDropdownTrigger(selectElement);
+	        }
         
         // 基于市值排名估算价格的函数
         function getEstimatedPrice(coin) {
@@ -2044,38 +3853,48 @@
         });
         
         // 搜索代币
-        async function searchTokens() {
-            const query = document.getElementById('tokenSearchInput').value.trim();
-            if (!query) {
-                return;
-            }
-            
-            const loadingIndicator = document.getElementById('loadingIndicator');
-            const searchResults = document.getElementById('searchResults');
+	        async function searchTokens() {
+	            const query = document.getElementById('tokenSearchInput').value.trim();
+	            if (!query) {
+	                return;
+	            }
+	            
+	            const queryKey = query.toLowerCase();
+	            const cached = tokenSearchSessionCache.get(queryKey);
+	            if (cached && nowMs() - cached.ts < 60 * 1000) {
+	                displaySearchResults(cached.coins || []);
+	                return;
+	            }
+	            
+	            const loadingIndicator = document.getElementById('loadingIndicator');
+	            const searchResults = document.getElementById('searchResults');
             
             // 显示加载动画
             loadingIndicator.style.display = 'block';
             searchResults.innerHTML = '';
             
-            try {
-                // 使用CoinGecko API搜索代币
-                let searchUrl = `https://api.coingecko.com/api/v3/search?query=${encodeURIComponent(query)}`;
-                console.log('搜索URL:', searchUrl);
-                
-                let response;
-                try {
-                    response = await fetch(searchUrl, {
-                        method: 'GET',
-                        headers: {
-                            'Accept': 'application/json'
-                        }
-                    });
-                } catch (corsError) {
-                    console.log('搜索API直接访问失败，使用本地数据库:', corsError);
-                    // 使用本地的常见代币数据库作为备用
-                    const localResults = getLocalTokenResults(query);
-                    response = {
-                        ok: true,
+	            try {
+	                // 使用CoinGecko API搜索代币
+	                let searchUrl = `https://api.coingecko.com/api/v3/search?query=${encodeURIComponent(query)}`;
+	                console.log('搜索URL:', searchUrl);
+	                
+	                let response;
+	                try {
+	                    response = await fetchJsonWithTimeout(searchUrl, {
+	                        method: 'GET',
+	                        headers: {
+	                            'Accept': 'application/json'
+	                        }
+	                    }, 8000);
+	                    
+	                    apiStatus.coingecko = true;
+	                } catch (corsError) {
+	                    console.log('搜索API直接访问失败，使用本地数据库:', corsError);
+	                    apiStatus.coingecko = false;
+	                    // 使用本地的常见代币数据库作为备用
+	                    const localResults = getLocalTokenResults(query);
+	                    response = {
+	                        ok: true,
                         json: async () => ({ coins: localResults })
                     };
                 }
@@ -2083,18 +3902,20 @@
                 if (!response.ok) {
                     throw new Error('搜索请求失败');
                 }
-                
-                const data = await response.json();
-                loadingIndicator.style.display = 'none';
-                
-                displaySearchResults(data.coins || []);
-                
-            } catch (error) {
-                console.error('搜索代币时出错:', error);
-                loadingIndicator.style.display = 'none';
-                searchResults.innerHTML = '<div class="no-results">搜索失败，请稍后重试</div>';
-            }
-        }
+	                
+	                const data = await response.json();
+	                loadingIndicator.style.display = 'none';
+	                const coins = data.coins || [];
+	                tokenSearchSessionCache.set(queryKey, { ts: nowMs(), coins });
+	                displaySearchResults(coins);
+	                
+	            } catch (error) {
+	                console.error('搜索代币时出错:', error);
+	                apiStatus.coingecko = false;
+	                loadingIndicator.style.display = 'none';
+	                searchResults.innerHTML = '<div class="no-results">搜索失败，请稍后重试</div>';
+	            }
+	        }
         
         // 显示搜索结果
         function displaySearchResults(coins) {
@@ -2133,75 +3954,87 @@
         }
         
         // 选择自定义代币
-        async function selectCustomToken(coin) {
-            try {
-                console.log('选择的代币:', coin);
-                
-                // 获取代币详细信息和价格
-                // 尝试直接访问，如果失败则使用CORS代理
-                let priceUrl = `https://api.coingecko.com/api/v3/simple/price?ids=${coin.id}&vs_currencies=usd`;
-                console.log('请求价格URL:', priceUrl);
-                
-                let response;
-                try {
-                    response = await fetch(priceUrl, {
-                        method: 'GET',
-                        headers: {
-                            'Accept': 'application/json'
-                        }
-                    });
-                } catch (corsError) {
-                    console.log('直接访问失败，尝试使用备用方案:', corsError);
-                    // 如果直接访问失败，使用一个备用的价格估算
-                    // 基于市值排名提供一个大概的价格
-                    const estimatedPrice = getEstimatedPrice(coin);
-                    console.log('使用估算价格:', estimatedPrice);
-                    
-                    // 创建模拟响应
-                    response = {
-                        ok: true,
-                        json: async () => ({ [coin.id]: { usd: estimatedPrice } })
-                    };
-                    
-                    // 提示用户正在使用估算价格
-                    console.log('⚠️ 注意：正在使用基于市值排名的估算价格，可能不够准确');
-                }
-                
-                console.log('价格API响应状态:', response.status);
-                
-                if (!response.ok) {
-                    console.error('价格API请求失败:', response.status, response.statusText);
-                    throw new Error(`获取代币价格失败: ${response.status} ${response.statusText}`);
-                }
-                
-                const priceData = await response.json();
-                console.log('价格数据:', priceData);
-                
-                const price = priceData[coin.id]?.usd || 0;
-                console.log('解析出的价格:', price);
-                
-                if (price === 0) {
-                    console.warn('价格为0，可能数据有误');
-                }
+	        async function selectCustomToken(coin) {
+	            const selectId = currentSelectId; // 先保存，避免 closeCustomTokenModal() 把 currentSelectId 清空
+	            try {
+	                console.log('选择的代币:', coin);
+	                
+	                const tokenPriceCacheKey = `${CACHE_KEYS.coingeckoTokenPrice}:${coin.id}`;
+	                const cachedPrice = readCache(tokenPriceCacheKey, 2 * 60 * 1000); // 2分钟
+	                
+	                let price = 0;
+	                let isEstimated = false;
+	                
+	                if (cachedPrice?.data?.price) {
+	                    price = cachedPrice.data.price;
+	                    isEstimated = !!cachedPrice.data.isEstimated;
+	                    console.log(`使用缓存价格（${formatAge(cachedPrice.ts)}）:`, price);
+	                } else {
+	                    // 获取代币详细信息和价格（CoinGecko）
+	                    const priceUrl = `https://api.coingecko.com/api/v3/simple/price?ids=${coin.id}&vs_currencies=usd`;
+	                    console.log('请求价格URL:', priceUrl);
+	                    
+	                    let response;
+	                    try {
+	                        response = await fetchJsonWithTimeout(priceUrl, {
+	                            method: 'GET',
+	                            headers: { 'Accept': 'application/json' }
+	                        }, 8000);
+	                        
+	                        apiStatus.coingecko = true;
+	                    } catch (corsError) {
+	                        console.log('直接访问失败，尝试使用备用方案:', corsError);
+	                        apiStatus.coingecko = false;
+	                        
+	                        // 如果直接访问失败，使用一个备用的价格估算（基于市值排名）
+	                        const estimatedPrice = getEstimatedPrice(coin);
+	                        console.log('使用估算价格:', estimatedPrice);
+	                        response = {
+	                            ok: true,
+	                            status: 200,
+	                            statusText: 'OK',
+	                            json: async () => ({ [coin.id]: { usd: estimatedPrice } })
+	                        };
+	                        isEstimated = true;
+	                        console.log('⚠️ 注意：正在使用基于市值排名的估算价格，可能不够准确');
+	                    }
+	                    
+	                    if (!response.ok) {
+	                        console.error('价格API请求失败:', response.status, response.statusText);
+	                        throw new Error(`获取代币价格失败: ${response.status} ${response.statusText}`);
+	                    }
+	                    
+	                    const priceData = await response.json();
+	                    console.log('价格数据:', priceData);
+	                    
+	                    price = priceData[coin.id]?.usd || 0;
+	                    console.log('解析出的价格:', price);
+	                    
+	                    writeCache(tokenPriceCacheKey, { price, isEstimated });
+	                }
+	                
+	                if (price === 0) {
+	                    console.warn('价格为0，可能数据有误');
+	                }
                 
                 // 存储自定义代币信息
                 const tokenKey = coin.symbol.toUpperCase();
                 const logoUrl = coin.large || coin.thumb || coin.image;
-                customTokens.set(tokenKey, {
-                    id: coin.id,
-                    name: coin.name,
-                    symbol: coin.symbol,
-                    image: logoUrl,
-                    price: price,
-                    isEstimated: price === getEstimatedPrice(coin) // 标记是否为估算价格
-                });
+	                customTokens.set(tokenKey, {
+	                    id: coin.id,
+	                    name: coin.name,
+	                    symbol: coin.symbol,
+	                    image: logoUrl,
+	                    price: price,
+	                    isEstimated: isEstimated || price === getEstimatedPrice(coin) // 标记是否为估算价格
+	                });
                 
                 // 不添加到下拉菜单，只在当前会话中使用
                 
                 // 设置触发搜索的下拉菜单使用自定义代币
-                if (currentSelectId) {
-                    const currentSelect = document.getElementById(currentSelectId);
-                    if (currentSelect) {
+	                if (selectId) {
+	                    const currentSelect = document.getElementById(selectId);
+	                    if (currentSelect) {
                         // 保持CUSTOM选项的原始文本"🔍 自定义代币"，但存储代币信息
                         const customOption = currentSelect.querySelector('option[value="CUSTOM"]');
                         if (customOption) {
@@ -2222,36 +4055,37 @@
                         // 立即更新外部显示
                         updateSelectDisplay(currentSelect);
                     }
-                }
-                
-                // 重新加载汇率以包含新的自定义代币
-                await loadRates();
-                
-                // 关闭弹窗
-                closeCustomTokenModal();
-                
-                // 重新计算转换
-                if (currentSelectId) {
-                    const selectIndex = parseInt(currentSelectId.replace('currency', ''));
-                    convert(selectIndex);
-                    saveState();
-                }
-                
-            } catch (error) {
-                console.error('选择代币时出错:', error);
+	                }
+	                
+	                // 重算汇率矩阵以包含新的自定义代币
+	                // 默认不强制刷新基础汇率（预设币价/ExchangeRate），避免短时间内重复请求
+	                await loadRates({ forceRefresh: false, reason: 'customTokenSelected' });
+	                
+	                // 关闭弹窗
+	                closeCustomTokenModal();
+	                
+	                // 重新计算转换
+	                if (selectId) {
+	                    const selectIndex = parseInt(selectId.replace('currency', ''));
+	                    convert(selectIndex);
+	                    saveState();
+	                }
+	                
+	            } catch (error) {
+	                console.error('选择代币时出错:', error);
                 console.error('错误详情:', error.message);
                 console.error('错误堆栈:', error.stack);
                 
-                // 提供更详细的错误信息
-                let errorMessage = '获取代币信息失败';
-                if (apiStatus.rateLimited || error.message.includes('429')) {
-                    errorMessage = 'API调用已达限制，请等待几分钟后重试';
-                } else if (!apiStatus.coingecko) {
-                    errorMessage = '已超过汇率服务 API 访问限制次数，自定义代币功能暂时无法使用';
-                } else if (error.message.includes('Failed to fetch')) {
-                    errorMessage += '：网络连接问题，请检查网络或稍后重试';
-                } else if (error.message.includes('403') || error.message.includes('401')) {
-                    errorMessage += '：API访问受限';
+	                // 提供更详细的错误信息
+	                let errorMessage = '获取代币信息失败';
+	                if (apiStatus.rateLimited || error.message.includes('429')) {
+	                    errorMessage = 'API调用已达限制，请等待几分钟后重试';
+	                } else if (!apiStatus.coingecko) {
+	                    errorMessage = 'CoinGecko 服务暂时不可用，自定义代币功能可能受影响';
+	                } else if (error.message.includes('Failed to fetch')) {
+	                    errorMessage += '：网络连接问题，请检查网络或稍后重试';
+	                } else if (error.message.includes('403') || error.message.includes('401')) {
+	                    errorMessage += '：API访问受限';
                 } else {
                     errorMessage += `：${error.message}`;
                 }
@@ -2322,22 +4156,22 @@
     </script>
     </div>
 
-    <!-- Toast 提示 -->
-    <div id="shareToast" class="toast">
-        <div class="toast-icon">✅</div>
-        <div>网站链接复制成功，快分享给你的朋友吧</div>
-    </div>
+	    <!-- Toast 提示 -->
+	    <div id="shareToast" class="toast">
+	        <div class="toast-icon">✅</div>
+	        <div class="toast-text"></div>
+	    </div>
 
-    <!-- 自定义代币弹窗 -->
-    <div id="customTokenModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>自定义代币搜索</h3>
-                <span class="close" onclick="closeCustomTokenModal()">&times;</span>
-            </div>
-            <div class="modal-body">
+	    <!-- 自定义代币弹窗 -->
+	    <div id="customTokenModal" class="modal">
+	        <div class="modal-content">
+		            <div class="modal-header" style="border-bottom: none;">
+		                <h3>自定义代币搜索</h3>
+		                <span class="close" onclick="closeCustomTokenModal()">&times;</span>
+		            </div>
+	            <div class="modal-body">
                 <div class="search-container">
-                    <input type="text" id="tokenSearchInput" placeholder="输入代币名称或符号 (如: Bitcoin, BTC)" />
+	                    <input type="text" id="tokenSearchInput" placeholder="输入代笔名称或符号" />
                 </div>
                 <div id="searchResults" class="search-results"></div>
                 <div id="loadingIndicator" class="loading" style="display: none;">
@@ -2345,8 +4179,43 @@
                     <p>正在搜索代币...</p>
                 </div>
             </div>
-        </div>
-    </div>
+	        </div>
+	    </div>
+
+	    <!-- 分享图预览弹窗 -->
+	    <div id="shareImageModal" class="modal">
+	        <div class="modal-content share-modal-content">
+	            <div class="modal-header" style="border-radius: 16px 16px 0 0; border-bottom: none; padding-bottom: 10px;">
+	                <h3>分享图预览</h3>
+	                <span class="close" onclick="closeShareImageModal()">&times;</span>
+	            </div>
+	            <div class="modal-body">
+	                <div class="share-preview">
+	                    <img id="shareImagePreview" alt="分享图预览" />
+	                </div>
+	                <div class="share-actions">
+	                    <button class="primary" id="copyShareImageBtn">
+	                        <span style="display:inline-flex; align-items:center; gap:8px; justify-content:center;">
+	                            <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+	                                <path d="M8 7.5A3.5 3.5 0 0 1 11.5 4h7A3.5 3.5 0 0 1 22 7.5v9A3.5 3.5 0 0 1 18.5 20h-7A3.5 3.5 0 0 1 8 16.5v-9zm3.5-1.5A1.5 1.5 0 0 0 10 7.5v9a1.5 1.5 0 0 0 1.5 1.5h7a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 18.5 6h-7z"/>
+	                                <path d="M2 6.5A3.5 3.5 0 0 1 5.5 3h.5a1 1 0 1 1 0 2h-.5A1.5 1.5 0 0 0 4 6.5v9A1.5 1.5 0 0 0 5.5 17H6a1 1 0 1 1 0 2h-.5A3.5 3.5 0 0 1 2 15.5v-9z"/>
+	                            </svg>
+	                            复制图片
+	                        </span>
+	                    </button>
+	                    <button id="downloadShareImageBtn">
+	                        <span style="display:inline-flex; align-items:center; gap:8px; justify-content:center;">
+	                            <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+	                                <path d="M12 2.5c.55 0 1 .45 1 1v8.2l2.23-2.23a1 1 0 1 1 1.41 1.42l-3.94 3.94a1 1 0 0 1-1.41 0L7.36 10.9a1 1 0 1 1 1.41-1.42L11 11.7V3.5c0-.55.45-1 1-1z"/>
+	                                <path d="M6.5 14c.55 0 1 .45 1 1v2.5c0 .55.45 1 1 1h7c.55 0 1-.45 1-1V15c0-.55.45-1 1-1s1 .45 1 1v2.5c0 1.66-1.34 3-3 3h-7c-1.66 0-3-1.34-3-3V15c0-.55.45-1 1-1z"/>
+	                            </svg>
+	                            下载图片
+	                        </span>
+	                    </button>
+	                </div>
+	            </div>
+	        </div>
+	    </div>
 
 </body>
 </html>
