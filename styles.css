@@ -1,0 +1,947 @@
+		        :root {
+		            --bg: #ffffff;
+		            --surface: #ffffff;
+		            --surface-muted: #f5f5f7;
+		            --text: #1d1d1f;
+		            --muted: #6e6e73;
+		            --border: #d2d2d7;
+		            --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+		            --focus: rgba(0, 0, 0, 0.18);
+		            --unit-select-width: 240px;
+		        }
+	        
+	        body {
+	            font-family: "PingFang SC";
+	            margin: 0;
+	            padding: 0;
+	            min-height: 100vh;
+	            display: flex;
+	            flex-direction: column;
+	            align-items: center;
+	            justify-content: center;
+	            background: var(--bg);
+	            color: var(--text);
+	        }
+        
+        * {
+            font-family: "PingFang SC";
+        }
+        
+	        .container {
+	            padding: 50px 50px 30px 50px;
+	            text-align: center;
+	            transform: scale(1.3);
+	            background: var(--surface);
+	            border-radius: 20px;
+	            box-shadow: var(--shadow);
+	            border: 1px solid var(--border);
+	        }
+        
+	        .field {
+	            margin: 20px 0;
+	            display: flex;
+	            align-items: center;
+	            justify-content: center;
+	            gap: 15px;
+	        }
+	        
+		        .select-wrapper {
+		            position: relative;
+		            display: inline-block;
+		            flex-shrink: 0;
+		            width: var(--unit-select-width);
+		        }
+
+	        /* 自定义下拉（替代系统 select） */
+	        .native-select-hidden {
+	            position: absolute !important;
+	            inset: 0 !important;
+	            opacity: 0 !important;
+	            pointer-events: none !important;
+	        }
+
+		        .dropdown {
+		            position: relative;
+		            width: 100%;
+		            min-width: 0;
+		        }
+
+	        .dropdown-trigger {
+	            width: 100%;
+	            display: flex;
+	            align-items: center;
+	            justify-content: space-between;
+	            gap: 10px;
+	            padding: 15px 45px 15px 20px;
+	            font-size: 16px;
+	            border: 1px solid var(--border);
+	            border-radius: 12px;
+	            background: var(--surface);
+	            color: var(--text);
+	            cursor: pointer;
+	            user-select: none;
+	            transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+	            box-sizing: border-box;
+	        }
+
+	        .dropdown-trigger:hover {
+	            border-color: var(--text);
+	            background: var(--surface-muted);
+	        }
+
+	        .dropdown-trigger:focus {
+	            outline: none;
+	            border-color: var(--text);
+	            box-shadow: 0 0 0 3px var(--focus);
+	        }
+
+		        .dropdown-trigger-left {
+		            display: flex;
+		            align-items: center;
+		            gap: 10px;
+		            overflow: hidden;
+		            min-width: 0;
+		        }
+
+		        .dropdown-logo {
+		            width: 22px;
+		            height: 22px;
+		            border-radius: 50%;
+		            overflow: hidden;
+		            display: flex;
+		            align-items: center;
+		            justify-content: center;
+		            background: var(--surface-muted);
+		            border: 1px solid var(--border);
+		            flex-shrink: 0;
+		        }
+		        
+		        /* Emoji 图标：去除圆框，仅保留内容本身（用于选择框/下拉菜单） */
+		        .dropdown-logo.is-emoji {
+		            background: transparent;
+		            border: none;
+		            border-radius: 0;
+		        }
+
+		        .dropdown-logo.is-emoji .dropdown-logo-emoji {
+		            font-size: 18px;
+		            line-height: 1;
+		        }
+
+	        .dropdown-logo img {
+	            width: 100%;
+	            height: 100%;
+	            object-fit: cover;
+	            display: block;
+	        }
+
+	        .dropdown-logo-emoji {
+	            font-size: 14px;
+	            line-height: 1;
+	        }
+
+		        .dropdown-text {
+		            white-space: nowrap;
+		            overflow: hidden;
+		            text-overflow: ellipsis;
+		            min-width: 0;
+		        }
+
+	        .dropdown-chevron {
+	            width: 16px;
+	            height: 16px;
+	            flex-shrink: 0;
+	            opacity: 0.85;
+	        }
+
+	        .dropdown-menu {
+	            position: fixed;
+	            left: 0;
+	            top: 0;
+	            width: 300px;
+	            overflow: visible; /* 允许箭头超出边界 */
+	            background: var(--surface);
+	            border: 1px solid var(--border);
+	            border-radius: 14px;
+	            box-shadow: var(--shadow);
+	            z-index: 9999;
+	            display: none;
+	        }
+	        
+	        .dropdown-menu-scroll {
+	            max-height: 680px;
+	            overflow: auto;
+	            padding: 8px;
+	            border-radius: 14px;
+	        }
+	        
+	        /* 下拉菜单箭头（指向目标框） */
+	        .dropdown-menu::before,
+	        .dropdown-menu::after {
+	            content: "";
+	            position: absolute;
+	            width: 0;
+	            height: 0;
+	            top: calc(var(--arrow-top, 28px) - 9px);
+	        }
+	        
+	        /* 默认：菜单在目标框右侧，箭头在左边指向目标框 */
+	        .dropdown-menu[data-side="right"]::before {
+	            left: -10px;
+	            border-top: 9px solid transparent;
+	            border-bottom: 9px solid transparent;
+	            border-right: 10px solid var(--border);
+	        }
+	        
+	        .dropdown-menu[data-side="right"]::after {
+	            left: -9px;
+	            border-top: 8px solid transparent;
+	            border-bottom: 8px solid transparent;
+	            border-right: 9px solid var(--surface);
+	            top: calc(var(--arrow-top, 28px) - 8px);
+	        }
+	        
+	        /* 翻转：菜单在目标框左侧，箭头在右边指向目标框 */
+	        .dropdown-menu[data-side="left"]::before {
+	            right: -10px;
+	            border-top: 9px solid transparent;
+	            border-bottom: 9px solid transparent;
+	            border-left: 10px solid var(--border);
+	        }
+	        
+	        .dropdown-menu[data-side="left"]::after {
+	            right: -9px;
+	            border-top: 8px solid transparent;
+	            border-bottom: 8px solid transparent;
+	            border-left: 9px solid var(--surface);
+	            top: calc(var(--arrow-top, 28px) - 8px);
+	        }
+
+	        .dropdown-group {
+	            padding: 8px 10px 6px 10px;
+	            color: var(--muted);
+	            font-size: 12px;
+	            letter-spacing: 0.02em;
+	        }
+
+	        .dropdown-item {
+	            display: flex;
+	            align-items: center;
+	            gap: 10px;
+	            padding: 5px 10px;
+	            border-radius: 10px;
+	            cursor: pointer;
+	            color: var(--text);
+	            transition: background 0.15s ease;
+	        }
+
+	        .dropdown-item:hover {
+	            background: var(--surface-muted);
+	        }
+
+	        .dropdown-item[aria-selected="true"] {
+	            background: var(--surface-muted);
+	        }
+
+	        .dropdown-item-text {
+	            flex: 1;
+	            min-width: 0;
+	            overflow: hidden;
+	            text-overflow: ellipsis;
+	            white-space: nowrap;
+	        }
+
+		        select {
+		            padding: 15px 45px 15px 20px;
+		            font-size: 16px;
+		            border: 1px solid var(--border);
+		            border-radius: 12px;
+		            background: var(--surface);
+		            box-shadow: none;
+		            transition: all 0.3s ease;
+	            cursor: pointer;
+	            min-width: 0;
+	            width: 100%;
+	            appearance: none;
+	            -webkit-appearance: none;
+	            -moz-appearance: none;
+		            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231d1d1f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+	            background-size: 16px 16px;
+	            background-position: calc(100% - 15px) center;
+	            background-repeat: no-repeat;
+	        }
+        
+	        select:hover {
+	            border-color: var(--text);
+	            transform: none;
+	            box-shadow: none;
+	            background: var(--surface-muted);
+	        }
+        
+	        select:focus {
+	            outline: none;
+	            border-color: var(--text);
+	            box-shadow: 0 0 0 3px var(--focus);
+	        }
+        
+	        select option {
+            padding: 12px 20px;
+	            background: var(--surface);
+	            color: var(--text);
+            font-size: 16px;
+            border: none;
+            margin: 2px 0;
+        }
+        
+	        select option:hover {
+	            background: var(--surface-muted);
+	            color: var(--text);
+	        }
+        
+		        select option:checked {
+		            background: var(--surface-muted);
+		            color: var(--text);
+		            font-weight: 400;
+		        }
+        
+		        select optgroup {
+		            font-weight: 400;
+		            font-size: 14px;
+		            color: var(--muted);
+		            background: var(--surface-muted);
+		            padding: 8px 12px;
+		            margin: 4px 0;
+		        }
+        
+		        input {
+            width: 220px;
+            padding: 15px 20px;
+            font-size: 16px;
+	            border: 1px solid var(--border);
+	            border-radius: 12px;
+	            background: var(--surface);
+	            box-shadow: none;
+	            transition: all 0.3s ease;
+	            text-align: right;
+		            font-weight: 400;
+		            color: var(--text);
+		        }
+        
+	        input:hover {
+	            border-color: var(--text);
+	            transform: none;
+	            box-shadow: none;
+	            background: var(--surface-muted);
+	        }
+        
+	        input:focus {
+	            outline: none;
+	            border-color: var(--text);
+	            box-shadow: 0 0 0 3px var(--focus);
+	        }
+        
+        input::placeholder {
+            color: #a0a0a0;
+            font-weight: normal;
+        }
+        
+		        h1 {
+	            font-size: 2.8em;
+	            margin-bottom: 35px;
+	            margin-top: -5px;
+	            color: var(--text);
+		            font-weight: 400;
+		            letter-spacing: -0.5px;
+		        }
+        
+		        .author {
+	            font-size: 0.8em;
+	            cursor: pointer;
+	            transition: all 0.3s ease;
+	            text-decoration: none;
+		            font-weight: 400;
+		            display: block;
+		            opacity: 0.8;
+		            color: var(--text);
+		        }
+	        
+	        .author svg {
+	            transition: all 0.3s ease;
+	            fill: currentColor;
+	            stroke: none;
+	        }
+        
+	        .author:hover {
+	            opacity: 1;
+	            transform: none;
+	            filter: none;
+	        }
+        
+	        .author:hover svg {
+	            fill: #000000;
+	        }
+        
+	        .social-links {
+	            display: grid;
+	            grid-template-columns: 1fr auto 1fr;
+	            align-items: center;
+	            gap: 12px;
+	            margin-top: 35px;
+	            margin-bottom: 0px;
+	        }
+
+	        .social-actions {
+	            display: flex;
+	            justify-content: flex-end;
+	            gap: 10px;
+	            align-items: center;
+	        }
+
+	        .api-status {
+	            text-align: left;
+	        }
+
+	        .share-center {
+	            display: flex;
+	            justify-content: center;
+	            gap: 10px;
+	        }
+
+	        /* 主页底部按钮 SVG 统一纯黑（与标题一致） */
+	        .social-links .author {
+	            color: #000000;
+	        }
+
+	        .social-actions .author,
+	        .social-actions .add-to-home-btn {
+	            color: #000000;
+	        }
+
+	        .social-actions svg {
+	            fill: #000000;
+	        }
+
+	        /* 分享按钮：文字样式（与右侧图标分离、居中） */
+	        .share-btn {
+	            display: inline-flex;
+	            align-items: center;
+	            justify-content: center;
+	            box-sizing: border-box;
+	            flex: 0 0 100px;
+	            font-size: 14px;
+	            padding: 8px 18px;
+	            width: 100px;
+	            min-width: 0;
+	            border: 1px solid var(--border);
+	            border-radius: 12px;
+	            background: var(--surface);
+	            color: var(--text);
+	            opacity: 1;
+	            cursor: pointer;
+	            transition: background 0.2s ease, border-color 0.2s ease;
+	            text-decoration: none;
+	            white-space: nowrap;
+	            overflow: hidden;
+	            text-overflow: ellipsis;
+	            line-height: 1;
+	            -webkit-appearance: none;
+	            appearance: none;
+	        }
+	        
+	        .share-btn .btn-content {
+	            display: inline-flex;
+	            align-items: center;
+	            justify-content: center;
+	            gap: 8px;
+	        }
+	        
+	        .share-btn svg {
+	            width: 16px;
+	            height: 16px;
+	            fill: none;
+	            stroke: currentColor;
+	            stroke-width: 2;
+	            stroke-linecap: round;
+	            stroke-linejoin: round;
+	        }
+
+	        .share-btn:hover {
+	            background: var(--surface-muted);
+	            border-color: var(--text);
+	        }
+
+	        .share-btn:active {
+	            background: var(--surface-muted);
+	            border-color: var(--text);
+	        }
+
+	        .share-btn.primary {
+	            background: var(--text);
+	            color: #ffffff;
+	            border-color: var(--text);
+	        }
+
+	        .share-btn.primary:hover {
+	            background: #000000;
+	            border-color: #000000;
+	        }
+
+	        .share-btn:focus-visible {
+	            outline: none;
+	            border-color: var(--text);
+	            box-shadow: 0 0 0 3px var(--focus);
+	        }
+        
+	        /* 移动端响应式设计 */
+		        @media screen and (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                padding: 30px 20px 20px 20px;
+                transform: scale(1);
+                margin: 10px;
+                border-radius: 15px;
+            }
+            
+            h1 {
+                font-size: 2.2em;
+                margin-bottom: 15px;
+                margin-top: 5px;
+            }
+            
+            .author {
+                font-size: 0.7em;
+            }
+            
+	            .social-links {
+	                margin-top: 30px;
+	                margin-bottom: 0px;
+	                gap: 10px;
+	            }
+
+	            .share-btn {
+	                font-size: 13px;
+	                padding: 10px 12px;
+	                width: 100px;
+	                flex: 0 0 100px;
+	            }
+            
+		            .field {
+		                margin: 15px 0;
+		                flex-direction: row;
+		                align-items: center;
+		                gap: 12px;
+		            }
+		            
+		            .select-wrapper {
+		                width: 40%;
+		            }
+            
+		            select {
+		                min-width: 0;
+		                width: 100%;
+		                padding: 10px 35px 10px 12px;
+		                font-size: 13px;
+		                margin-bottom: 0;
+		            }
+
+		            .dropdown {
+		                width: 100%;
+		                min-width: 0;
+		            }
+
+	            .dropdown-trigger {
+	                padding: 10px 35px 10px 12px;
+	                font-size: 13px;
+	            }
+            
+            input {
+                width: 55%;
+                padding: 10px 12px;
+                font-size: 16px;
+                text-align: right;
+            }
+        }
+        
+		        @media screen and (max-width: 480px) {
+            .container {
+                padding: 20px 15px 20px 15px;
+                margin: 5px;
+            }
+            
+            h1 {
+                font-size: 1.8em;
+                margin-bottom: 12px;
+            }
+            
+            .author {
+                font-size: 0.6em;
+            }
+            
+	            .social-links {
+	                margin-top: 20px;
+	                margin-bottom: 0px;
+	                gap: 8px;
+	            }
+
+	            .share-btn {
+	                font-size: 12px;
+	                padding: 9px 10px;
+	                width: 100px;
+	                flex: 0 0 100px;
+	            }
+            
+		            .field {
+		                margin: 10px 0;
+		                gap: 8px;
+		            }
+		            
+		            .select-wrapper {
+		                width: 50%;
+		            }
+            
+		            select {
+		                min-width: 0;
+		                width: 100%;
+		                padding: 8px 30px 8px 10px;
+		                font-size: 12px;
+		            }
+
+		            .dropdown {
+		                width: 100%;
+		                min-width: 0;
+		            }
+
+	            .dropdown-trigger {
+	                padding: 8px 30px 8px 10px;
+	                font-size: 12px;
+	            }
+            
+            input {
+                width: 46%;
+                padding: 8px 10px;
+                font-size: 16px;
+                text-align: right;
+            }
+        }
+        
+        /* 自定义代币弹窗样式 */
+	        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+	            background-color: rgba(0, 0, 0, 0.55);
+	            backdrop-filter: blur(5px);
+	        }
+        
+	        .modal-content {
+	            background: var(--surface);
+	            margin: 5% auto;
+	            padding: 0;
+	            border-radius: 20px;
+	            width: 90%;
+	            max-width: 600px;
+	            box-shadow: var(--shadow);
+	            border: 1px solid var(--border);
+	            animation: modalSlideIn 0.3s ease-out;
+	        }
+        
+        @keyframes modalSlideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+	        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+	            padding: 18px 24px;
+	            background: var(--surface);
+	            color: var(--text);
+	            border-bottom: 1px solid var(--border);
+	            border-radius: 20px 20px 0 0;
+	        }
+        
+        .modal-header h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 400;
+        }
+        
+        .close {
+            color: var(--text);
+            float: right;
+            font-size: 28px;
+            font-weight: 400;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        
+        .close:hover {
+            opacity: 0.7;
+        }
+        
+	        .modal-body {
+	            padding: 18px 24px;
+	        }
+
+	        /* 分享图预览弹窗 */
+	        .share-modal-content {
+	            padding: 14px 18px 14px 18px;
+	        }
+
+		        .share-preview {
+		            width: 100%;
+		            border: 1px solid var(--border);
+		            border-radius: 16px;
+		            background: var(--surface-muted);
+		            overflow: hidden;
+		        }
+
+		        .share-preview img {
+		            width: 100%;
+		            max-width: 100%;
+		            max-height: 70vh;
+		            height: auto;
+		            display: block;
+		        }
+
+	        .share-actions {
+	            display: flex;
+	            gap: 12px;
+	            margin-top: 16px;
+	        }
+
+        .share-actions button {
+	            flex: 1;
+	            border: 1px solid var(--border);
+	            background: var(--surface);
+	            color: var(--text);
+	            padding: 12px 14px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 400;
+            cursor: pointer;
+            transition: background 0.2s ease, border-color 0.2s ease;
+        }
+
+	        .share-actions button:hover {
+	            background: var(--surface-muted);
+	            border-color: var(--text);
+	        }
+
+	        .share-actions button.primary {
+	            background: var(--text);
+	            color: #ffffff;
+	            border-color: var(--text);
+	        }
+
+	        .share-actions button.primary svg {
+	            fill: currentColor;
+	        }
+
+	        .share-actions button.primary:hover {
+	            background: #000000;
+	            border-color: #000000;
+	        }
+        
+        .search-container {
+            margin-bottom: 25px;
+        }
+        
+	        .search-container input {
+            width: 100%;
+            padding: 15px 20px;
+            font-size: 16px;
+	            border: 1px solid var(--border);
+	            border-radius: 12px;
+	            background: var(--surface);
+	            box-shadow: none;
+	            transition: all 0.3s ease;
+	            box-sizing: border-box;
+	            color: var(--text);
+	        }
+        
+	        .search-container input:focus {
+	            outline: none;
+	            border-color: var(--text);
+	            box-shadow: 0 0 0 3px var(--focus);
+	        }
+        
+        .search-results {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+	        .token-result {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            margin: 10px 0;
+	            background: var(--surface);
+	            border: 1px solid var(--border);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+	        .token-result:hover {
+	            border-color: var(--text);
+	            transform: none;
+	            box-shadow: none;
+	            background: var(--surface-muted);
+	        }
+        
+        .token-logo {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 15px;
+            object-fit: cover;
+        }
+        
+        .token-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .token-name-row {
+            margin-bottom: 8px;
+        }
+        
+        .token-name {
+            font-weight: 400;
+            color: var(--text);
+        }
+        
+        .token-bottom-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+		        .token-symbol {
+		            color: var(--muted);
+		            font-weight: 400;
+		            text-transform: uppercase;
+		        }
+        
+        .token-price {
+            color: var(--muted);
+            font-weight: 400;
+        }
+        
+	        .loading {
+	            text-align: center;
+	            padding: 40px 20px;
+	            color: var(--muted);
+	        }
+        
+	        .spinner {
+            width: 40px;
+            height: 40px;
+	            border: 4px solid var(--border);
+	            border-top: 4px solid var(--text);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+	        .no-results {
+            text-align: center;
+            padding: 40px 20px;
+	            color: var(--muted);
+	            font-style: italic;
+	        }
+        
+	        /* 添加到主屏幕按钮样式 */
+		        .add-to-home-btn {
+	            background: none;
+	            border: none;
+	            cursor: pointer;
+	            transition: all 0.3s ease;
+	            text-decoration: none;
+	            font-weight: 400;
+	            display: block;
+	            opacity: 0.8;
+	            font-size: 24px;
+	            padding: 0;
+	            line-height: 1;
+	            color: var(--text);
+	        }
+
+		        .add-to-home-btn svg {
+		            transition: all 0.3s ease;
+		            fill: currentColor;
+		            stroke: none;
+		        }
+
+		        .add-to-home-btn:hover {
+		            opacity: 1;
+		            transform: none;
+		            filter: none;
+		        }
+
+		        .add-to-home-btn:hover svg {
+		            fill: #000000;
+		        }
+
+	        /* Toast 提示样式 */
+		        .toast {
+	            position: fixed;
+	            bottom: 32px;
+	            left: 50%;
+	            transform: translate(-50%, 12px);
+		            background: rgba(255, 255, 255, 0.82);
+		            color: #1d1d1f;
+		            border: 1px solid rgba(0, 0, 0, 0.12);
+		            backdrop-filter: blur(12px);
+	            padding: 10px 14px;
+	            border-radius: 999px;
+	            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+	            z-index: 10000;
+	            opacity: 0;
+	            pointer-events: none;
+	            transition: opacity 0.2s ease, transform 0.2s ease;
+	            font-size: 13px;
+		            font-weight: 400;
+		            text-align: center;
+		            max-width: 80vw;
+		            letter-spacing: -0.2px;
+		        }
+
+	        .toast.show {
+	            opacity: 1;
+	            transform: translate(-50%, 0);
+	        }
+
+	        .toast-icon {
+	            display: none;
+	        }
+
+	        @media screen and (max-width: 768px) {
+	            .toast {
+	                bottom: 20px;
+	                font-size: 12px;
+	                padding: 9px 12px;
+	            }
+	        }
+    
