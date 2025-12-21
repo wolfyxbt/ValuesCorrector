@@ -398,7 +398,13 @@
 	        }
 
 	        .api-status {
+	            font-size: 11px;
+	            color: #6e6e73;
 	            text-align: left;
+	            white-space: nowrap;
+	            overflow: hidden;
+	            text-overflow: ellipsis;
+	            user-select: none;
 	        }
 
 	        .share-center {

@@ -966,9 +966,21 @@
             document.querySelectorAll('.dropdown.open').forEach((dd) => positionDropdownMenu(dd));
         }, { passive: true });
 
-        window.addEventListener('resize', () => {
-            document.querySelectorAll('.dropdown.open').forEach((dd) => positionDropdownMenu(dd));
-        });
+window.addEventListener('resize', () => {
+	            document.querySelectorAll('.dropdown.open').forEach((dd) => positionDropdownMenu(dd));
+	        });
+
+	        // iOS Safari 等场景：地址栏收起/弹出会改变 visualViewport，但 window.resize/scroll 不一定稳定触发
+	        // 这里额外监听 visualViewport，确保手机端下拉菜单位置与箭头始终对齐目标框
+	        if (window.visualViewport && !window.__valuesCorrectorVisualViewportBound) {
+	            window.__valuesCorrectorVisualViewportBound = true;
+	            window.visualViewport.addEventListener('resize', () => {
+	                document.querySelectorAll('.dropdown.open').forEach((dd) => positionDropdownMenu(dd));
+	            });
+	            window.visualViewport.addEventListener('scroll', () => {
+	                document.querySelectorAll('.dropdown.open').forEach((dd) => positionDropdownMenu(dd));
+	            }, { passive: true });
+	        }
 
 	        // 分享按钮功能：生成换算结果分享图 PNG，并打开预览弹窗
 	        if (shareBtn) {
@@ -1261,10 +1273,10 @@
 	        function updateApiStatusDisplay(isRealTime, errorMessage) {
 	            const statusElement = document.getElementById('apiStatus');
 	            if (!statusElement) return;
-            
-            // 确保状态元素始终可见
-            statusElement.style.display = 'block';
-            
+	            
+	            // 确保状态元素始终可见
+	            statusElement.style.display = 'block';
+	            
 	            // 新版：允许传入对象以自定义文案
 	            if (typeof isRealTime === 'object' && isRealTime) {
 	                statusElement.innerHTML = isRealTime.message || '汇率状态未知';
@@ -1273,15 +1285,15 @@
 	            }
 	            
 	            if (isRealTime) {
-	                statusElement.innerHTML = '实时汇率已加载';
-	                statusElement.style.color = '#28a745';
+	                statusElement.innerHTML = '汇率已加载';
+	                statusElement.style.color = '#6e6e73';
 	                return;
 	            }
 	            
 	            // 使用传入的错误消息，如果没有则使用默认消息
-	            const displayMessage = errorMessage || '已超过汇率服务 API 访问限制次数，请稍后再试';
+	            const displayMessage = errorMessage || '汇率加载失败';
 	            statusElement.innerHTML = displayMessage;
-	            statusElement.style.color = '#dc3545';
+	            statusElement.style.color = '#b3261e';
 	        }
 
 	        // 获取真实汇率
@@ -1292,8 +1304,8 @@
 	            // 显示加载状态
 	            const statusElement = document.getElementById('apiStatus');
 	            if (statusElement) {
-	                statusElement.innerHTML = '正在加载汇率数据...';
-                statusElement.style.color = '#6c757d';
+	                statusElement.innerHTML = '汇率加载中';
+                statusElement.style.color = '#6e6e73';
                 statusElement.style.display = 'block';
 	            }
 	            
@@ -1503,7 +1515,7 @@
 	                }
 	                
 	                console.error(errorMessage);
-	                updateApiStatusDisplay(false, errorMessage);
+	                updateApiStatusDisplay({ message: '汇率加载失败', color: '#b3261e' });
 	                
 	                // 清空汇率，表示服务不可用
 	                rates = {};
@@ -1805,7 +1817,7 @@
             // 实物 - 使用emoji
             'ZHUJIAO': { logo: '🍚', text: '猪脚饭', type: 'emoji' },
             'KFC': { logo: '🍗', text: 'KFC', type: 'emoji' },
-            'IN11': { logo: '💃', text: 'in11嫩模', type: 'emoji' },
+            'IN11': { logo: '💃', text: 'in11 嫩模', type: 'emoji' },
             'IPHONE17': { logo: '📱', text: 'iPhone17', type: 'emoji' },
             'MACBOOK': { logo: '💻', text: 'MacBook Air', type: 'emoji' },
             'ROLEX': { logo: '⌚', text: '劳力士', type: 'emoji' },
@@ -2242,7 +2254,7 @@
 	            });
 	        }
 	        
-	        function positionDropdownMenu(dropdown) {
+function positionDropdownMenu(dropdown) {
 	            const trigger = dropdown.querySelector('.dropdown-trigger');
 	            const menu = dropdown._menu || dropdown.querySelector('.dropdown-menu');
 	            if (!trigger || !menu) return;
@@ -2253,15 +2265,50 @@
 	            if (wasHidden) menu.style.display = 'block';
 	            menu.style.visibility = 'hidden';
 	            
-	            const triggerRect = trigger.getBoundingClientRect();
-	            const menuRect = menu.getBoundingClientRect();
+	            // 在 iOS Safari 等环境下，visualViewport 可能与布局视口存在偏移（地址栏/缩放/键盘）
+	            // 使用 offset 修正，保证 fixed 定位与 getBoundingClientRect 的坐标系一致
+	            const vv = window.visualViewport;
+	            const viewportOffsetLeft = vv ? vv.offsetLeft : 0;
+	            const viewportOffsetTop = vv ? vv.offsetTop : 0;
+	            const viewportWidth = vv ? vv.width : window.innerWidth;
+	            const viewportHeight = vv ? vv.height : window.innerHeight;
+
+	            const triggerRectRaw = trigger.getBoundingClientRect();
+	            const triggerRect = {
+	                left: triggerRectRaw.left + viewportOffsetLeft,
+	                right: triggerRectRaw.right + viewportOffsetLeft,
+	                top: triggerRectRaw.top + viewportOffsetTop,
+	                bottom: triggerRectRaw.bottom + viewportOffsetTop,
+	                width: triggerRectRaw.width,
+	                height: triggerRectRaw.height
+	            };
+
+	            const menuRectRaw = menu.getBoundingClientRect();
+	            const menuRect = {
+	                left: menuRectRaw.left + viewportOffsetLeft,
+	                right: menuRectRaw.right + viewportOffsetLeft,
+	                top: menuRectRaw.top + viewportOffsetTop,
+	                bottom: menuRectRaw.bottom + viewportOffsetTop,
+	                width: menuRectRaw.width,
+	                height: menuRectRaw.height
+	            };
 	            const gap = 12;
 	            const margin = 12;
 	            
-	            // 约束范围：优先保证菜单完全展示在页面主卡片（.container）内部
-	            // 若获取失败则退回到视口范围
-	            const containerEl = document.querySelector('.container');
-	            const containerRect = containerEl ? containerEl.getBoundingClientRect() : null;
+	            // 约束范围：
+	            // - 桌面：尽量保证菜单完整展示在主卡片（.container）内部，体验更“贴近组件”
+	            // - 手机端：优先保证在“视口”内可见（允许超出卡片边界），否则会因为卡片较窄导致菜单被迫翻转/错位
+	            const isMobileLayout = window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
+	            const containerEl = !isMobileLayout ? document.querySelector('.container') : null;
+	            const containerRectRaw = containerEl ? containerEl.getBoundingClientRect() : null;
+	            const containerRect = containerRectRaw
+	                ? {
+	                        left: containerRectRaw.left + viewportOffsetLeft,
+	                        right: containerRectRaw.right + viewportOffsetLeft,
+	                        top: containerRectRaw.top + viewportOffsetTop,
+	                        bottom: containerRectRaw.bottom + viewportOffsetTop
+	                  }
+	                : null;
 	            const bounds = containerRect
 	                ? {
 	                        left: containerRect.left,
@@ -2270,17 +2317,17 @@
 	                        bottom: containerRect.bottom
 	                  }
 	                : {
-	                        left: margin,
-	                        right: window.innerWidth - margin,
-	                        top: margin,
-	                        bottom: window.innerHeight - margin
+	                        left: viewportOffsetLeft + margin,
+	                        right: viewportOffsetLeft + viewportWidth - margin,
+	                        top: viewportOffsetTop + margin,
+	                        bottom: viewportOffsetTop + viewportHeight - margin
 	                  };
 	            
 	            // 额外兜底：同时不能超出视口
-	            bounds.left = Math.max(bounds.left, margin);
-	            bounds.top = Math.max(bounds.top, margin);
-	            bounds.right = Math.min(bounds.right, window.innerWidth - margin);
-	            bounds.bottom = Math.min(bounds.bottom, window.innerHeight - margin);
+	            bounds.left = Math.max(bounds.left, viewportOffsetLeft + margin);
+	            bounds.top = Math.max(bounds.top, viewportOffsetTop + margin);
+	            bounds.right = Math.min(bounds.right, viewportOffsetLeft + viewportWidth - margin);
+	            bounds.bottom = Math.min(bounds.bottom, viewportOffsetTop + viewportHeight - margin);
 	            
 	            // 目标：点击目标框后，从右侧“侧弹”出现，并允许滚动选择。
 	            // 视觉上更接近把原本“向下弹出”改成“向右弹出”：菜单与目标框垂直居中对齐。
@@ -2293,8 +2340,12 @@
 	            width = Math.min(width, Math.max(220, bounds.right - bounds.left));
 	            
 	            if (left + width > bounds.right) {
-	                left = triggerRect.left - gap - width;
-	                side = 'left';
+	                // 桌面：允许翻转到左侧
+	                // 手机：优先保持“从右侧冒出”，因为容器太窄会导致错误翻转
+	                if (!isMobileLayout) {
+	                    left = triggerRect.left - gap - width;
+	                    side = 'left';
+	                }
 	            }
 	            
 	            left = Math.max(bounds.left, Math.min(left, bounds.right - width));
@@ -2305,7 +2356,7 @@
 	            top = triggerRect.top + (triggerRect.height - desiredHeight) / 2;
 	            top = Math.max(bounds.top, Math.min(top, bounds.bottom - desiredHeight));
 	            // 再兜底一次，确保不会越出视口
-	            top = Math.max(margin, Math.min(top, window.innerHeight - margin - desiredHeight));
+	            top = Math.max(viewportOffsetTop + margin, Math.min(top, viewportOffsetTop + viewportHeight - margin - desiredHeight));
 	            
 	            // 箭头位置：指向触发器的垂直中心
 	            const arrowCenterY = triggerRect.top + triggerRect.height / 2;
