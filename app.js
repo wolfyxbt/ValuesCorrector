@@ -37,9 +37,9 @@
 		            return sign + digits.slice(0, idx) + '.' + digits.slice(idx);
 		        }
 
-		        function formatNumberForDisplay(input) {
-		            const n = typeof input === 'number' ? input : Number(input);
-		            if (!Number.isFinite(n) || n === 0) return '0';
+			        function formatNumberForDisplay(input) {
+			            const n = typeof input === 'number' ? input : Number(input);
+			            if (!Number.isFinite(n) || n === 0) return '0';
 
 		            const sign = n < 0 ? '-' : '';
 		            const abs = Math.abs(n);
@@ -62,8 +62,196 @@
 
 		            const cut = Math.min(frac.length, firstNonZero + 2);
 		            const shown = frac.slice(0, cut);
-		            return sign + '0.' + shown;
-		        }
+			            return sign + '0.' + shown;
+			        }
+
+			        // ===== 输入框表达式解析（用于 amount 输入框）=====
+			        // 允许：数字、小数点、千分位逗号、空格、括号，以及 + - * /
+			        // 目标：让用户可以输入如 "1+2*3" 并用于换算；不使用 eval，避免安全风险。
+			        function normalizeMathInput(raw) {
+			            if (raw == null) return '';
+			            let s = String(raw);
+			            // 常见全角/替代符号归一
+			            s = s
+			                .replace(/＋/g, '+')
+			                .replace(/－/g, '-')
+			                .replace(/—/g, '-') // 长横
+			                .replace(/×/g, '*')
+			                .replace(/✕/g, '*')
+			                .replace(/÷/g, '/')
+			                .replace(/（/g, '(')
+			                .replace(/）/g, ')');
+			            return s;
+			        }
+
+			        function isLikelyPlainNumberInput(raw) {
+			            const s = normalizeMathInput(raw).trim();
+			            // 允许：可选负号 + 数字/逗号 + 可选小数（不允许其他运算符）
+			            return /^-?[\d,]*\.?\d*$/.test(s) && !/[+*/()]/.test(s);
+			        }
+
+			        function evaluateMathExpression(raw) {
+			            const s0 = normalizeMathInput(raw);
+			            const s = s0.replace(/,/g, '');
+			            if (!s.trim()) return NaN;
+
+			            // 只允许白名单字符：数字/小数点/运算符/括号/空格
+			            if (/[^0-9+\-*/().\s]/.test(s)) return NaN;
+
+			            // Tokenize
+			            /** @type {{type:'num',value:number}|{type:'op',value:string}|{type:'paren',value:'(' | ')'}[]} */
+			            const tokens = [];
+			            let i = 0;
+			            while (i < s.length) {
+			                const ch = s[i];
+			                if (ch === ' ' || ch === '\t' || ch === '\n' || ch === '\r') {
+			                    i++;
+			                    continue;
+			                }
+			                if (ch === '(' || ch === ')') {
+			                    tokens.push({ type: 'paren', value: ch });
+			                    i++;
+			                    continue;
+			                }
+			                if (ch === '+' || ch === '-' || ch === '*' || ch === '/') {
+			                    tokens.push({ type: 'op', value: ch });
+			                    i++;
+			                    continue;
+			                }
+			                if ((ch >= '0' && ch <= '9') || ch === '.') {
+			                    let j = i;
+			                    let dotCount = 0;
+			                    while (j < s.length) {
+			                        const c = s[j];
+			                        if (c === '.') {
+			                            dotCount++;
+			                            if (dotCount > 1) break;
+			                            j++;
+			                            continue;
+			                        }
+			                        if (c >= '0' && c <= '9') {
+			                            j++;
+			                            continue;
+			                        }
+			                        break;
+			                    }
+			                    const numStr = s.slice(i, j);
+			                    if (numStr === '.' || numStr === '') return NaN;
+			                    const num = Number(numStr);
+			                    if (!Number.isFinite(num)) return NaN;
+			                    tokens.push({ type: 'num', value: num });
+			                    i = j;
+			                    continue;
+			                }
+			                return NaN;
+			            }
+
+			            // Shunting-yard -> RPN
+			            const out = [];
+			            const ops = [];
+			            const precedence = (op) => (op === 'u+' || op === 'u-' ? 3 : op === '*' || op === '/' ? 2 : 1);
+			            const isRightAssoc = (op) => op === 'u+' || op === 'u-';
+
+			            let prevType = 'start'; // start | num | op | '(' | ')'
+			            for (const t of tokens) {
+			                if (t.type === 'num') {
+			                    out.push(t);
+			                    prevType = 'num';
+			                    continue;
+			                }
+			                if (t.type === 'paren') {
+			                    if (t.value === '(') {
+			                        ops.push({ type: 'paren', value: '(' });
+			                        prevType = '(';
+			                    } else {
+			                        // pop until '('
+			                        while (ops.length) {
+			                            const top = ops.pop();
+			                            if (top.type === 'paren' && top.value === '(') break;
+			                            out.push(top);
+			                        }
+			                        prevType = ')';
+			                    }
+			                    continue;
+			                }
+			                if (t.type === 'op') {
+			                    let op = t.value;
+			                    // unary +/-
+			                    if ((op === '+' || op === '-') && (prevType === 'start' || prevType === 'op' || prevType === '(')) {
+			                        op = op === '+' ? 'u+' : 'u-';
+			                    }
+			                    while (ops.length) {
+			                        const top = ops[ops.length - 1];
+			                        if (top.type === 'paren') break;
+			                        const topOp = top.value;
+			                        const p1 = precedence(op);
+			                        const p2 = precedence(topOp);
+			                        if (p2 > p1 || (p2 === p1 && !isRightAssoc(op))) {
+			                            out.push(ops.pop());
+			                            continue;
+			                        }
+			                        break;
+			                    }
+			                    ops.push({ type: 'op', value: op });
+			                    prevType = 'op';
+			                    continue;
+			                }
+			            }
+			            while (ops.length) out.push(ops.pop());
+
+			            // Eval RPN
+			            const stack = [];
+			            for (const t of out) {
+			                if (t.type === 'num') {
+			                    stack.push(t.value);
+			                    continue;
+			                }
+			                if (t.type === 'op') {
+			                    if (t.value === 'u+' || t.value === 'u-') {
+			                        if (stack.length < 1) return NaN;
+			                        const a = stack.pop();
+			                        stack.push(t.value === 'u-' ? -a : +a);
+			                        continue;
+			                    }
+			                    if (stack.length < 2) return NaN;
+			                    const b = stack.pop();
+			                    const a = stack.pop();
+			                    let r;
+			                    switch (t.value) {
+			                        case '+':
+			                            r = a + b;
+			                            break;
+			                        case '-':
+			                            r = a - b;
+			                            break;
+			                        case '*':
+			                            r = a * b;
+			                            break;
+			                        case '/':
+			                            r = a / b;
+			                            break;
+			                        default:
+			                            return NaN;
+			                    }
+			                    if (!Number.isFinite(r)) return NaN;
+			                    stack.push(r);
+			                    continue;
+			                }
+			                return NaN;
+			            }
+			            if (stack.length !== 1) return NaN;
+			            return stack[0];
+			        }
+
+			        function parseAmountInputToNumber(raw) {
+			            const s = normalizeMathInput(raw);
+			            if (!s.trim()) return NaN;
+			            if (isLikelyPlainNumberInput(s)) {
+			                const n = Number(s.replace(/,/g, ''));
+			                return Number.isFinite(n) ? n : NaN;
+			            }
+			            return evaluateMathExpression(s);
+			        }
 		        
 		        // ===== API / 缓存工具 =====
 		        const CACHE_VERSION = 1;
@@ -1733,7 +1921,7 @@ window.addEventListener('resize', () => {
             
             updating = true;
             
-            const sourceAmount = document.getElementById(`amount${sourceIndex}`).value.replace(/,/g, '');
+            const sourceAmountRaw = document.getElementById(`amount${sourceIndex}`).value;
             let sourceCurrency = document.getElementById(`currency${sourceIndex}`).value;
             
             // 处理自定义代币：如果选择的是CUSTOM，获取实际的代币符号
@@ -1746,12 +1934,12 @@ window.addEventListener('resize', () => {
                 }
             }
             
-            console.log('转换参数 - 金额:', sourceAmount, '货币:', sourceCurrency);
+            console.log('转换参数 - 金额(原始):', sourceAmountRaw, '货币:', sourceCurrency);
             console.log('rates对象存在:', !!rates, '包含货币数量:', rates ? Object.keys(rates).length : 0);
             
-            if (!sourceAmount || sourceAmount === '') {
-	            for (let i = 1; i <= 6; i++) {
-	                if (i !== sourceIndex) {
+            if (!sourceAmountRaw || sourceAmountRaw === '') {
+		            for (let i = 1; i <= 6; i++) {
+		                if (i !== sourceIndex) {
                         document.getElementById(`amount${i}`).value = '';
                     }
                 }
@@ -1759,7 +1947,7 @@ window.addEventListener('resize', () => {
                 return;
             }
             
-            const amount = parseFloat(sourceAmount);
+            const amount = parseAmountInputToNumber(sourceAmountRaw);
             if (isNaN(amount)) {
                 updating = false;
                 return;
@@ -2009,42 +2197,51 @@ window.addEventListener('resize', () => {
             }
         }
 
-	        // 基础换算功能事件监听器
-		        function setupBasicEventListeners() {
-	            function formatNumberWithThousands(value) {
-	                const raw = String(value ?? '');
-	                if (!raw) return '';
-	
-	                // 仅保留数字与小数点（保留第一个小数点）
-	                const cleaned = raw.replace(/[^\d.]/g, '');
-	                if (!cleaned) return '';
-	
-	                const firstDot = cleaned.indexOf('.');
-	                const hasDot = firstDot !== -1;
-	                const integerPartRaw = hasDot ? cleaned.slice(0, firstDot) : cleaned;
-	                const decimalPartRaw = hasDot ? cleaned.slice(firstDot + 1).replace(/\./g, '') : '';
-	
-	                // 允许用户输入以 "." 开头的情况
-	                const integerDigits = integerPartRaw.replace(/^0+(?=\d)/, '') || (integerPartRaw === '' ? '' : '0');
-	                const groupedInt = integerDigits.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-	
-	                if (hasDot) {
-	                    return `${groupedInt}${integerPartRaw === '' ? '' : ''}.${decimalPartRaw}`;
-	                }
-	                return groupedInt;
-	            }
-	
-	            function applyThousandsSeparatorsToInput(inputEl) {
-	                const original = inputEl.value;
-	                if (!original) return;
-	
-	                const selStart = inputEl.selectionStart ?? original.length;
-	                const leftRaw = original.slice(0, selStart);
-	                const leftDigitsCount = leftRaw.replace(/[^\d.]/g, '').length;
-	
-	                const formatted = formatNumberWithThousands(original);
-	                if (formatted === original) return;
-	                inputEl.value = formatted;
+		        // 基础换算功能事件监听器
+			        function setupBasicEventListeners() {
+		            function formatNumberWithThousands(value) {
+		                const raw = normalizeMathInput(String(value ?? ''));
+		                if (!raw) return '';
+		
+		                const trimmed = raw.trim();
+		                if (!trimmed) return '';
+		                if (!isLikelyPlainNumberInput(trimmed)) return raw;
+		
+		                const sign = trimmed.startsWith('-') ? '-' : '';
+		                const body = trimmed.replace(/,/g, '').replace(/^-/, '');
+		
+		                // 仅保留数字与小数点（保留第一个小数点）
+		                const cleaned = body.replace(/[^\d.]/g, '');
+		                if (!cleaned) return sign ? '-' : '';
+		
+		                const firstDot = cleaned.indexOf('.');
+		                const hasDot = firstDot !== -1;
+		                const integerPartRaw = hasDot ? cleaned.slice(0, firstDot) : cleaned;
+		                const decimalPartRaw = hasDot ? cleaned.slice(firstDot + 1).replace(/\./g, '') : '';
+		
+		                // 允许用户输入以 "." 开头的情况
+		                const integerDigits = integerPartRaw.replace(/^0+(?=\d)/, '') || (integerPartRaw === '' ? '' : '0');
+		                const groupedInt = integerDigits.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+		
+		                if (hasDot) {
+		                    return `${sign}${groupedInt}.${decimalPartRaw}`;
+		                }
+		                return `${sign}${groupedInt}`;
+		            }
+		
+		            function applyThousandsSeparatorsToInput(inputEl) {
+		                const original = inputEl.value;
+		                if (!original) return;
+		                // 允许输入表达式：遇到运算符/括号时不做千分位格式化，避免破坏表达式
+		                if (!isLikelyPlainNumberInput(original)) return;
+		
+		                const selStart = inputEl.selectionStart ?? original.length;
+		                const leftRaw = original.slice(0, selStart);
+		                const leftDigitsCount = leftRaw.replace(/[^\d.]/g, '').length;
+		
+		                const formatted = formatNumberWithThousands(original);
+		                if (formatted === original) return;
+		                inputEl.value = formatted;
 	
 	                // 还原光标位置：保持“光标左侧的数字/小数点字符数量”一致
 	                let seen = 0;
@@ -2062,15 +2259,32 @@ window.addEventListener('resize', () => {
 	                } catch {}
 	            }
 	
-	            for (let i = 1; i <= 6; i++) {
-	                // 金额输入事件
-	                document.getElementById(`amount${i}`).addEventListener('input', (e) => {
-	                    console.log('Input event triggered for amount' + i);
-	                    applyThousandsSeparatorsToInput(e.target);
-	                    lastInputField = i;
-	                    convert(i);
-	                    saveState();
-	                });
+		            for (let i = 1; i <= 6; i++) {
+		                // 金额输入事件
+		                document.getElementById(`amount${i}`).addEventListener('input', (e) => {
+		                    console.log('Input event triggered for amount' + i);
+		                    // 保留表达式输入：仅去掉非白名单字符，避免手机端输入法带入奇怪字符
+		                    const inputEl = e.target;
+		                    const original = inputEl.value;
+		                    const selStart = inputEl.selectionStart ?? original.length;
+		                    const leftRaw = original.slice(0, selStart);
+		                    const allowed = (s) =>
+		                        normalizeMathInput(s).replace(/[^0-9+\-*/().,\s]/g, '');
+		                    const sanitized = allowed(original);
+		                    if (sanitized !== original) {
+		                        // 还原光标：保持“光标左侧的允许字符数量”一致
+		                        const leftAllowedCount = allowed(leftRaw).length;
+		                        inputEl.value = sanitized;
+		                        const newPos = Math.max(0, Math.min(leftAllowedCount, sanitized.length));
+		                        try {
+		                            inputEl.setSelectionRange(newPos, newPos);
+		                        } catch {}
+		                    }
+		                    applyThousandsSeparatorsToInput(inputEl);
+		                    lastInputField = i;
+		                    convert(i);
+		                    saveState();
+		                });
                 
                 // 货币选择事件
                 document.getElementById(`currency${i}`).addEventListener('change', function() {
