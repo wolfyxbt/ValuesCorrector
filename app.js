@@ -329,207 +329,55 @@
 	            }
 	        }
 	        
-	        // ===== 预设币种实时价格（Binance + OKX） =====
-	        // 说明：网页端 OKX REST 通常缺少 CORS 头，无法直接 fetch，因此这里使用 OKX WebSocket 公共频道获取 SOL/OKB。
-	        // 价格使用 USDT 报价，默认按 1 USDT ≈ 1 USD 处理（对大多数场景足够；如需更精确可再加 USDT/USD 校准）。
-	        let okxWs = null;
-	        let okxWsBackoffMs = 1000;
-	        let okxWsLastConnectAttempt = 0;
-	        let scheduledRatesRefreshTimer = null;
-	        
-	        // { SOL: { price, ts }, OKB: { price, ts } }
-	        const okxLivePrices = new Map();
-	        
-	        function scheduleRatesRefresh(reason) {
-	            if (scheduledRatesRefreshTimer) return;
-	            scheduledRatesRefreshTimer = setTimeout(async () => {
-	                scheduledRatesRefreshTimer = null;
-	                try {
-	                    await loadRates({ forceRefresh: false, reason: reason || 'scheduledRefresh' });
-	                    // 若页面上已有输入，刷新后以最后输入栏位为基准重算
-	                    const lastAmount = document.getElementById(`amount${lastInputField}`)?.value?.trim?.() || '';
-	                    if (lastAmount !== '') convert(lastInputField);
-	                } catch (e) {
-	                    console.log('计划内刷新失败:', e);
-	                }
-	            }, 1500); // 防抖：避免 OKX 高频推送导致反复重算
-	        }
-	        
-	        function startOkxWebSocket() {
-	            // 若已连接/正在连接，直接返回
-	            if (okxWs && (okxWs.readyState === WebSocket.OPEN || okxWs.readyState === WebSocket.CONNECTING)) return;
-	            
-	            const now = nowMs();
-	            if (now - okxWsLastConnectAttempt < okxWsBackoffMs) return;
-	            okxWsLastConnectAttempt = now;
-	            
-	            try {
-	                okxWs = new WebSocket('wss://ws.okx.com:8443/ws/v5/public');
-	            } catch (e) {
-	                console.log('OKX WebSocket 初始化失败:', e);
-	                okxWs = null;
-	                okxWsBackoffMs = Math.min(30_000, okxWsBackoffMs * 2);
-	                return;
-	            }
-	            
-	            okxWs.onopen = () => {
-	                okxWsBackoffMs = 1000;
-	                apiStatus.okx = true;
-	                const sub = {
-	                    op: 'subscribe',
-	                    args: [
-	                        { channel: 'tickers', instId: 'SOL-USDT' },
-	                        { channel: 'tickers', instId: 'OKB-USDT' }
-	                    ]
-	                };
-	                okxWs.send(JSON.stringify(sub));
-	            };
-	            
-	            okxWs.onmessage = (evt) => {
-	                try {
-	                    const msg = JSON.parse(evt.data);
-	                    if (msg?.event) return;
-	                    const channel = msg?.arg?.channel;
-	                    if (channel !== 'tickers') return;
-	                    
-	                    const instId = msg?.arg?.instId;
-	                    const last = msg?.data?.[0]?.last;
-	                    const price = typeof last === 'string' ? parseFloat(last) : (typeof last === 'number' ? last : NaN);
-	                    if (!instId || !Number.isFinite(price) || price <= 0) return;
-	                    
-	                    const symbol = instId.startsWith('SOL-') ? 'SOL' : instId.startsWith('OKB-') ? 'OKB' : null;
-	                    if (!symbol) return;
-	                    
-	                    okxLivePrices.set(symbol, { price, ts: nowMs() });
-	                    writeCache(CACHE_KEYS.okxSpotPrices, Object.fromEntries(okxLivePrices.entries()));
-	                    scheduleRatesRefresh('okxWsUpdate');
-	                } catch (e) {
-	                    // 忽略解析错误
-	                }
-	            };
-	            
-	            okxWs.onerror = () => {
-	                apiStatus.okx = false;
-	            };
-	            
-	            okxWs.onclose = () => {
-	                apiStatus.okx = false;
-	                okxWs = null;
-	                okxWsBackoffMs = Math.min(30_000, okxWsBackoffMs * 2);
-	                setTimeout(() => startOkxWebSocket(), okxWsBackoffMs);
-	            };
-	        }
-	        
-	        async function getBinancePresetPrices({ forceRefresh = false } = {}) {
-	            const TTL_MS = 30 * 1000; // 30秒
-	            if (!forceRefresh) {
-	                const cached = readCache(CACHE_KEYS.binanceSpotPrices, TTL_MS);
-	                if (cached?.data) return { prices: cached.data, source: 'cache', ts: cached.ts };
-	            }
-	            
-	            const url = 'https://api.binance.com/api/v3/ticker/price?symbols=%5B%22BTCUSDT%22,%22ETHUSDT%22,%22BNBUSDT%22%5D';
-	            const res = await fetchJsonWithTimeout(url, { method: 'GET' }, 8000);
-	            
-	            if (!res.ok) {
-	                const error = new Error(`Binance 请求失败: ${res.status}`);
-	                error.status = res.status;
-	                throw error;
-	            }
-	            
-	            const arr = await res.json();
-	            if (!Array.isArray(arr)) throw new Error('Binance 返回数据异常');
-	            
-	            const out = {};
-	            for (const item of arr) {
-	                const sym = item?.symbol;
-	                const priceStr = item?.price;
-	                const price = typeof priceStr === 'string' ? parseFloat(priceStr) : NaN;
-	                if (sym === 'BTCUSDT') out.BTC = price;
-	                if (sym === 'ETHUSDT') out.ETH = price;
-	                if (sym === 'BNBUSDT') out.BNB = price;
-	            }
-	            
-	            for (const k of ['BTC', 'ETH', 'BNB']) {
-	                if (!Number.isFinite(out[k]) || out[k] <= 0) throw new Error(`Binance 返回数据不完整，缺少 ${k} 价格`);
-	            }
-	            
-	            writeCache(CACHE_KEYS.binanceSpotPrices, out);
-	            return { prices: out, source: 'realtime', ts: nowMs() };
-	        }
-	        
-	        function getOkxPresetPrices({ forceRefresh = false } = {}) {
-	            // OKX WebSocket 价格的“实时”判断窗口更短
-	            const LIVE_MAX_AGE_MS = 15 * 1000; // 15秒内视为实时
-	            
-	            const sol = okxLivePrices.get('SOL');
-	            const okb = okxLivePrices.get('OKB');
-	            const bothLive =
-	                sol && okb &&
-	                (nowMs() - sol.ts <= LIVE_MAX_AGE_MS) &&
-	                (nowMs() - okb.ts <= LIVE_MAX_AGE_MS);
-	            
-	            if (!forceRefresh && bothLive) {
-	                return { prices: { SOL: sol.price, OKB: okb.price }, source: 'realtime', ts: Math.min(sol.ts, okb.ts) };
-	            }
-	            
-	            // 用持久化缓存兜底（即使不是实时，也比“不可用”强）
-	            const cached = readCache(CACHE_KEYS.okxSpotPrices, -1);
-	            if (cached?.data) {
-	                const cachedSol = cached.data?.SOL?.price;
-	                const cachedOkb = cached.data?.OKB?.price;
-	                if (Number.isFinite(cachedSol) && Number.isFinite(cachedOkb)) {
-	                    return { prices: { SOL: cachedSol, OKB: cachedOkb }, source: 'cache', ts: cached.ts };
-	                }
-	            }
-	            
-	            throw new Error('OKX 价格尚未就绪（WebSocket 未连接或未收到数据）');
-	        }
-	        
-	        async function getPresetCryptoPrices({ forceRefresh = false } = {}) {
-	            const TTL_MS = 30 * 1000; // 30秒：组合价格缓存
-	            if (!forceRefresh) {
-	                const cached = readCache(CACHE_KEYS.presetCryptoPrices, TTL_MS);
-	                if (cached?.data) return { prices: cached.data, source: 'cache', ts: cached.ts };
-	            }
-	            
-	            // 确保 OKX WS 在后台启动（不会阻塞）
-	            startOkxWebSocket();
-	            
-	            const [binanceRes, okxRes] = await Promise.all([
-	                (async () => {
-	                    try {
-	                        const r = await getBinancePresetPrices({ forceRefresh });
-	                        apiStatus.binance = true;
-	                        return r;
-	                    } catch (e) {
-	                        apiStatus.binance = false;
-	                        throw e;
-	                    }
-	                })(),
-	                (async () => {
-	                    try {
-	                        const r = getOkxPresetPrices({ forceRefresh });
-	                        apiStatus.okx = true;
-	                        return r;
-	                    } catch (e) {
-	                        apiStatus.okx = false;
-	                        throw e;
-	                    }
-	                })()
-	            ]);
-	            
-	            const prices = {
-	                ...binanceRes.prices,
-	                ...okxRes.prices
-	            };
-	            
-	            for (const k of ['BTC', 'ETH', 'BNB', 'SOL', 'OKB']) {
-	                if (!Number.isFinite(prices[k]) || prices[k] <= 0) throw new Error(`预设币种价格不完整，缺少 ${k}`);
-	            }
-	            
-	            writeCache(CACHE_KEYS.presetCryptoPrices, prices);
-	            return { prices, source: 'realtime', ts: nowMs() };
-	        }
+		        // ===== 预设币种实时价格（CoinPaprika）=====
+		        // 说明：使用 CoinPaprika 的 ticker 接口获取 5 个预设主流代币的 USD 实时价格。
+		        const COINPAPRIKA_TICKER_URLS = {
+		            BTC: 'https://api.coinpaprika.com/v1/tickers/btc-bitcoin/',
+		            ETH: 'https://api.coinpaprika.com/v1/tickers/eth-ethereum',
+		            BNB: 'https://api.coinpaprika.com/v1/tickers/bnb-bnb/',
+		            OKB: 'https://api.coinpaprika.com/v1/tickers/okb-okb/',
+		            SOL: 'https://api.coinpaprika.com/v1/tickers/sol-solana/'
+		        };
+		        
+		        async function fetchCoinPaprikaUsdPrice({ symbol, url }) {
+		            const res = await fetchJsonWithTimeout(url, { method: 'GET' }, 8000);
+		            if (!res.ok) {
+		                const error = new Error(`CoinPaprika 请求失败（${symbol}）: ${res.status}`);
+		                error.status = res.status;
+		                throw error;
+		            }
+		            
+		            const data = await res.json();
+		            const priceRaw = data?.quotes?.USD?.price;
+		            const price = typeof priceRaw === 'number' ? priceRaw : parseFloat(priceRaw);
+		            if (!Number.isFinite(price) || price <= 0) {
+		                throw new Error(`CoinPaprika 返回数据异常，缺少 ${symbol} USD 价格`);
+		            }
+		            return price;
+		        }
+		        
+		        async function getPresetCryptoPrices({ forceRefresh = false } = {}) {
+		            const TTL_MS = 30 * 1000; // 30秒：组合价格缓存
+		            if (!forceRefresh) {
+		                const cached = readCache(CACHE_KEYS.presetCryptoPrices, TTL_MS);
+		                if (cached?.data) return { prices: cached.data, source: 'cache', ts: cached.ts };
+		            }
+		            
+		            const entries = await Promise.all(
+		                Object.entries(COINPAPRIKA_TICKER_URLS).map(async ([symbol, url]) => {
+		                    const price = await fetchCoinPaprikaUsdPrice({ symbol, url });
+		                    return [symbol, price];
+		                })
+		            );
+		            const prices = Object.fromEntries(entries);
+		            
+		            for (const k of ['BTC', 'ETH', 'BNB', 'SOL', 'OKB']) {
+		                if (!Number.isFinite(prices[k]) || prices[k] <= 0) throw new Error(`预设币种价格不完整，缺少 ${k}`);
+		            }
+		            
+		            writeCache(CACHE_KEYS.presetCryptoPrices, prices);
+		            return { prices, source: 'realtime', ts: nowMs() };
+		        }
 	        
 	        async function getFiatRates({ forceRefresh = false } = {}) {
 	            const TTL_MS = 6 * 60 * 60 * 1000; // 6小时：法币汇率更新没那么频繁
@@ -1220,7 +1068,7 @@ window.addEventListener('resize', () => {
             e.preventDefault();
             deferredPrompt = e;
             // 显示添加到主屏幕按钮
-            addToHomeBtn.style.display = 'block';
+            addToHomeBtn.style.display = 'inline-flex';
         });
         
         // 点击添加到主屏幕按钮
@@ -1441,21 +1289,20 @@ window.addEventListener('resize', () => {
         // 初始化按钮显示（所有设备都显示）
         setTimeout(() => {
             if (addToHomeBtn) {
-                addToHomeBtn.style.display = 'block';
+                addToHomeBtn.style.display = 'inline-flex';
                 console.log('添加到主屏幕按钮已显示');
             }
         }, 500);
         
-        // API状态跟踪
-	        let apiStatus = {
-	            preset: true,
-	            binance: true,
-	            okx: true,
-	            exchangerate: true,
-	            coingecko: true, // 仅用于“自定义代币”相关功能（搜索/价格）
-	            rateLimited: false,
-	            backoffUntil: 0
-	        };
+	        // API状态跟踪
+		        let apiStatus = {
+		            preset: true,
+		            coinpaprika: true,
+		            exchangerate: true,
+		            coingecko: true, // 仅用于“自定义代币”相关功能（搜索/价格）
+		            rateLimited: false,
+		            backoffUntil: 0
+		        };
 
 	        // 更新API状态显示
 	        function updateApiStatusDisplay(isRealTime, errorMessage) {
@@ -1508,18 +1355,20 @@ window.addEventListener('resize', () => {
 	                const [{ prices: cryptoPrices, source: cryptoSource, ts: cryptoTs }, { fiatData, source: fiatSource, ts: fiatTs }] =
 	                    await Promise.all([
 		                        (async () => {
-		                            try {
-		                                const r = await getPresetCryptoPrices({ forceRefresh });
-		                                apiStatus.preset = true;
-		                                apiStatus.rateLimited = false;
-		                                return r;
-		                            } catch (e) {
-		                                console.warn('预设币种价格获取失败，尝试使用缓存:', e);
-		                                apiStatus.preset = false;
-		                                if (e?.status === 429) {
-		                                    apiStatus.rateLimited = true;
-		                                    apiStatus.backoffUntil = nowMs() + 10 * 60 * 1000; // 10分钟退避
-		                                }
+			                            try {
+			                                const r = await getPresetCryptoPrices({ forceRefresh });
+			                                apiStatus.preset = true;
+			                                apiStatus.coinpaprika = true;
+			                                apiStatus.rateLimited = false;
+			                                return r;
+			                            } catch (e) {
+			                                console.warn('预设币种价格获取失败，尝试使用缓存:', e);
+			                                apiStatus.preset = false;
+			                                apiStatus.coinpaprika = false;
+			                                if (e?.status === 429) {
+			                                    apiStatus.rateLimited = true;
+			                                    apiStatus.backoffUntil = nowMs() + 10 * 60 * 1000; // 10分钟退避
+			                                }
 	                                const stale = readCache(CACHE_KEYS.presetCryptoPrices, -1);
 	                                if (stale?.data) return { prices: stale.data, source: 'stale-cache', ts: stale.ts };
 	                                throw e;
@@ -1658,10 +1507,10 @@ window.addEventListener('resize', () => {
 	                console.log('汇率加载成功:', rates);
 	                
 	                const parts = [];
-	                if (cryptoSource === 'realtime') parts.push('预设币种（Binance + OKX 实时）');
-	                else if (cryptoSource === 'cache') parts.push(`预设币种（Binance + OKX 缓存 ${formatAge(cryptoTs)}）`);
-	                else if (cryptoSource === 'stale-cache') parts.push(`预设币种（Binance + OKX 旧缓存 ${formatAge(cryptoTs)}）`);
-	                else parts.push(`预设币种（未知来源 ${cryptoSource || 'unknown'}）`);
+		                if (cryptoSource === 'realtime') parts.push('预设币种（CoinPaprika 实时）');
+		                else if (cryptoSource === 'cache') parts.push(`预设币种（CoinPaprika 缓存 ${formatAge(cryptoTs)}）`);
+		                else if (cryptoSource === 'stale-cache') parts.push(`预设币种（CoinPaprika 旧缓存 ${formatAge(cryptoTs)}）`);
+		                else parts.push(`预设币种（未知来源 ${cryptoSource || 'unknown'}）`);
 	                
 		                if (fiatSource === 'realtime') parts.push('ExchangeRate 实时');
 		                else if (fiatSource === 'cache') parts.push(`ExchangeRate 缓存（${formatAge(fiatTs)}）`);
@@ -1695,7 +1544,7 @@ window.addEventListener('resize', () => {
 	                } else if (!apiStatus.preset && !apiStatus.exchangerate) {
 	                    errorMessage = '汇率服务暂时不可用（预设币价与法币汇率均失败）';
 	                } else if (!apiStatus.preset) {
-	                    errorMessage = '预设币种价格服务暂时不可用（Binance/OKX）';
+	                    errorMessage = '预设币种价格服务暂时不可用（CoinPaprika）';
 	                } else if (!apiStatus.exchangerate) {
 	                    errorMessage = 'ExchangeRate 法币汇率服务暂时不可用';
 	                } else {
@@ -1737,10 +1586,7 @@ window.addEventListener('resize', () => {
 	            console.log('🚀 开始初始化应用...');
 
 	            checkLocalStorage();
-	            
-	            // 尽早启动 OKX WebSocket（用于 SOL/OKB 实时价格）
-	            startOkxWebSocket();
-
+		            
 		            // 先设置事件监听器
 		            setupBasicEventListeners();
 		            setupShareImageModalListeners();

@@ -383,7 +383,7 @@
         
 	        .social-links {
 	            display: grid;
-	            grid-template-columns: 1fr auto 1fr;
+	            grid-template-columns: auto 1fr auto;
 	            align-items: center;
 	            gap: 12px;
 	            margin-top: 35px;
@@ -392,9 +392,12 @@
 
 	        .social-actions {
 	            display: flex;
-	            justify-content: flex-end;
+	            justify-content: flex-start;
 	            gap: 10px;
 	            align-items: center;
+	            grid-column: 1;
+	            grid-row: 1;
+	            justify-self: start;
 	        }
 
 	        .api-status {
@@ -409,8 +412,12 @@
 
 	        .share-center {
 	            display: flex;
-	            justify-content: center;
+	            justify-content: flex-end;
 	            gap: 10px;
+	            grid-column: 3;
+	            grid-row: 1;
+	            justify-self: end;
+	            align-items: center;
 	        }
 
 	        /* 主页底部按钮 SVG 统一纯黑（与标题一致） */
@@ -421,6 +428,11 @@
 	        .social-actions .author,
 	        .social-actions .add-to-home-btn {
 	            color: #000000;
+	            display: inline-flex;
+	            align-items: center;
+	            justify-content: center;
+	            width: 36px;
+	            height: 36px;
 	        }
 
 	        .social-actions svg {
@@ -435,7 +447,7 @@
 	            box-sizing: border-box;
 	            flex: 0 0 100px;
 	            font-size: 14px;
-	            padding: 8px 18px;
+	            padding: 0 14px;
 	            width: 100px;
 	            min-width: 0;
 	            border: 1px solid var(--border);
@@ -450,6 +462,7 @@
 	            overflow: hidden;
 	            text-overflow: ellipsis;
 	            line-height: 1;
+	            height: 36px;
 	            -webkit-appearance: none;
 	            appearance: none;
 	        }
@@ -521,18 +534,19 @@
                 font-size: 0.7em;
             }
             
-	            .social-links {
-	                margin-top: 30px;
-	                margin-bottom: 0px;
-	                gap: 10px;
-	            }
+		            .social-links {
+		                margin-top: 30px;
+		                margin-bottom: 0px;
+		                gap: 10px;
+		            }
 
-	            .share-btn {
-	                font-size: 13px;
-	                padding: 10px 12px;
-	                width: 100px;
-	                flex: 0 0 100px;
-	            }
+		            .share-btn {
+		                font-size: 13px;
+		                padding: 0 12px;
+		                width: 100px;
+		                flex: 0 0 100px;
+		                height: 36px;
+		            }
             
 		            .field {
 		                margin: 15px 0;
@@ -592,12 +606,13 @@
 	                gap: 8px;
 	            }
 
-	            .share-btn {
-	                font-size: 12px;
-	                padding: 9px 10px;
-	                width: 100px;
-	                flex: 0 0 100px;
-	            }
+		            .share-btn {
+		                font-size: 12px;
+		                padding: 0 10px;
+		                width: 100px;
+		                flex: 0 0 100px;
+		                height: 36px;
+		            }
             
 		            .field {
 		                margin: 10px 0;
