@@ -456,13 +456,16 @@
 	                    const mapped = (typeof currencyLogos !== 'undefined') ? currencyLogos[value] : null;
 	                    if (mapped) {
 	                        label = mapped.text || value;
-	                        // 分享图：加密货币不展示 Logo；非加密按原来的 emoji 展示
+	                        // 分享图：加密货币不展示 Logo；非加密可展示 emoji / 图片
 	                        if (presetCryptoSet.has(value)) {
 	                            logoType = 'none';
 	                            logo = '';
-	                        } else if (mapped.type === 'emoji') {
+	                        } else if (mapped.type === 'image' && mapped.logo) {
+	                            logoType = 'image';
+	                            logo = mapped.logo;
+	                        } else if (mapped.type === 'emoji' && mapped.logo) {
 	                            logoType = 'emoji';
-	                            logo = mapped.logo || '';
+	                            logo = mapped.logo;
 	                        } else {
 	                            logoType = 'none';
 	                            logo = '';
@@ -543,7 +546,12 @@
 	        function drawInlineLogo(ctx, { x, y, size, logoType, logo, bitmap }) {
 	            ctx.save();
 	            if (logoType === 'image' && bitmap) {
-	                ctx.drawImage(bitmap, x - size / 2, y - size / 2, size, size);
+	                const r = size / 2;
+	                ctx.beginPath();
+	                ctx.arc(x, y, r, 0, Math.PI * 2);
+	                ctx.closePath();
+	                ctx.clip();
+	                ctx.drawImage(bitmap, x - r, y - r, size, size);
 	            } else if (logoType === 'emoji' && logo) {
 	                ctx.font = `400 ${Math.floor(size * 0.9)}px "PingFang SC"`;
 	                ctx.textAlign = 'center';
@@ -552,12 +560,55 @@
 	            }
 	            ctx.restore();
 	        }
+
+	        async function preloadShareLogoBitmaps(rows) {
+	            const sources = Array.from(
+	                new Set(
+	                    rows
+	                        .filter((row) => row.logoType === 'image' && row.logo)
+	                        .map((row) => row.logo)
+	                )
+	            );
+	            const bitmaps = new Map();
+	            await Promise.all(
+	                sources.map(async (src) => {
+	                    try {
+	                        const res = await fetch(src, { mode: 'cors', credentials: 'same-origin' });
+	                        if (!res.ok) throw new Error(`logo fetch failed: ${res.status}`);
+	                        const blob = await res.blob();
+	                        await new Promise((resolve) => {
+	                            const img = new Image();
+	                            const objectUrl = URL.createObjectURL(blob);
+	                            img.onload = () => {
+	                                URL.revokeObjectURL(objectUrl);
+	                                bitmaps.set(src, img);
+	                                resolve();
+	                            };
+	                            img.onerror = () => {
+	                                URL.revokeObjectURL(objectUrl);
+	                                bitmaps.set(src, null);
+	                                resolve();
+	                            };
+	                            img.src = objectUrl;
+	                        });
+	                    } catch (e) {
+	                        bitmaps.set(src, null);
+	                    }
+	                })
+	            );
+	            return bitmaps;
+	        }
         
 	        async function generateSharePngBlob() {
 	            const rows = getShareRows();
 	            if (rows.length === 0) {
 	                throw new Error('没有可分享的换算结果（请先输入任意金额）');
 	            }
+	            const logoBitmaps = await preloadShareLogoBitmaps(rows);
+	            const rowsForShare = rows.map((row) => ({
+	                ...row,
+	                bitmap: row.logoType === 'image' ? (logoBitmaps.get(row.logo) || null) : null
+	            }));
 
 			            // 横向分享图（landscape）
 			            const BASE_W = 1350;
@@ -591,7 +642,7 @@
 				                basePillH * SOURCE_ROW_SCALE,
 				                Math.round(primaryAmountFontSizeForLayout * 1.05 + primaryTickerFontSizeForLayout * 1.05 + 28)
 				            );
-						            const maxRows = Math.min(6, rows.length);
+						            const maxRows = Math.min(6, rowsForShare.length);
 					            const colGap = Math.round(56 * marginScale);
 					            const baseTotalInnerW = BASE_W - pad * 2 - sideInset * 2;
 					            const minLeftColW = 420;
@@ -600,7 +651,7 @@
 					            const rightColWBase = Math.max(minRightColW, baseTotalInnerW - colGap - leftColWBase);
 
 					            // 动态增宽：当主体/副体出现大位数数字时，图片宽度随之变宽以保证完整显示
-					            const chainForMeasure = rows.slice(0, maxRows);
+					            const chainForMeasure = rowsForShare.slice(0, maxRows);
 					            const primaryForMeasure = chainForMeasure[0];
 					            const secondaryForMeasure = chainForMeasure.slice(1);
 
@@ -735,7 +786,7 @@
 				            const leftX = titleX;
 				            const rightX = titleRightX - rightColW;
 			            // 顺序：严格保持与 UI 显示一致（1→6）
-			            const chain = rows.slice(0, maxRows);
+			            const chain = rowsForShare.slice(0, maxRows);
 			            const primaryRow = chain[0];
 			            const secondaryRows = chain.slice(1);
 			            // baseLineH/basePillH/SOURCE_ROW_SCALE 已在上方用于动态高度计算
@@ -763,8 +814,23 @@
 					                const iconGap = 12 * scale;
 					                const textStartX = x + padX;
 					                const textY = yMid + (12 * scale) + (showPrefix ? 0 : Math.round(pillH * 0.2)); // 主体行下移 20%
-				                const shouldDrawLogo = !row.isCrypto;
+				                const hasInlineLogo = row.logoType === 'emoji'
+				                    ? !!row.logo
+				                    : row.logoType === 'image'
+				                        ? !!row.bitmap
+				                        : false;
+				                const shouldDrawLogo = !row.isCrypto && hasInlineLogo;
 				                const prefix = showPrefix ? '约等于 ≈' : '';
+				                const getTextCenterOffset = (fontSize, text) => {
+				                    const metrics = ctx.measureText(text || 'Hg');
+				                    const ascent = Number.isFinite(metrics.actualBoundingBoxAscent)
+				                        ? metrics.actualBoundingBoxAscent
+				                        : fontSize * 0.8;
+				                    const descent = Number.isFinite(metrics.actualBoundingBoxDescent)
+				                        ? metrics.actualBoundingBoxDescent
+				                        : fontSize * 0.2;
+				                    return (ascent - descent) / 2;
+				                };
 				                
 				                ctx.textAlign = 'left';
 				                ctx.textBaseline = 'alphabetic';
@@ -801,39 +867,40 @@
 					                if (!showPrefix) {
 					                    const unitY = textY + Math.round(amountFontSize * 0.92);
 					                    let unitCursorX = textStartX;
+					                    const nextCursorX = shouldDrawLogo ? (unitCursorX + iconSize + iconGap) : unitCursorX;
+					                    const tickerMaxW = Math.max(120, (x + w - padX) - nextCursorX);
+					                    const ticker = ellipsize(tickerLabel, tickerMaxW);
 					                    if (shouldDrawLogo) {
 					                        const iconCx = unitCursorX + iconSize / 2;
-					                        const iconCy = unitY - Math.round(iconSize * 0.1);
+					                        const iconCy = unitY - getTextCenterOffset(tickerFontSize, ticker);
 					                        drawInlineLogo(ctx, {
 					                            x: iconCx,
 					                            y: iconCy,
 					                            size: iconSize,
 					                            logoType: row.logoType,
 					                            logo: row.logo,
-					                            bitmap: null
+					                            bitmap: row.bitmap
 					                        });
-					                        unitCursorX += iconSize + iconGap;
+					                        unitCursorX = nextCursorX;
 					                    }
-					                    const tickerMaxW = Math.max(120, (x + w - padX) - unitCursorX);
-					                    const ticker = ellipsize(tickerLabel, tickerMaxW);
 					                    ctx.fillText(ticker, unitCursorX, unitY);
 					                } else {
+					                    const nextCursorX = shouldDrawLogo ? (cursorX + iconSize + iconGap) : cursorX;
+					                    const tickerMaxW = Math.max(120, (x + w - padX) - nextCursorX);
+					                    const ticker = ellipsize(tickerLabel, tickerMaxW);
 					                    if (shouldDrawLogo) {
 					                        const iconCx = cursorX + iconSize / 2;
-					                        const iconCy = yMid;
+					                        const iconCy = textY - getTextCenterOffset(tickerFontSize, ticker);
 					                        drawInlineLogo(ctx, {
 					                            x: iconCx,
 					                            y: iconCy,
 					                            size: iconSize,
 					                            logoType: row.logoType,
 					                            logo: row.logo,
-					                            bitmap: null
+					                            bitmap: row.bitmap
 					                        });
-					                        cursorX += iconSize + iconGap;
+					                        cursorX = nextCursorX;
 					                    }
-
-					                    const tickerMaxW = Math.max(120, (x + w - padX) - cursorX);
-					                    const ticker = ellipsize(tickerLabel, tickerMaxW);
 					                    ctx.fillText(ticker, cursorX, textY);
 					                }
 					            }
@@ -1396,16 +1463,15 @@ window.addEventListener('resize', () => {
 	                
 	                const currencies = ['CNY', 'JPY', 'KRW', 'SGD', 'AED', 'HKD', 'MYR', 'TWD'];
 	                const cryptos = ['BTC', 'ETH', 'SOL', 'BNB', 'OKB'];
-	                const products = ['ZHUJIAO', 'KFC', 'IN11', 'IPHONE17', 'FERRARI', 'PORSCHE', 'XIAOMISU7', 'ROLEX', 'MACBOOK'];
+                const products = ['ZHUJIAO', 'KFC', 'IN11', 'IPHONE17', 'FERRARI_SF90', 'PATEK', 'XIAOXIAO_HOME', 'MACBOOK'];
 	                const productPrices = { 
 	                    ZHUJIAO: 20 / fiatData.rates.CNY,       // 20 CNY 转换为 USD
 	                    KFC: 50 / fiatData.rates.CNY,           // 50 CNY 转换为 USD
 	                    IN11: 3000 / fiatData.rates.CNY,        // 3000 CNY 转换为 USD
                     IPHONE17: 799,                          // 799 USD
-                    FERRARI: 1750000 / fiatData.rates.CNY,  // 1,750,000 CNY 转换为 USD
-                    PORSCHE: 550000 / fiatData.rates.CNY,   // 550,000 CNY 转换为 USD
-                    XIAOMISU7: 215900 / fiatData.rates.CNY, // 215,900 CNY 转换为 USD
-                    ROLEX: 56500 / fiatData.rates.CNY,      // 56,500 CNY 转换为 USD
+                    FERRARI_SF90: 8500000 / fiatData.rates.CNY, // 8,500,000 CNY 转换为 USD
+                    PATEK: 1200000 / fiatData.rates.CNY,    // 1,200,000 CNY 转换为 USD
+                    XIAOXIAO_HOME: 74540000 / fiatData.rates.CNY, // 74,540,000 CNY 转换为 USD
                     MACBOOK: 999                            // 999 USD
                 };
                 
@@ -1854,10 +1920,9 @@ window.addEventListener('resize', () => {
             'IN11': { logo: '💃', text: 'in11 嫩模', type: 'emoji' },
             'IPHONE17': { logo: '📱', text: 'iPhone17', type: 'emoji' },
             'MACBOOK': { logo: '💻', text: 'MacBook Air', type: 'emoji' },
-            'ROLEX': { logo: '⌚', text: '劳力士', type: 'emoji' },
-            'XIAOMISU7': { logo: '🏎️', text: 'Xiaomi Su7', type: 'emoji' },
-            'PORSCHE': { logo: '🏎️', text: 'Porsche 718', type: 'emoji' },
-            'FERRARI': { logo: '🏎️', text: 'Ferrari Roma', type: 'emoji' }
+            'PATEK': { logo: 'assets/logos/enheng-patek.png', text: '嗯哼的百达斐丽', type: 'image' },
+            'XIAOXIAO_HOME': { logo: 'assets/logos/xiaoxia-home.png', text: '小侠的新房', type: 'image' },
+            'FERRARI_SF90': { logo: 'assets/logos/0xsun-ferrari.png', text: '0xSun 的法拉利', type: 'image' }
         };
 
 	        // 更新下拉菜单的外部显示

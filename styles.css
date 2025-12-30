@@ -7,7 +7,7 @@
 		            --border: #d2d2d7;
 		            --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
 		            --focus: rgba(0, 0, 0, 0.18);
-		            --unit-select-width: 240px;
+		            --unit-select-width: 260px;
 		        }
 	        
 	        body {
@@ -314,7 +314,7 @@
 		        }
         
 		        input {
-            width: 220px;
+            width: 200px;
             padding: 15px 20px;
             font-size: 16px;
 	            border: 1px solid var(--border);
@@ -556,7 +556,7 @@
 		            }
 		            
 		            .select-wrapper {
-		                width: 40%;
+		                width: 45%;
 		            }
             
 		            select {
@@ -578,7 +578,7 @@
 	            }
             
             input {
-                width: 55%;
+                width: 50%;
                 padding: 10px 12px;
                 font-size: 16px;
                 text-align: right;
@@ -620,7 +620,7 @@
 		            }
 		            
 		            .select-wrapper {
-		                width: 50%;
+		                width: 55%;
 		            }
             
 		            select {
@@ -641,7 +641,7 @@
 	            }
             
             input {
-                width: 46%;
+                width: 42%;
                 padding: 8px 10px;
                 font-size: 16px;
                 text-align: right;
