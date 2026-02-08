@@ -1647,9 +1647,39 @@ window.addEventListener('resize', () => {
 	            }
 	        }
 
+        // 注册 Service Worker（自动更新缓存，解决 PWA 主屏幕书签无法获取最新版本的问题）
+        function registerServiceWorker() {
+            if (!('serviceWorker' in navigator)) return;
+
+            navigator.serviceWorker.register('./sw.js')
+                .then((reg) => {
+                    console.log('✅ Service Worker 已注册');
+
+                    // 检测到新版本时自动刷新页面
+                    reg.addEventListener('updatefound', () => {
+                        const newWorker = reg.installing;
+                        if (!newWorker) return;
+
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'activated' && navigator.serviceWorker.controller) {
+                                // 新版本已激活且当前页面有旧 controller → 说明是一次更新
+                                console.log('🔄 检测到新版本，即将刷新页面...');
+                                window.location.reload();
+                            }
+                        });
+                    });
+                })
+                .catch((err) => {
+                    console.warn('Service Worker 注册失败:', err);
+                });
+        }
+
         // 初始化函数
 	        function initApp() {
 	            console.log('🚀 开始初始化应用...');
+
+                // 注册 Service Worker
+                registerServiceWorker();
 
 	            checkLocalStorage();
 		            
