@@ -1656,6 +1656,9 @@ window.addEventListener('resize', () => {
 		            // 先设置事件监听器
 		            setupBasicEventListeners();
 		            setupShareImageModalListeners();
+
+		            // 初始化移动端自定义键盘（须在 setupBasicEventListeners 之后）
+		            initMobileKeyboard();
 		            
 		            // 初始化自定义下拉（替代系统下拉菜单）
 		            for (let i = 1; i <= 6; i++) {
@@ -3054,6 +3057,180 @@ function positionDropdownMenu(dropdown) {
                 
                 input.hasSearchListener = true;
             }
+        }
+
+        // ===== 移动端内嵌键盘（页面 UI 的一部分，仅手机端显示）=====
+        let mobileKeyboardEl = null;
+        let mobileKbActiveInput = null;   // 当前活跃的 amount 输入框元素
+        let mobileKbActiveIndex = null;   // 当前活跃的栏位编号 (1~6)
+
+        /**
+         * 构建键盘 DOM 并插入 .container 底部
+         * 布局：5 行 × 4 列，与页面其他元素风格统一
+         */
+        function buildMobileKeyboard() {
+            if (mobileKeyboardEl) return;
+
+            const container = document.querySelector('.container');
+            if (!container) return;
+
+            const kb = document.createElement('div');
+            kb.className = 'mobile-keyboard';
+            kb.id = 'mobileKeyboard';
+
+            // 键盘布局定义
+            const rows = [
+                [
+                    { label: 'C', value: 'clear', cls: 'action' },
+                    { label: '', value: 'backspace', cls: 'action', isSvg: true },
+                    { label: '×', value: '*', cls: 'operator' },
+                    { label: '÷', value: '/', cls: 'operator' },
+                ],
+                [
+                    { label: '7', value: '7' },
+                    { label: '8', value: '8' },
+                    { label: '9', value: '9' },
+                    { label: '−', value: '-', cls: 'operator' },
+                ],
+                [
+                    { label: '4', value: '4' },
+                    { label: '5', value: '5' },
+                    { label: '6', value: '6' },
+                    { label: '+', value: '+', cls: 'operator' },
+                ],
+                [
+                    { label: '1', value: '1' },
+                    { label: '2', value: '2' },
+                    { label: '3', value: '3' },
+                    { label: '.', value: '.' },
+                ],
+                [
+                    { label: '0', value: '0', wide: true },
+                    { label: '00', value: '00', wide: true },
+                ],
+            ];
+
+            rows.forEach((row) => {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'kb-row';
+
+                row.forEach((key) => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'kb-key' + (key.cls ? ` ${key.cls}` : '');
+                    btn.setAttribute('data-value', key.value);
+                    if (key.wide) btn.classList.add('wide');
+
+                    if (key.isSvg) {
+                        // 退格图标
+                        btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/><line x1="18" y1="9" x2="12" y2="15"/><line x1="12" y1="9" x2="18" y2="15"/></svg>';
+                    } else {
+                        btn.textContent = key.label;
+                    }
+
+                    // 触屏：touchstart 阻止系统键盘弹出，touchend 执行按键逻辑
+                    let touched = false;
+                    btn.addEventListener('touchstart', (e) => {
+                        e.preventDefault();
+                        touched = true;
+                    }, { passive: false });
+
+                    btn.addEventListener('touchend', (e) => {
+                        e.preventDefault();
+                        if (touched) {
+                            touched = false;
+                            handleMobileKeyPress(key.value);
+                        }
+                    }, { passive: false });
+
+                    // 桌面端后备（鼠标点击）
+                    btn.addEventListener('click', (e) => {
+                        if (touched) return; // 避免触屏设备重复触发
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleMobileKeyPress(key.value);
+                    });
+
+                    rowDiv.appendChild(btn);
+                });
+
+                kb.appendChild(rowDiv);
+            });
+
+            // 插入到 .container 末尾，成为页面的一部分
+            container.appendChild(kb);
+            mobileKeyboardEl = kb;
+        }
+
+        /** 切换当前活跃的输入框 */
+        function setActiveKbInput(inputIndex) {
+            // 移除上一个输入框的高亮
+            if (mobileKbActiveInput) {
+                mobileKbActiveInput.classList.remove('kb-active-input');
+            }
+
+            mobileKbActiveIndex = inputIndex;
+            mobileKbActiveInput = document.getElementById(`amount${inputIndex}`);
+
+            if (mobileKbActiveInput) {
+                mobileKbActiveInput.classList.add('kb-active-input');
+            }
+        }
+
+        /** 处理键盘按键 */
+        function handleMobileKeyPress(value) {
+            if (!mobileKbActiveInput) {
+                // 如果没有活跃输入框，默认激活第一个
+                setActiveKbInput(1);
+            }
+
+            const input = mobileKbActiveInput;
+            if (!input) return;
+
+            switch (value) {
+                case 'clear':
+                    input.value = '';
+                    break;
+
+                case 'backspace':
+                    input.value = input.value.slice(0, -1);
+                    break;
+
+                default:
+                    // 追加字符（数字、运算符、小数点、00）
+                    input.value += value;
+                    break;
+            }
+
+            // 触发 input 事件，激活已有的格式化、换算、保存逻辑
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+
+        /** 初始化移动端键盘（仅手机端执行） */
+        function initMobileKeyboard() {
+            if (!isMobileDevice()) return;
+
+            buildMobileKeyboard();
+
+            // 移动端：将 amount 输入框设为 readonly，阻止系统键盘弹出
+            for (let i = 1; i <= 6; i++) {
+                const input = document.getElementById(`amount${i}`);
+                if (!input) continue;
+
+                input.setAttribute('readonly', 'readonly');
+                input.setAttribute('inputmode', 'none');
+
+                // 点击输入框时切换为当前活跃目标
+                input.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    setActiveKbInput(i);
+                });
+            }
+
+            // 默认激活第一个输入框
+            setActiveKbInput(1);
+
+            console.log('📱 移动端内嵌键盘已初始化');
         }
         
     
