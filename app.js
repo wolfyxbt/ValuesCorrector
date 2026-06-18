@@ -10,11 +10,11 @@
         // logoType: 'image' | 'emoji'
         const ASSET_CONFIG = [
             // 加密货币
-            { symbol: 'BTC', category: 'crypto', text: 'BTC', logoType: 'image', logo: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png' },
-            { symbol: 'ETH', category: 'crypto', text: 'ETH', logoType: 'image', logo: 'https://assets.coingecko.com/coins/images/279/large/ethereum.png' },
-            { symbol: 'SOL', category: 'crypto', text: 'SOL', logoType: 'image', logo: 'https://assets.coingecko.com/coins/images/4128/large/solana.png' },
-            { symbol: 'BNB', category: 'crypto', text: 'BNB', logoType: 'image', logo: 'https://assets.coingecko.com/coins/images/825/large/bnb-icon2_2x.png' },
-            { symbol: 'OKB', category: 'crypto', text: 'OKB', logoType: 'image', logo: 'https://assets.coingecko.com/coins/images/4463/large/WeChat_Image_20220118095654.png' },
+            { symbol: 'BTC', category: 'crypto', text: 'BTC', logoType: 'image', logo: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png', emoji: '🟠' },
+            { symbol: 'ETH', category: 'crypto', text: 'ETH', logoType: 'image', logo: 'https://assets.coingecko.com/coins/images/279/large/ethereum.png', emoji: '♦️' },
+            { symbol: 'SOL', category: 'crypto', text: 'SOL', logoType: 'image', logo: 'https://assets.coingecko.com/coins/images/4128/large/solana.png', emoji: '🟣' },
+            { symbol: 'BNB', category: 'crypto', text: 'BNB', logoType: 'image', logo: 'https://assets.coingecko.com/coins/images/825/large/bnb-icon2_2x.png', emoji: '🟡' },
+            { symbol: 'OKB', category: 'crypto', text: 'OKB', logoType: 'image', logo: 'https://assets.coingecko.com/coins/images/4463/large/WeChat_Image_20220118095654.png', emoji: '⚫' },
             // 法币（USD 为基准货币）
             { symbol: 'USD', category: 'fiat', text: 'USD', logoType: 'emoji', logo: '🇺🇸' },
             { symbol: 'CNY', category: 'fiat', text: 'CNY', logoType: 'emoji', logo: '🇨🇳' },
@@ -26,9 +26,9 @@
             { symbol: 'HKD', category: 'fiat', text: 'HKD', logoType: 'emoji', logo: '🇭🇰' },
             { symbol: 'MYR', category: 'fiat', text: 'MYR', logoType: 'emoji', logo: '🇲🇾' },
             // 实物（priceAmount 为以 priceCurrency 计价的单价）
-            { symbol: 'PATEK', category: 'product', text: '嗯哼的百达斐丽', logoType: 'image', logo: 'assets/logos/enheng-patek.png', priceAmount: 1200000, priceCurrency: 'CNY' },
-            { symbol: 'XIAOXIAO_HOME', category: 'product', text: '小侠的新房', logoType: 'image', logo: 'assets/logos/xiaoxia-home.png', priceAmount: 74540000, priceCurrency: 'CNY' },
-            { symbol: 'FERRARI_SF90', category: 'product', text: '0xSun 的法拉利', logoType: 'image', logo: 'assets/logos/0xsun-ferrari.png', priceAmount: 8500000, priceCurrency: 'CNY' },
+            { symbol: 'PATEK', category: 'product', text: '嗯哼的百达斐丽', logoType: 'image', logo: 'assets/logos/enheng-patek.png', emoji: '⌚', priceAmount: 1200000, priceCurrency: 'CNY' },
+            { symbol: 'XIAOXIAO_HOME', category: 'product', text: '小侠的新房', logoType: 'image', logo: 'assets/logos/xiaoxia-home.png', emoji: '🏠', priceAmount: 74540000, priceCurrency: 'CNY' },
+            { symbol: 'FERRARI_SF90', category: 'product', text: '0xSun 的法拉利', logoType: 'image', logo: 'assets/logos/0xsun-ferrari.png', emoji: '🏎️', priceAmount: 8500000, priceCurrency: 'CNY' },
             { symbol: 'ZHUJIAO', category: 'product', text: '猪脚饭', logoType: 'emoji', logo: '🍚', priceAmount: 20, priceCurrency: 'CNY' },
             { symbol: 'KFC', category: 'product', text: 'KFC', logoType: 'emoji', logo: '🍗', priceAmount: 50, priceCurrency: 'CNY' },
             { symbol: 'IN11', category: 'product', text: 'in11 嫩模', logoType: 'emoji', logo: '💃', priceAmount: 3000, priceCurrency: 'CNY' },
@@ -53,6 +53,82 @@
             const b = usdPrices[to];
             if (!Number.isFinite(a) || !Number.isFinite(b) || b <= 0) return null;
             return a / b;
+        }
+
+        // ===== 换算栏位生成（6 个栏位由配置动态生成，HTML 只保留容器）=====
+        const FIELD_COUNT = 6;
+        // 每个栏位的默认币种（按顺序对应 currency1~currency6）
+        const DEFAULT_CURRENCIES = ['BTC', 'ETH', 'SOL', 'USD', 'CNY', 'HKD'];
+        // 下拉分组（顺序与原 HTML 一致）；加密货币组末尾追加“自定义代币”入口
+        const SELECT_GROUPS = [
+            { label: '加密货币', category: 'crypto', appendCustom: true },
+            { label: '法币', category: 'fiat' },
+            { label: '实物', category: 'product' },
+        ];
+
+        // 原生 <option> 文本：emoji 型用其 emoji（即 logo），图片型用单独的 emoji 字段
+        function optionLabelFor(asset) {
+            const emoji = asset.logoType === 'emoji' ? asset.logo : asset.emoji;
+            return emoji ? `${emoji} ${asset.text}` : asset.text;
+        }
+
+        // 用 ASSET_CONFIG 填充单个 <select> 的 optgroup/option
+        function populateCurrencySelect(select, defaultValue) {
+            for (const group of SELECT_GROUPS) {
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = group.label;
+
+                for (const asset of ASSET_CONFIG) {
+                    if (asset.category !== group.category) continue;
+                    const opt = document.createElement('option');
+                    opt.value = asset.symbol;
+                    opt.textContent = optionLabelFor(asset);
+                    if (asset.symbol === defaultValue) opt.selected = true;
+                    optgroup.appendChild(opt);
+                }
+
+                if (group.appendCustom) {
+                    const custom = document.createElement('option');
+                    custom.value = 'CUSTOM';
+                    custom.textContent = '🔍 自定义代币';
+                    optgroup.appendChild(custom);
+                    // 隐藏占位项：用于手机端重复选择“自定义代币”时仍能触发 change
+                    const placeholder = document.createElement('option');
+                    placeholder.value = 'TEMP_CUSTOM_PLACEHOLDER';
+                    placeholder.style.display = 'none';
+                    optgroup.appendChild(placeholder);
+                }
+
+                select.appendChild(optgroup);
+            }
+        }
+
+        // 生成 6 个换算栏位（.field > .select-wrapper > select 与同级 input），插入容器
+        function buildCurrencyFields() {
+            const host = document.getElementById('currencyFields');
+            if (!host || host.childElementCount > 0) return;
+
+            for (let i = 1; i <= FIELD_COUNT; i++) {
+                const field = document.createElement('div');
+                field.className = 'field';
+
+                const wrapper = document.createElement('div');
+                wrapper.className = 'select-wrapper';
+
+                const select = document.createElement('select');
+                select.id = `currency${i}`;
+                populateCurrencySelect(select, DEFAULT_CURRENCIES[i - 1]);
+                wrapper.appendChild(select);
+
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.id = `amount${i}`;
+                input.placeholder = '输入金额';
+
+                field.appendChild(wrapper);
+                field.appendChild(input);
+                host.appendChild(field);
+            }
         }
 
 		        // ===== 数字显示格式化（用于结果展示）=====
@@ -1641,6 +1717,9 @@ window.addEventListener('resize', () => {
         // 初始化函数
 	        function initApp() {
 	            console.log('🚀 开始初始化应用...');
+
+                // 由配置生成 6 个换算栏位（必须最先执行，后续逻辑依赖 currencyN / amountN 元素）
+                buildCurrencyFields();
 
                 // 注册 Service Worker
                 registerServiceWorker();
