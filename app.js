@@ -1,8 +1,59 @@
-		        let rates = {};
+		        let usdPrices = {}; // 各资产相对 USD 的单价表（换算单一数据源；1 单位资产 = ? USD）
 		        let updating = false;
 		        let lastInputField = 1; // 记录最后一次输入数字的栏位
 		        let localStorageAvailable = false;
 		        let loadRatesInFlight = null;
+
+        // ===== 资产配置（集中定义所有可换算的币种 / 法币 / 实物）=====
+        // 新增一项只需在此数组加一行，下面的 currencyLogos、分类列表、汇率换算都会自动派生。
+        // category: 'crypto'（实时价来自 CoinPaprika）| 'fiat'（以 USD 为基准）| 'product'（按 priceAmount + priceCurrency 计价）
+        // logoType: 'image' | 'emoji'
+        const ASSET_CONFIG = [
+            // 加密货币
+            { symbol: 'BTC', category: 'crypto', text: 'BTC', logoType: 'image', logo: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png' },
+            { symbol: 'ETH', category: 'crypto', text: 'ETH', logoType: 'image', logo: 'https://assets.coingecko.com/coins/images/279/large/ethereum.png' },
+            { symbol: 'SOL', category: 'crypto', text: 'SOL', logoType: 'image', logo: 'https://assets.coingecko.com/coins/images/4128/large/solana.png' },
+            { symbol: 'BNB', category: 'crypto', text: 'BNB', logoType: 'image', logo: 'https://assets.coingecko.com/coins/images/825/large/bnb-icon2_2x.png' },
+            { symbol: 'OKB', category: 'crypto', text: 'OKB', logoType: 'image', logo: 'https://assets.coingecko.com/coins/images/4463/large/WeChat_Image_20220118095654.png' },
+            // 法币（USD 为基准货币）
+            { symbol: 'USD', category: 'fiat', text: 'USD', logoType: 'emoji', logo: '🇺🇸' },
+            { symbol: 'CNY', category: 'fiat', text: 'CNY', logoType: 'emoji', logo: '🇨🇳' },
+            { symbol: 'TWD', category: 'fiat', text: 'TWD', logoType: 'emoji', logo: '🇹🇼' },
+            { symbol: 'JPY', category: 'fiat', text: 'JPY', logoType: 'emoji', logo: '🇯🇵' },
+            { symbol: 'KRW', category: 'fiat', text: 'KRW', logoType: 'emoji', logo: '🇰🇷' },
+            { symbol: 'SGD', category: 'fiat', text: 'SGD', logoType: 'emoji', logo: '🇸🇬' },
+            { symbol: 'AED', category: 'fiat', text: 'AED', logoType: 'emoji', logo: '🇦🇪' },
+            { symbol: 'HKD', category: 'fiat', text: 'HKD', logoType: 'emoji', logo: '🇭🇰' },
+            { symbol: 'MYR', category: 'fiat', text: 'MYR', logoType: 'emoji', logo: '🇲🇾' },
+            // 实物（priceAmount 为以 priceCurrency 计价的单价）
+            { symbol: 'PATEK', category: 'product', text: '嗯哼的百达斐丽', logoType: 'image', logo: 'assets/logos/enheng-patek.png', priceAmount: 1200000, priceCurrency: 'CNY' },
+            { symbol: 'XIAOXIAO_HOME', category: 'product', text: '小侠的新房', logoType: 'image', logo: 'assets/logos/xiaoxia-home.png', priceAmount: 74540000, priceCurrency: 'CNY' },
+            { symbol: 'FERRARI_SF90', category: 'product', text: '0xSun 的法拉利', logoType: 'image', logo: 'assets/logos/0xsun-ferrari.png', priceAmount: 8500000, priceCurrency: 'CNY' },
+            { symbol: 'ZHUJIAO', category: 'product', text: '猪脚饭', logoType: 'emoji', logo: '🍚', priceAmount: 20, priceCurrency: 'CNY' },
+            { symbol: 'KFC', category: 'product', text: 'KFC', logoType: 'emoji', logo: '🍗', priceAmount: 50, priceCurrency: 'CNY' },
+            { symbol: 'IN11', category: 'product', text: 'in11 嫩模', logoType: 'emoji', logo: '💃', priceAmount: 3000, priceCurrency: 'CNY' },
+            { symbol: 'IPHONE17', category: 'product', text: 'iPhone17', logoType: 'emoji', logo: '📱', priceAmount: 799, priceCurrency: 'USD' },
+            { symbol: 'MACBOOK', category: 'product', text: 'MacBook Air', logoType: 'emoji', logo: '💻', priceAmount: 999, priceCurrency: 'USD' },
+        ];
+
+        // 由 ASSET_CONFIG 派生的查询结构（避免在多处重复维护清单）
+        const PRESET_CRYPTO_SYMBOLS = ASSET_CONFIG.filter((a) => a.category === 'crypto').map((a) => a.symbol);
+        const FIAT_SYMBOLS = ASSET_CONFIG.filter((a) => a.category === 'fiat' && a.symbol !== 'USD').map((a) => a.symbol);
+        const PRODUCT_ASSETS = ASSET_CONFIG.filter((a) => a.category === 'product');
+
+        // 所有货币的 logo 和显示文本映射（供下拉菜单 / 分享图使用）
+        const currencyLogos = Object.fromEntries(
+            ASSET_CONFIG.map((a) => [a.symbol, { logo: a.logo, text: a.text, type: a.logoType }])
+        );
+
+        // 换算汇率：from→to = usdPrices[from] / usdPrices[to]
+        function getConversionRate(from, to) {
+            if (from === to) return 1;
+            const a = usdPrices[from];
+            const b = usdPrices[to];
+            if (!Number.isFinite(a) || !Number.isFinite(b) || b <= 0) return null;
+            return a / b;
+        }
 
 		        // ===== 数字显示格式化（用于结果展示）=====
 		        function toPlainDecimalString(num) {
@@ -371,7 +422,7 @@
 		            );
 		            const prices = Object.fromEntries(entries);
 		            
-		            for (const k of ['BTC', 'ETH', 'BNB', 'SOL', 'OKB']) {
+		            for (const k of PRESET_CRYPTO_SYMBOLS) {
 		                if (!Number.isFinite(prices[k]) || prices[k] <= 0) throw new Error(`预设币种价格不完整，缺少 ${k}`);
 		            }
 		            
@@ -1461,116 +1512,29 @@ window.addEventListener('resize', () => {
 	                        })()
 	                    ]);
 	                
-	                const currencies = ['CNY', 'JPY', 'KRW', 'SGD', 'AED', 'HKD', 'MYR', 'TWD'];
-	                const cryptos = ['BTC', 'ETH', 'SOL', 'BNB', 'OKB'];
-                const products = ['ZHUJIAO', 'KFC', 'IN11', 'IPHONE17', 'FERRARI_SF90', 'PATEK', 'XIAOXIAO_HOME', 'MACBOOK'];
-	                const productPrices = { 
-	                    ZHUJIAO: 20 / fiatData.rates.CNY,       // 20 CNY 转换为 USD
-	                    KFC: 50 / fiatData.rates.CNY,           // 50 CNY 转换为 USD
-	                    IN11: 3000 / fiatData.rates.CNY,        // 3000 CNY 转换为 USD
-                    IPHONE17: 799,                          // 799 USD
-                    FERRARI_SF90: 8500000 / fiatData.rates.CNY, // 8,500,000 CNY 转换为 USD
-                    PATEK: 1200000 / fiatData.rates.CNY,    // 1,200,000 CNY 转换为 USD
-                    XIAOXIAO_HOME: 74540000 / fiatData.rates.CNY, // 74,540,000 CNY 转换为 USD
-                    MACBOOK: 999                            // 999 USD
-                };
-                
-                rates = {};
-                
-                // 构建汇率矩阵
-                // 获取自定义代币符号列表
-                const customTokenSymbols = customTokens ? Array.from(customTokens.keys()) : [];
-                const allCurrencies = [...cryptos, ...customTokenSymbols, 'USD', ...currencies, ...products];
-                allCurrencies.forEach(from => {
-                    rates[from] = {};
-                    allCurrencies.forEach(to => {
-                        if (from === to) {
-                            rates[from][to] = 1;
-                        } else if (cryptos.includes(from) && cryptos.includes(to)) {
-                            // 加密货币之间
-                            rates[from][to] = cryptoPrices[from] / cryptoPrices[to];
-                        } else if (cryptos.includes(from) && to === 'USD') {
-                            // 加密货币到美元
-                            rates[from][to] = cryptoPrices[from];
-                        } else if (from === 'USD' && cryptos.includes(to)) {
-                            // 美元到加密货币
-                            rates[from][to] = 1 / cryptoPrices[to];
-                        } else if (cryptos.includes(from) && currencies.includes(to)) {
-                            // 加密货币到其他法币
-                            rates[from][to] = cryptoPrices[from] * fiatData.rates[to];
-                        } else if (currencies.includes(from) && cryptos.includes(to)) {
-                            // 其他法币到加密货币
-                            rates[from][to] = 1 / (cryptoPrices[to] * fiatData.rates[from]);
-                        } else if (customTokens && customTokenSymbols.includes(from) && customTokenSymbols.includes(to)) {
-                            // 自定义代币之间
-                            const fromPrice = customTokens.get(from).price;
-                            const toPrice = customTokens.get(to).price;
-                            rates[from][to] = fromPrice / toPrice;
-                        } else if (customTokens && customTokenSymbols.includes(from) && to === 'USD') {
-                            // 自定义代币到美元
-                            rates[from][to] = customTokens.get(from).price;
-                        } else if (customTokens && from === 'USD' && customTokenSymbols.includes(to)) {
-                            // 美元到自定义代币
-                            rates[from][to] = 1 / customTokens.get(to).price;
-                        } else if (customTokens && customTokenSymbols.includes(from) && cryptos.includes(to)) {
-                            // 自定义代币到预设加密货币
-                            const fromPrice = customTokens.get(from).price;
-                            rates[from][to] = fromPrice / cryptoPrices[to];
-                        } else if (customTokens && cryptos.includes(from) && customTokenSymbols.includes(to)) {
-                            // 预设加密货币到自定义代币
-                            const toPrice = customTokens.get(to).price;
-                            rates[from][to] = cryptoPrices[from] / toPrice;
-                        } else if (customTokens && customTokenSymbols.includes(from) && currencies.includes(to)) {
-                            // 自定义代币到其他法币
-                            const fromPrice = customTokens.get(from).price;
-                            rates[from][to] = fromPrice * fiatData.rates[to];
-                        } else if (customTokens && currencies.includes(from) && customTokenSymbols.includes(to)) {
-                            // 其他法币到自定义代币
-                            const toPrice = customTokens.get(to).price;
-                            rates[from][to] = 1 / (toPrice * fiatData.rates[from]);
-                        } else if (from === 'USD' && currencies.includes(to)) {
-                            // 美元到其他法币
-                            rates[from][to] = fiatData.rates[to];
-                        } else if (currencies.includes(from) && to === 'USD') {
-                            // 其他法币到美元
-                            rates[from][to] = 1 / fiatData.rates[from];
-                        } else if (currencies.includes(from) && currencies.includes(to)) {
-                            // 法币之间
-                            rates[from][to] = fiatData.rates[to] / fiatData.rates[from];
-                        } else if (products.includes(from) && to === 'USD') {
-                            // 产品到美元 (1 iPhone17 = 799 USD)
-                            rates[from][to] = productPrices[from];
-                        } else if (from === 'USD' && products.includes(to)) {
-                            // 美元到产品 (1 USD = 1/799 iPhone17)
-                            rates[from][to] = 1 / productPrices[to];
-                        } else if (products.includes(from) && currencies.includes(to)) {
-                            // 产品到其他法币
-                            rates[from][to] = productPrices[from] * fiatData.rates[to];
-                        } else if (currencies.includes(from) && products.includes(to)) {
-                            // 其他法币到产品
-                            rates[from][to] = 1 / (productPrices[to] * fiatData.rates[from]);
-                        } else if (cryptos.includes(from) && products.includes(to)) {
-                            // 加密货币到产品
-                            rates[from][to] = cryptoPrices[from] / productPrices[to];
-                        } else if (products.includes(from) && cryptos.includes(to)) {
-                            // 产品到加密货币
-                            rates[from][to] = productPrices[from] / cryptoPrices[to];
-                        } else if (customTokens && customTokenSymbols.includes(from) && products.includes(to)) {
-                            // 自定义代币到产品
-                            const fromPrice = customTokens.get(from).price;
-                            rates[from][to] = fromPrice / productPrices[to];
-                        } else if (customTokens && products.includes(from) && customTokenSymbols.includes(to)) {
-                            // 产品到自定义代币
-                            const toPrice = customTokens.get(to).price;
-                            rates[from][to] = productPrices[from] / toPrice;
-                        } else if (products.includes(from) && products.includes(to)) {
-                            // 产品之间
-                            rates[from][to] = productPrices[from] / productPrices[to];
+                // 计算每种资产相对 USD 的单价（单一数据源），换算时按需 from→to 计算
+                usdPrices = { USD: 1 };
+                for (const symbol of PRESET_CRYPTO_SYMBOLS) {
+                    usdPrices[symbol] = cryptoPrices[symbol];
+                }
+                for (const symbol of FIAT_SYMBOLS) {
+                    usdPrices[symbol] = 1 / fiatData.rates[symbol];
+                }
+                for (const asset of PRODUCT_ASSETS) {
+                    usdPrices[asset.symbol] = asset.priceCurrency === 'USD'
+                        ? asset.priceAmount
+                        : asset.priceAmount / fiatData.rates[asset.priceCurrency];
+                }
+                // 自定义代币：直接使用其 USD 价格
+                if (customTokens) {
+                    for (const [symbol, info] of customTokens.entries()) {
+                        if (Number.isFinite(info?.price) && info.price > 0) {
+                            usdPrices[symbol] = info.price;
                         }
-                    });
-	                });
-	                
-	                console.log('汇率加载成功:', rates);
+                    }
+                }
+
+	                console.log('汇率加载成功:', usdPrices);
 	                
 	                const parts = [];
 		                if (cryptoSource === 'realtime') parts.push('预设币种（CoinPaprika 实时）');
@@ -1621,7 +1585,7 @@ window.addEventListener('resize', () => {
 	                updateApiStatusDisplay({ message: '汇率加载失败', color: '#b3261e' });
 	                
 	                // 清空汇率，表示服务不可用
-	                rates = {};
+	                usdPrices = {};
 	            }
 	            })().finally(() => {
 	                loadRatesInFlight = null;
@@ -1858,7 +1822,7 @@ window.addEventListener('resize', () => {
             }
             
             // 检查汇率服务是否可用
-            if (!rates || Object.keys(rates).length === 0) {
+            if (!usdPrices || Object.keys(usdPrices).length === 0) {
                 console.error('汇率服务不可用，无法进行转换');
                 updating = false;
                 return;
@@ -1880,7 +1844,7 @@ window.addEventListener('resize', () => {
             }
             
             console.log('转换参数 - 金额(原始):', sourceAmountRaw, '货币:', sourceCurrency);
-            console.log('rates对象存在:', !!rates, '包含货币数量:', rates ? Object.keys(rates).length : 0);
+            console.log('usdPrices存在:', !!usdPrices, '包含资产数量:', usdPrices ? Object.keys(usdPrices).length : 0);
             
             if (!sourceAmountRaw || sourceAmountRaw === '') {
 		            for (let i = 1; i <= 6; i++) {
@@ -1914,10 +1878,9 @@ window.addEventListener('resize', () => {
                     
                     let result;
                     
-	                    if (sourceCurrency === targetCurrency) {
-	                        result = amount;
-	                    } else if (rates[sourceCurrency] && rates[sourceCurrency][targetCurrency]) {
-	                        result = amount * rates[sourceCurrency][targetCurrency];
+	                    const rate = getConversionRate(sourceCurrency, targetCurrency);
+	                    if (rate != null) {
+	                        result = amount * rate;
 	                    } else {
 	                        result = 0;
 	                    }
@@ -1929,35 +1892,6 @@ window.addEventListener('resize', () => {
             updating = false;
         }
         
-	        // 所有货币的logo和显示文本映射
-	        const currencyLogos = {
-	            // 加密货币 - UI 使用图片 logo（注意：分享图仍使用 emoji，避免 canvas/CORS 问题）
-	            'BTC': { logo: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png', text: 'BTC', type: 'image' },
-	            'ETH': { logo: 'https://assets.coingecko.com/coins/images/279/large/ethereum.png', text: 'ETH', type: 'image' },
-	            'SOL': { logo: 'https://assets.coingecko.com/coins/images/4128/large/solana.png', text: 'SOL', type: 'image' },
-	            'BNB': { logo: 'https://assets.coingecko.com/coins/images/825/large/bnb-icon2_2x.png', text: 'BNB', type: 'image' },
-	            'OKB': { logo: 'https://assets.coingecko.com/coins/images/4463/large/WeChat_Image_20220118095654.png', text: 'OKB', type: 'image' },
-            // 法币 - 使用emoji
-	            'USD': { logo: '🇺🇸', text: 'USD', type: 'emoji' },
-	            'CNY': { logo: '🇨🇳', text: 'CNY', type: 'emoji' },
-	            'TWD': { logo: '🇹🇼', text: 'TWD', type: 'emoji' },
-	            'HKD': { logo: '🇭🇰', text: 'HKD', type: 'emoji' },
-	            'JPY': { logo: '🇯🇵', text: 'JPY', type: 'emoji' },
-	            'KRW': { logo: '🇰🇷', text: 'KRW', type: 'emoji' },
-	            'SGD': { logo: '🇸🇬', text: 'SGD', type: 'emoji' },
-            'AED': { logo: '🇦🇪', text: 'AED', type: 'emoji' },
-            'MYR': { logo: '🇲🇾', text: 'MYR', type: 'emoji' },
-            // 实物 - 使用emoji
-            'ZHUJIAO': { logo: '🍚', text: '猪脚饭', type: 'emoji' },
-            'KFC': { logo: '🍗', text: 'KFC', type: 'emoji' },
-            'IN11': { logo: '💃', text: 'in11 嫩模', type: 'emoji' },
-            'IPHONE17': { logo: '📱', text: 'iPhone17', type: 'emoji' },
-            'MACBOOK': { logo: '💻', text: 'MacBook Air', type: 'emoji' },
-            'PATEK': { logo: 'assets/logos/enheng-patek.png', text: '嗯哼的百达斐丽', type: 'image' },
-            'XIAOXIAO_HOME': { logo: 'assets/logos/xiaoxia-home.png', text: '小侠的新房', type: 'image' },
-            'FERRARI_SF90': { logo: 'assets/logos/0xsun-ferrari.png', text: '0xSun 的法拉利', type: 'image' }
-        };
-
 	        // 更新下拉菜单的外部显示
 	        function updateSelectDisplay(selectElement) {
 	            // 若已启用自定义下拉，改为更新自定义触发器文本，不再使用覆盖层方案
