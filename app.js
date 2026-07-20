@@ -6,6 +6,8 @@
 
         // ===== 资产配置（集中定义所有可换算的币种 / 法币 / 实物）=====
         // 新增一项只需在此数组加一行，下面的 currencyLogos、分类列表、汇率换算都会自动派生。
+        // ⚠️ 例外：新增 crypto 时还必须在 COINPAPRIKA_TICKER_URLS 补上对应的行情接口地址，
+        //    否则 getPresetCryptoPrices 校验会因缺价抛错，导致整个汇率加载失败（所有换算不可用）。
         // category: 'crypto'（实时价来自 CoinPaprika）| 'fiat'（以 USD 为基准）| 'product'（按 priceAmount + priceCurrency 计价）
         // logoType: 'image' | 'emoji'
         const ASSET_CONFIG = [
@@ -556,7 +558,7 @@
         
 	        function getShareRows() {
 	            const rows = [];
-	            const presetCryptoSet = new Set(['BTC', 'ETH', 'SOL', 'BNB', 'OKB']);
+	            const presetCryptoSet = new Set(PRESET_CRYPTO_SYMBOLS);
 	            for (let i = 1; i <= 6; i++) {
 	                const amountEl = document.getElementById(`amount${i}`);
 	                const selectEl = document.getElementById(`currency${i}`);
