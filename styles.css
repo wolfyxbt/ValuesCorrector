@@ -353,6 +353,14 @@
 		            font-weight: 400;
 		            letter-spacing: -0.5px;
 		        }
+
+	        /* 站点 logo：随 h1 字号缩放，白底与页面背景融合 */
+	        .site-logo {
+	            height: 1.05em;
+	            width: 1.05em;
+	            vertical-align: -0.16em;
+	            margin-right: 0.12em;
+	        }
         
 		        .author {
 	            font-size: 0.8em;
