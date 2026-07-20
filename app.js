@@ -12,11 +12,12 @@
         // logoType: 'image' | 'emoji'
         const ASSET_CONFIG = [
             // 加密货币
-            { symbol: 'BTC', category: 'crypto', text: 'BTC', logoType: 'image', logo: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png', emoji: '🟠' },
-            { symbol: 'ETH', category: 'crypto', text: 'ETH', logoType: 'image', logo: 'https://assets.coingecko.com/coins/images/279/large/ethereum.png', emoji: '♦️' },
-            { symbol: 'SOL', category: 'crypto', text: 'SOL', logoType: 'image', logo: 'https://assets.coingecko.com/coins/images/4128/large/solana.png', emoji: '🟣' },
-            { symbol: 'BNB', category: 'crypto', text: 'BNB', logoType: 'image', logo: 'https://assets.coingecko.com/coins/images/825/large/bnb-icon2_2x.png', emoji: '🟡' },
-            { symbol: 'OKB', category: 'crypto', text: 'OKB', logoType: 'image', logo: 'https://assets.coingecko.com/coins/images/4463/large/WeChat_Image_20220118095654.png', emoji: '⚫' },
+            // logo 使用仓库内本地文件（同源）：UI 与分享图 canvas 都可直接使用，无跨域污染问题
+            { symbol: 'BTC', category: 'crypto', text: 'BTC', logoType: 'image', logo: 'assets/logos/btc.png', emoji: '🟠' },
+            { symbol: 'ETH', category: 'crypto', text: 'ETH', logoType: 'image', logo: 'assets/logos/eth.png', emoji: '♦️' },
+            { symbol: 'SOL', category: 'crypto', text: 'SOL', logoType: 'image', logo: 'assets/logos/sol.png', emoji: '🟣' },
+            { symbol: 'BNB', category: 'crypto', text: 'BNB', logoType: 'image', logo: 'assets/logos/bnb.png', emoji: '🟡' },
+            { symbol: 'OKB', category: 'crypto', text: 'OKB', logoType: 'image', logo: 'assets/logos/okb.png', emoji: '⚫' },
             // 法币（USD 为基准货币）
             { symbol: 'USD', category: 'fiat', text: 'USD', logoType: 'emoji', logo: '🇺🇸' },
             { symbol: 'CNY', category: 'fiat', text: 'CNY', logoType: 'emoji', logo: '🇨🇳' },
@@ -577,7 +578,7 @@
 	                    const customOption = selectEl.querySelector('option[value="CUSTOM"]');
 	                    const displayText = customOption?.getAttribute('data-display-text');
 	                    label = displayText ? `${displayText}` : '自定义代币';
-	                    // 分享图：加密货币不展示 Logo（按需只在 ticker 前加 $）
+	                    // 分享图：自定义代币 logo 是外链图片（会污染 canvas），不展示，只在 ticker 前加 $
 	                    logoType = 'none';
 	                    logo = '';
 	                } else {
@@ -585,11 +586,8 @@
 	                    const mapped = (typeof currencyLogos !== 'undefined') ? currencyLogos[value] : null;
 	                    if (mapped) {
 	                        label = mapped.text || value;
-	                        // 分享图：加密货币不展示 Logo；非加密可展示 emoji / 图片
-	                        if (presetCryptoSet.has(value)) {
-	                            logoType = 'none';
-	                            logo = '';
-	                        } else if (mapped.type === 'image' && mapped.logo) {
+	                        // 预设加密货币 logo 已本地化（同源），可与实物/法币一样绘入分享图
+	                        if (mapped.type === 'image' && mapped.logo) {
 	                            logoType = 'image';
 	                            logo = mapped.logo;
 	                        } else if (mapped.type === 'emoji' && mapped.logo) {
@@ -728,6 +726,14 @@
 	            return bitmaps;
 	        }
         
+	        // 行是否有可绘制的 logo（image 需 bitmap 已加载成功；emoji 需有字符）
+	        function rowHasDrawableLogo(row) {
+	            if (!row) return false;
+	            if (row.logoType === 'emoji') return !!row.logo;
+	            if (row.logoType === 'image') return !!row.bitmap;
+	            return false;
+	        }
+
 	        async function generateSharePngBlob() {
 	            const rows = getShareRows();
 	            if (rows.length === 0) {
@@ -800,7 +806,7 @@
 					            let requiredRightColW = rightColWBase;
 
 						            if (primaryForMeasure) {
-						                const shouldDrawLogo = !primaryForMeasure.isCrypto;
+						                const shouldDrawLogo = rowHasDrawableLogo(primaryForMeasure);
 						                const amountFont = `400 ${primaryAmountFontSizeForLayout}px "PingFang SC"`;
 						                const tickerFont = `400 ${primaryTickerFontSizeForLayout}px "PingFang SC"`;
 						                const amountW = measureText(amountFont, primaryForMeasure.amount);
@@ -822,7 +828,7 @@
 					                const prefixW = measureText(prefixFont, prefix) + 14;
 
 					                for (const r of secondaryForMeasure) {
-					                    const shouldDrawLogo = !r.isCrypto;
+					                    const shouldDrawLogo = rowHasDrawableLogo(r);
 					                    const amountW = measureText(amountFont, r.amount) + 14;
 					                    const tickerLabel = r.isCrypto ? `$${r.label}` : r.label;
 					                    const tickerW = measureText(tickerFont, tickerLabel);
@@ -965,12 +971,7 @@
 					                const iconGap = 12 * scale;
 					                const textStartX = x + padX;
 					                const textY = yMid + (12 * scale) + (showPrefix ? 0 : Math.round(pillH * 0.2)); // 主体行下移 20%
-				                const hasInlineLogo = row.logoType === 'emoji'
-				                    ? !!row.logo
-				                    : row.logoType === 'image'
-				                        ? !!row.bitmap
-				                        : false;
-				                const shouldDrawLogo = !row.isCrypto && hasInlineLogo;
+				                const shouldDrawLogo = rowHasDrawableLogo(row);
 				                const prefix = showPrefix ? '约等于 ≈' : '';
 				                const getTextCenterOffset = (fontSize, text) => {
 				                    const metrics = ctx.measureText(text || 'Hg');
