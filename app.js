@@ -2267,7 +2267,15 @@ window.addEventListener('resize', () => {
 		                    convert(i);
 		                    saveState();
 		                });
-                
+
+		                // 桌面端：按 Enter 或 = 键把算式替换为计算结果（如 1+1 → 2）
+		                document.getElementById(`amount${i}`).addEventListener('keydown', (e) => {
+		                    if (e.key === 'Enter' || e.key === '=') {
+		                        e.preventDefault();
+		                        applyEqualsToInput(e.target);
+		                    }
+		                });
+
                 // 货币选择事件
                 document.getElementById(`currency${i}`).addEventListener('change', function() {
                     console.log('Currency change event triggered for currency' + i);
@@ -3174,7 +3182,8 @@ function positionDropdownMenu(dropdown) {
                 ],
                 [
                     { label: '0', value: '0', wide: true },
-                    { label: '00', value: '00', wide: true },
+                    { label: '00', value: '00' },
+                    { label: '=', value: 'equals', cls: 'equals' },
                 ],
             ];
 
@@ -3245,6 +3254,19 @@ function positionDropdownMenu(dropdown) {
             }
         }
 
+        /** “等于”：把输入框中的算式就地替换为计算结果（如 1+1 → 2） */
+        function applyEqualsToInput(input) {
+            if (!input) return;
+            const raw = input.value;
+            // 空值或纯数字无需计算；算式非法/不完整（如 "1+"）时保持原样不动
+            if (!raw || isLikelyPlainNumberInput(raw)) return;
+            const result = evaluateMathExpression(raw);
+            if (!Number.isFinite(result)) return;
+            input.value = formatNumberForDisplay(result);
+            // 触发 input 事件，复用既有的千分位格式化、换算、保存逻辑
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+
         /** 处理键盘按键 */
         function handleMobileKeyPress(value) {
             if (!mobileKbActiveInput) {
@@ -3263,6 +3285,11 @@ function positionDropdownMenu(dropdown) {
                 case 'backspace':
                     input.value = input.value.slice(0, -1);
                     break;
+
+                case 'equals':
+                    // 求值内部自行触发 input 事件，这里直接返回
+                    applyEqualsToInput(input);
+                    return;
 
                 default:
                     // 追加字符（数字、运算符、小数点、00）

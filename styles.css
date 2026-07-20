@@ -1049,6 +1049,18 @@
                 border-color: var(--text);
             }
 
+            /* 等于键 —— 深色强调，与“分享结果”主按钮风格一致 */
+            .kb-key.equals {
+                background: var(--text);
+                color: var(--surface);
+                border-color: var(--text);
+                font-size: 22px;
+            }
+
+            .kb-key.equals:active {
+                opacity: 0.85;
+            }
+
             /* 功能键（C、退格）—— 同运算符风格 */
             .kb-key.action {
                 background: var(--surface-muted);
