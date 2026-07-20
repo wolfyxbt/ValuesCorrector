@@ -739,13 +739,7 @@
 	            if (rows.length === 0) {
 	                throw new Error('没有可分享的换算结果（请先输入任意金额）');
 	            }
-	            // 站点 logo（同源资源，绘入 canvas 不会造成跨域污染）
-	            const SITE_LOGO_SRC = 'favicon/android-chrome-192x192.png';
-	            const logoBitmaps = await preloadShareLogoBitmaps([
-	                ...rows,
-	                { logoType: 'image', logo: SITE_LOGO_SRC },
-	            ]);
-	            const siteLogoBitmap = logoBitmaps.get(SITE_LOGO_SRC) || null;
+	            const logoBitmaps = await preloadShareLogoBitmaps(rows);
 	            const rowsForShare = rows.map((row) => ({
 	                ...row,
 	                bitmap: row.logoType === 'image' ? (logoBitmaps.get(row.logo) || null) : null
@@ -893,25 +887,9 @@
 			            
 					            const shareTitle = '价值观纠正器';
 					            const titleFontSize = 101;
-					            // 站点 logo：白色圆形衬底（黑底上黑色 $ 需要白圈才可见），加载失败则只画标题
-					            let titleTextX = titleX;
-					            if (siteLogoBitmap) {
-					                const logoSize = titleFontSize;
-					                const logoR = logoSize / 2;
-					                const logoCx = titleX + logoR;
-					                const logoCy = cursorY - Math.round(titleFontSize * 0.38);
-					                ctx.save();
-					                ctx.beginPath();
-					                ctx.arc(logoCx, logoCy, logoR, 0, Math.PI * 2);
-					                ctx.closePath();
-					                ctx.clip();
-					                ctx.drawImage(siteLogoBitmap, logoCx - logoR, logoCy - logoR, logoSize, logoSize);
-					                ctx.restore();
-					                titleTextX = titleX + logoSize + 26;
-					            }
 					            ctx.fillStyle = TEXT;
 					            ctx.font = `400 ${titleFontSize}px "PingFang SC"`;
-					            ctx.fillText(shareTitle, titleTextX, cursorY);
+					            ctx.fillText(shareTitle, titleX, cursorY);
 				            
 				            // 右上角信息（与标题最顶部对齐）
 				            const titleMetrics = ctx.measureText(shareTitle);
