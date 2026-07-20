@@ -3220,7 +3220,12 @@ function positionDropdownMenu(dropdown) {
                         }
                     }, { passive: false });
 
-                    // 桌面端后备（鼠标点击）
+                    // 桌面端：按下时阻止按钮抢走输入框焦点，保持活跃栏位不变
+                    btn.addEventListener('mousedown', (e) => {
+                        e.preventDefault();
+                    });
+
+                    // 桌面端（鼠标点击）
                     btn.addEventListener('click', (e) => {
                         if (touched) return; // 避免触屏设备重复触发
                         e.preventDefault();
@@ -3301,31 +3306,35 @@ function positionDropdownMenu(dropdown) {
             input.dispatchEvent(new Event('input', { bubbles: true }));
         }
 
-        /** 初始化移动端键盘（仅手机端执行） */
+        /** 初始化内嵌键盘（手机端在栏位下方；桌面端由 CSS 布局到栏位右侧） */
         function initMobileKeyboard() {
-            if (!isMobileDevice()) return;
-
             buildMobileKeyboard();
 
-            // 移动端：将 amount 输入框设为 readonly，阻止系统键盘弹出
+            const mobile = isMobileDevice();
             for (let i = 1; i <= 6; i++) {
                 const input = document.getElementById(`amount${i}`);
                 if (!input) continue;
 
-                input.setAttribute('readonly', 'readonly');
-                input.setAttribute('inputmode', 'none');
+                if (mobile) {
+                    // 移动端：输入框设为 readonly，阻止系统键盘弹出，只能用内嵌键盘
+                    input.setAttribute('readonly', 'readonly');
+                    input.setAttribute('inputmode', 'none');
 
-                // 点击输入框时切换为当前活跃目标
-                input.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    setActiveKbInput(i);
-                });
+                    // 点击输入框时切换为当前活跃目标
+                    input.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        setActiveKbInput(i);
+                    });
+                } else {
+                    // 桌面端：保留物理键盘直接输入，聚焦即成为内嵌键盘的目标栏位
+                    input.addEventListener('focus', () => setActiveKbInput(i));
+                }
             }
 
             // 默认激活第一个输入框
             setActiveKbInput(1);
 
-            console.log('📱 移动端内嵌键盘已初始化');
+            console.log(mobile ? '📱 移动端内嵌键盘已初始化' : '🖥️ 桌面端内嵌键盘已初始化');
         }
         
     

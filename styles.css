@@ -974,113 +974,166 @@
 	            }
 	        }
 
-        /* ===== 移动端内嵌键盘（仅手机端可见，作为页面 UI 的一部分）===== */
-        .mobile-keyboard {
-            display: none;
+        /* ===== 内嵌计算键盘（手机端在栏位下方；桌面端在栏位右侧，延续同一套按键风格）===== */
+
+        /* 当前活跃输入框高亮（键盘输入的目标栏位） */
+        .kb-active-input {
+            border-color: var(--text) !important;
+            box-shadow: 0 0 0 3px var(--focus) !important;
         }
 
+        /* 键盘行 */
+        .kb-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .kb-row:last-child {
+            margin-bottom: 0;
+        }
+
+        /* 按键通用样式 —— 与 select / input 的视觉风格对齐 */
+        .kb-key {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 48px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: var(--surface);
+            color: var(--text);
+            font-size: 20px;
+            font-weight: 400;
+            font-family: "PingFang SC";
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            transition: background 0.15s ease, border-color 0.15s ease;
+            box-shadow: none;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        .kb-key:active {
+            background: var(--surface-muted);
+            border-color: var(--text);
+        }
+
+        /* 占两格宽（0 键） */
+        .kb-key.wide {
+            grid-column: span 2;
+        }
+
+        /* 运算符键 —— 使用浅灰底色区分 */
+        .kb-key.operator {
+            background: var(--surface-muted);
+            font-size: 22px;
+        }
+
+        .kb-key.operator:active {
+            background: var(--border);
+            border-color: var(--text);
+        }
+
+        /* 等于键 —— 深色强调，与“分享结果”主按钮风格一致 */
+        .kb-key.equals {
+            background: var(--text);
+            color: var(--surface);
+            border-color: var(--text);
+            font-size: 22px;
+        }
+
+        .kb-key.equals:active {
+            opacity: 0.85;
+        }
+
+        /* 功能键（C、退格）—— 同运算符风格 */
+        .kb-key.action {
+            background: var(--surface-muted);
+            font-size: 17px;
+        }
+
+        .kb-key.action:active {
+            background: var(--border);
+            border-color: var(--text);
+        }
+
+        /* 退格键内 SVG 图标 */
+        .kb-key.action svg {
+            width: 22px;
+            height: 22px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* 桌面端（横屏）：键盘放在换算栏位右侧，形成左右两栏计算器布局 */
+        @media screen and (min-width: 769px) {
+            .container {
+                display: grid;
+                grid-template-columns: 1fr auto;
+                grid-template-areas:
+                    "title  title"
+                    "fields keyboard"
+                    "social social";
+                column-gap: 36px;
+                align-items: stretch;
+            }
+
+            .container > h1 {
+                grid-area: title;
+            }
+
+            #currencyFields {
+                grid-area: fields;
+            }
+
+            .social-links {
+                grid-area: social;
+            }
+
+            .mobile-keyboard {
+                grid-area: keyboard;
+                display: flex;
+                flex-direction: column;
+                width: 290px;
+                border-left: 1px solid var(--border);
+                padding-left: 36px;
+            }
+
+            /* 悬停反馈（鼠标操作特有） */
+            .kb-key:hover {
+                background: var(--surface-muted);
+            }
+
+            .kb-key.equals:hover {
+                background: var(--text);
+                opacity: 0.85;
+            }
+
+            /* 键盘行均分高度，与左侧 6 个换算栏位等高对齐 */
+            .mobile-keyboard .kb-row {
+                flex: 1;
+            }
+
+            .mobile-keyboard .kb-key {
+                height: auto;
+                min-height: 48px;
+            }
+        }
+
+        /* 手机端（竖屏）：键盘在栏位下方，占满宽度 */
         @media screen and (max-width: 768px) {
             .mobile-keyboard {
                 display: block;
                 margin-top: 24px;
                 padding-top: 20px;
                 border-top: 1px solid var(--border);
-            }
-
-            /* 当前活跃输入框高亮 */
-            .kb-active-input {
-                border-color: var(--text) !important;
-                box-shadow: 0 0 0 3px var(--focus) !important;
-            }
-
-            /* 键盘行 */
-            .kb-row {
-                display: grid;
-                grid-template-columns: repeat(4, 1fr);
-                gap: 10px;
-                margin-bottom: 10px;
-            }
-
-            .kb-row:last-child {
-                margin-bottom: 0;
-            }
-
-            /* 按键通用样式 —— 与 select / input 的视觉风格对齐 */
-            .kb-key {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                height: 48px;
-                border: 1px solid var(--border);
-                border-radius: 12px;
-                background: var(--surface);
-                color: var(--text);
-                font-size: 20px;
-                font-weight: 400;
-                font-family: "PingFang SC";
-                cursor: pointer;
-                user-select: none;
-                -webkit-user-select: none;
-                -webkit-tap-highlight-color: transparent;
-                transition: background 0.15s ease, border-color 0.15s ease;
-                box-shadow: none;
-                -webkit-appearance: none;
-                appearance: none;
-            }
-
-            .kb-key:active {
-                background: var(--surface-muted);
-                border-color: var(--text);
-            }
-
-            /* 占两格宽（0 键、00 键） */
-            .kb-key.wide {
-                grid-column: span 2;
-            }
-
-            /* 运算符键 —— 使用浅灰底色区分 */
-            .kb-key.operator {
-                background: var(--surface-muted);
-                font-size: 22px;
-            }
-
-            .kb-key.operator:active {
-                background: var(--border);
-                border-color: var(--text);
-            }
-
-            /* 等于键 —— 深色强调，与“分享结果”主按钮风格一致 */
-            .kb-key.equals {
-                background: var(--text);
-                color: var(--surface);
-                border-color: var(--text);
-                font-size: 22px;
-            }
-
-            .kb-key.equals:active {
-                opacity: 0.85;
-            }
-
-            /* 功能键（C、退格）—— 同运算符风格 */
-            .kb-key.action {
-                background: var(--surface-muted);
-                font-size: 17px;
-            }
-
-            .kb-key.action:active {
-                background: var(--border);
-                border-color: var(--text);
-            }
-
-            /* 退格键内 SVG 图标 */
-            .kb-key.action svg {
-                width: 22px;
-                height: 22px;
-                fill: none;
-                stroke: currentColor;
-                stroke-width: 2;
-                stroke-linecap: round;
-                stroke-linejoin: round;
             }
         }
 
