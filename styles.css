@@ -1,12 +1,14 @@
 		        :root {
-		            --bg: #ffffff;
+		            --bg: #f5f5f7;
 		            --surface: #ffffff;
 		            --surface-muted: #f5f5f7;
 		            --text: #1d1d1f;
 		            --muted: #6e6e73;
 		            --border: #d2d2d7;
-		            --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+		            --shadow: 0 24px 70px rgba(0, 0, 0, 0.10), 0 2px 8px rgba(0, 0, 0, 0.04);
 		            --focus: rgba(0, 0, 0, 0.18);
+		            --accent: #FF9F0A;           /* 与分享图一致的橙色强调 */
+		            --accent-soft: rgba(255, 159, 10, 0.22);
 		            --unit-select-width: 260px;
 		        }
 	        
@@ -32,9 +34,9 @@
 	            text-align: center;
 	            transform: scale(1.3);
 	            background: var(--surface);
-	            border-radius: 20px;
+	            border-radius: 24px;
 	            box-shadow: var(--shadow);
-	            border: 1px solid var(--border);
+	            border: 1px solid rgba(0, 0, 0, 0.04);
 	        }
         
 	        .field {
@@ -85,14 +87,14 @@
 	        }
 
 	        .dropdown-trigger:hover {
-	            border-color: var(--text);
+	            border-color: var(--muted);
 	            background: var(--surface-muted);
 	        }
 
 	        .dropdown-trigger:focus {
 	            outline: none;
-	            border-color: var(--text);
-	            box-shadow: 0 0 0 3px var(--focus);
+	            border-color: var(--accent);
+	            box-shadow: 0 0 0 3px var(--accent-soft);
 	        }
 
 		        .dropdown-trigger-left {
@@ -328,7 +330,7 @@
 		        }
         
 	        input:hover {
-	            border-color: var(--text);
+	            border-color: var(--muted);
 	            transform: none;
 	            box-shadow: none;
 	            background: var(--surface-muted);
@@ -336,8 +338,9 @@
         
 	        input:focus {
 	            outline: none;
-	            border-color: var(--text);
-	            box-shadow: 0 0 0 3px var(--focus);
+	            border-color: var(--accent);
+	            box-shadow: 0 0 0 3px var(--accent-soft);
+	            background: var(--surface);
 	        }
         
         input::placeholder {
@@ -347,12 +350,20 @@
         
 		        h1 {
 	            font-size: 2.8em;
-	            margin-bottom: 35px;
+	            margin-bottom: 8px;
 	            margin-top: -5px;
 	            color: var(--text);
 		            font-weight: 400;
 		            letter-spacing: -0.5px;
 		        }
+
+	        /* 标题下一句话说明 */
+	        .tagline {
+	            margin: 0 0 30px;
+	            color: var(--muted);
+	            font-size: 15px;
+	            letter-spacing: 0.3px;
+	        }
         
 		        .author {
 	            font-size: 0.8em;
@@ -968,10 +979,10 @@
 
         /* ===== 内嵌计算键盘（手机端在栏位下方；桌面端在栏位右侧，延续同一套按键风格）===== */
 
-        /* 当前活跃输入框高亮（键盘输入的目标栏位） */
+        /* 当前活跃输入框高亮（键盘输入的目标栏位）—— 与聚焦态一致的橙色 */
         .kb-active-input {
-            border-color: var(--text) !important;
-            box-shadow: 0 0 0 3px var(--focus) !important;
+            border-color: var(--accent) !important;
+            box-shadow: 0 0 0 3px var(--accent-soft) !important;
         }
 
         /* 键盘行 */
@@ -1003,7 +1014,7 @@
             user-select: none;
             -webkit-user-select: none;
             -webkit-tap-highlight-color: transparent;
-            transition: background 0.15s ease, border-color 0.15s ease;
+            transition: background 0.15s ease, border-color 0.15s ease, transform 0.08s ease;
             box-shadow: none;
             -webkit-appearance: none;
             appearance: none;
@@ -1011,7 +1022,8 @@
 
         .kb-key:active {
             background: var(--surface-muted);
-            border-color: var(--text);
+            border-color: var(--muted);
+            transform: scale(0.96);
         }
 
         /* 占两格宽（0 键） */
@@ -1030,16 +1042,17 @@
             border-color: var(--text);
         }
 
-        /* 等于键 —— 深色强调，与“分享结果”主按钮风格一致 */
+        /* 等于键 —— 橙色强调（呼应分享图的数字颜色，计算器式点睛） */
         .kb-key.equals {
-            background: var(--text);
-            color: var(--surface);
-            border-color: var(--text);
+            background: var(--accent);
+            color: #ffffff;
+            border-color: var(--accent);
             font-size: 22px;
         }
 
         .kb-key.equals:active {
             opacity: 0.85;
+            transform: scale(0.96);
         }
 
         /* 功能键（C、退格）—— 同运算符风格 */
@@ -1070,15 +1083,20 @@
                 display: grid;
                 grid-template-columns: 1fr auto;
                 grid-template-areas:
-                    "title  title"
-                    "fields keyboard"
-                    "social social";
+                    "title   title"
+                    "tagline tagline"
+                    "fields  keyboard"
+                    "social  social";
                 column-gap: 36px;
                 align-items: stretch;
             }
 
             .container > h1 {
                 grid-area: title;
+            }
+
+            .container > .tagline {
+                grid-area: tagline;
             }
 
             #currencyFields {
@@ -1104,8 +1122,8 @@
             }
 
             .kb-key.equals:hover {
-                background: var(--text);
-                opacity: 0.85;
+                background: var(--accent);
+                opacity: 0.88;
             }
 
             /* 键盘行均分高度，与左侧 6 个换算栏位等高对齐 */
