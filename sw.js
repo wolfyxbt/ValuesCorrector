@@ -1,6 +1,6 @@
 // ===== Service Worker — 网络优先策略 =====
 // 每次发版时更新此版本号，旧缓存会自动清除
-const CACHE_VERSION = 'v20260720-6';
+const CACHE_VERSION = 'v20260720-7';
 const CACHE_NAME = `values-corrector-${CACHE_VERSION}`;
 
 // 需要缓存的核心资源（用于离线回退）

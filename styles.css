@@ -350,20 +350,12 @@
         
 		        h1 {
 	            font-size: 2.8em;
-	            margin-bottom: 8px;
+	            margin-bottom: 35px;
 	            margin-top: -5px;
 	            color: var(--text);
 		            font-weight: 400;
 		            letter-spacing: -0.5px;
 		        }
-
-	        /* 标题下一句话说明 */
-	        .tagline {
-	            margin: 0 0 30px;
-	            color: var(--muted);
-	            font-size: 15px;
-	            letter-spacing: 0.3px;
-	        }
         
 		        .author {
 	            font-size: 0.8em;
@@ -1083,20 +1075,15 @@
                 display: grid;
                 grid-template-columns: 1fr auto;
                 grid-template-areas:
-                    "title   title"
-                    "tagline tagline"
-                    "fields  keyboard"
-                    "social  social";
+                    "title  title"
+                    "fields keyboard"
+                    "social social";
                 column-gap: 36px;
                 align-items: stretch;
             }
 
             .container > h1 {
                 grid-area: title;
-            }
-
-            .container > .tagline {
-                grid-area: tagline;
             }
 
             #currencyFields {
