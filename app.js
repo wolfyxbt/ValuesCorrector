@@ -120,6 +120,7 @@
 
                 const select = document.createElement('select');
                 select.id = `currency${i}`;
+                select.setAttribute('aria-label', `第 ${i} 栏单位`);
                 populateCurrencySelect(select, DEFAULT_CURRENCIES[i - 1]);
                 wrapper.appendChild(select);
 
@@ -127,6 +128,9 @@
                 input.type = 'text';
                 input.id = `amount${i}`;
                 input.placeholder = '输入金额';
+                input.setAttribute('aria-label', `第 ${i} 栏金额`);
+                input.setAttribute('autocomplete', 'off');
+                input.setAttribute('spellcheck', 'false');
 
                 field.appendChild(wrapper);
                 field.appendChild(input);
@@ -1079,10 +1083,44 @@
 
         let shareImageBlob = null;
         let shareImageObjectUrl = null;
+        let shareModalReturnFocus = null;
+
+        function syncModalScrollLock() {
+            const hasOpenModal = Array.from(document.querySelectorAll('.modal'))
+                .some((modal) => modal.getAttribute('aria-hidden') === 'false');
+            document.body.classList.toggle('modal-open', hasOpenModal);
+            const main = document.querySelector('main');
+            if (main) main.inert = hasOpenModal;
+        }
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key !== 'Tab') return;
+            const modal = Array.from(document.querySelectorAll('.modal'))
+                .find((item) => item.getAttribute('aria-hidden') === 'false');
+            if (!modal) return;
+
+            const focusable = Array.from(modal.querySelectorAll(
+                'button:not([disabled]), input:not([disabled]), [href], [tabindex]:not([tabindex="-1"])'
+            )).filter((item) => item.getClientRects().length > 0);
+            if (focusable.length === 0) return;
+
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first.focus();
+            }
+        });
 
         function closeShareImageModal() {
             const modal = document.getElementById('shareImageModal');
-            if (modal) modal.style.display = 'none';
+            if (modal) {
+                modal.style.display = 'none';
+                modal.setAttribute('aria-hidden', 'true');
+            }
             const img = document.getElementById('shareImagePreview');
             if (img) img.src = '';
             if (shareImageObjectUrl) {
@@ -1090,6 +1128,9 @@
                 shareImageObjectUrl = null;
             }
             shareImageBlob = null;
+            syncModalScrollLock();
+            if (shareModalReturnFocus?.isConnected) shareModalReturnFocus.focus();
+            shareModalReturnFocus = null;
         }
 
 	        function openShareImageModal(blob) {
@@ -1098,11 +1139,15 @@
 	            const img = document.getElementById('shareImagePreview');
 	            if (!modal || !img) return;
 
-	            if (shareImageObjectUrl) URL.revokeObjectURL(shareImageObjectUrl);
-	            shareImageObjectUrl = URL.createObjectURL(blob);
-	            img.src = shareImageObjectUrl;
-	            modal.style.display = 'block';
-	        }
+		            if (shareImageObjectUrl) URL.revokeObjectURL(shareImageObjectUrl);
+		            shareImageObjectUrl = URL.createObjectURL(blob);
+		            img.src = shareImageObjectUrl;
+                    shareModalReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+		            modal.style.display = 'flex';
+                    modal.setAttribute('aria-hidden', 'false');
+                    syncModalScrollLock();
+                    requestAnimationFrame(() => document.getElementById('copyShareImageBtn')?.focus());
+		        }
 
         async function copyShareImageToClipboard() {
             if (!shareImageBlob) throw new Error('图片未就绪');
@@ -1173,7 +1218,7 @@
 
                 // ESC 关闭
                 document.addEventListener('keydown', (e) => {
-                    if (e.key === 'Escape' && modal.style.display === 'block') {
+                    if (e.key === 'Escape' && modal.getAttribute('aria-hidden') === 'false') {
                         closeShareImageModal();
                     }
                 });
@@ -2318,7 +2363,7 @@ window.addEventListener('resize', () => {
                     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
                     if (isMobile) {
                         const modal = document.getElementById('customTokenModal');
-                        if (modal && modal.style.display === 'block') {
+                        if (modal && modal.getAttribute('aria-hidden') === 'false') {
                             // 强制select失去焦点
                             this.blur();
                             // 移除任何可能的焦点
@@ -2356,6 +2401,7 @@ window.addEventListener('resize', () => {
         
 	        // 自定义代币功能
 	        let currentSelectId = null;
+            let customTokenModalReturnFocus = null;
 	        let customTokens = new Map(); // 存储自定义代币数据
 	        const tokenSearchSessionCache = new Map(); // 本次页面会话内的搜索缓存（降低 CoinGecko 搜索频率）
 
@@ -2386,9 +2432,14 @@ window.addEventListener('resize', () => {
 		            const { type, logo, text } = getSelectDisplayInfo(selectElement);
 		            const logoBox = dropdown.querySelector('.dropdown-logo');
 		            const textBox = dropdown.querySelector('.dropdown-text');
+                    const trigger = dropdown.querySelector('.dropdown-trigger');
 		            if (!logoBox || !textBox) return;
 
 		            textBox.textContent = text;
+                    if (trigger) {
+                        const fieldNumber = selectElement.id.replace('currency', '');
+                        trigger.setAttribute('aria-label', `${text}，选择第 ${fieldNumber} 栏单位`);
+                    }
 		            logoBox.innerHTML = '';
 		            logoBox.classList.toggle('is-emoji', type === 'emoji');
 		            logoBox.classList.toggle('is-image', type === 'image');
@@ -2396,7 +2447,7 @@ window.addEventListener('resize', () => {
 		            if (type === 'image' && logo) {
 		                const img = document.createElement('img');
 		                img.src = logo;
-		                img.alt = text;
+		                img.alt = '';
 		                img.onerror = () => {
 		                    logoBox.classList.remove('is-image');
 		                    logoBox.classList.add('is-emoji');
@@ -2417,8 +2468,8 @@ window.addEventListener('resize', () => {
 		                logoBox.appendChild(span);
 		            }
 
-	            // 同步选中态
-	            dropdown.querySelectorAll('.dropdown-item').forEach((item) => {
+	            // 菜单 portal 在 body 下，通过保存的引用同步选中态。
+	            dropdown._menu?.querySelectorAll('.dropdown-item').forEach((item) => {
 	                const v = item.getAttribute('data-value');
 	                const selected = v === selectElement.value;
 	                item.setAttribute('aria-selected', selected ? 'true' : 'false');
@@ -2436,141 +2487,88 @@ window.addEventListener('resize', () => {
 	            });
 	        }
 	        
-function positionDropdownMenu(dropdown) {
-	            const trigger = dropdown.querySelector('.dropdown-trigger');
-	            const menu = dropdown._menu || dropdown.querySelector('.dropdown-menu');
-	            if (!trigger || !menu) return;
-	            const scroll = menu.querySelector('.dropdown-menu-scroll');
-	            
-	            // 打开时菜单是 display:block 才能测量尺寸
-	            const wasHidden = menu.style.display === '' || menu.style.display === 'none';
-	            if (wasHidden) menu.style.display = 'block';
-	            menu.style.visibility = 'hidden';
-	            
-	            // 在 iOS Safari 等环境下，visualViewport 可能与布局视口存在偏移（地址栏/缩放/键盘）
-	            // 使用 offset 修正，保证 fixed 定位与 getBoundingClientRect 的坐标系一致
-	            const vv = window.visualViewport;
-	            const viewportOffsetLeft = vv ? vv.offsetLeft : 0;
-	            const viewportOffsetTop = vv ? vv.offsetTop : 0;
-	            const viewportWidth = vv ? vv.width : window.innerWidth;
-	            const viewportHeight = vv ? vv.height : window.innerHeight;
+        function positionDropdownMenu(dropdown) {
+            const trigger = dropdown.querySelector('.dropdown-trigger');
+            const menu = dropdown._menu;
+            const scroll = menu?.querySelector('.dropdown-menu-scroll');
+            if (!trigger || !menu || !scroll) return;
 
-	            const triggerRectRaw = trigger.getBoundingClientRect();
-	            const triggerRect = {
-	                left: triggerRectRaw.left + viewportOffsetLeft,
-	                right: triggerRectRaw.right + viewportOffsetLeft,
-	                top: triggerRectRaw.top + viewportOffsetTop,
-	                bottom: triggerRectRaw.bottom + viewportOffsetTop,
-	                width: triggerRectRaw.width,
-	                height: triggerRectRaw.height
-	            };
+            const wasHidden = menu.style.display === '' || menu.style.display === 'none';
+            if (wasHidden) menu.style.display = 'block';
+            menu.style.visibility = 'hidden';
 
-	            const menuRectRaw = menu.getBoundingClientRect();
-	            const menuRect = {
-	                left: menuRectRaw.left + viewportOffsetLeft,
-	                right: menuRectRaw.right + viewportOffsetLeft,
-	                top: menuRectRaw.top + viewportOffsetTop,
-	                bottom: menuRectRaw.bottom + viewportOffsetTop,
-	                width: menuRectRaw.width,
-	                height: menuRectRaw.height
-	            };
-	            const gap = 12;
-	            const margin = 12;
-	            
-	            // 约束范围：
-	            // - 桌面：尽量保证菜单完整展示在主卡片（.container）内部，体验更“贴近组件”
-	            // - 手机端：优先保证在“视口”内可见（允许超出卡片边界），否则会因为卡片较窄导致菜单被迫翻转/错位
-	            const isMobileLayout = window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
-	            const containerEl = !isMobileLayout ? document.querySelector('.container') : null;
-	            const containerRectRaw = containerEl ? containerEl.getBoundingClientRect() : null;
-	            const containerRect = containerRectRaw
-	                ? {
-	                        left: containerRectRaw.left + viewportOffsetLeft,
-	                        right: containerRectRaw.right + viewportOffsetLeft,
-	                        top: containerRectRaw.top + viewportOffsetTop,
-	                        bottom: containerRectRaw.bottom + viewportOffsetTop
-	                  }
-	                : null;
-	            const bounds = containerRect
-	                ? {
-	                        left: containerRect.left,
-	                        right: containerRect.right,
-	                        top: containerRect.top,
-	                        bottom: containerRect.bottom
-	                  }
-	                : {
-	                        left: viewportOffsetLeft + margin,
-	                        right: viewportOffsetLeft + viewportWidth - margin,
-	                        top: viewportOffsetTop + margin,
-	                        bottom: viewportOffsetTop + viewportHeight - margin
-	                  };
-	            
-	            // 额外兜底：同时不能超出视口
-	            bounds.left = Math.max(bounds.left, viewportOffsetLeft + margin);
-	            bounds.top = Math.max(bounds.top, viewportOffsetTop + margin);
-	            bounds.right = Math.min(bounds.right, viewportOffsetLeft + viewportWidth - margin);
-	            bounds.bottom = Math.min(bounds.bottom, viewportOffsetTop + viewportHeight - margin);
-	            
-	            // 目标：点击目标框后，从右侧“侧弹”出现，并允许滚动选择。
-	            // 视觉上更接近把原本“向下弹出”改成“向右弹出”：菜单与目标框垂直居中对齐。
-	            let side = 'right';
-	            let left = triggerRect.right + gap;
-	            let top = triggerRect.top;
-	            
-	            // 宽度：略大于目标框，但不超过卡片/视口
-	            let width = Math.max(260, Math.min(360, Math.max(triggerRect.width, menuRect.width || 300)));
-	            width = Math.min(width, Math.max(220, bounds.right - bounds.left));
-	            
-	            if (left + width > bounds.right) {
-	                // 桌面：允许翻转到左侧
-	                // 手机：优先保持“从右侧冒出”，因为容器太窄会导致错误翻转
-	                if (!isMobileLayout) {
-	                    left = triggerRect.left - gap - width;
-	                    side = 'left';
-	                }
-	            }
-	            
-	            left = Math.max(bounds.left, Math.min(left, bounds.right - width));
-	            
-	            // 高度：限制最大高度并允许滚动；优先保证不超出卡片范围
-	            const maxHeight = Math.min(680, Math.max(200, bounds.bottom - bounds.top - margin * 2));
-	            const desiredHeight = Math.min(menuRect.height || 520, maxHeight);
-	            top = triggerRect.top + (triggerRect.height - desiredHeight) / 2;
-	            top = Math.max(bounds.top, Math.min(top, bounds.bottom - desiredHeight));
-	            // 再兜底一次，确保不会越出视口
-	            top = Math.max(viewportOffsetTop + margin, Math.min(top, viewportOffsetTop + viewportHeight - margin - desiredHeight));
-	            
-	            // 箭头位置：指向触发器的垂直中心
-	            const arrowCenterY = triggerRect.top + triggerRect.height / 2;
-	            let arrowTop = arrowCenterY - top;
-	            arrowTop = Math.max(20, Math.min(arrowTop, desiredHeight - 20));
-	            menu.style.setProperty('--arrow-top', `${Math.floor(arrowTop)}px`);
-	            menu.setAttribute('data-side', side);
-	            
-	            menu.style.width = `${Math.floor(width)}px`;
-	            menu.style.left = `${Math.floor(left)}px`;
-	            menu.style.top = `${Math.floor(top)}px`;
-	            if (scroll) scroll.style.maxHeight = `${Math.floor(maxHeight)}px`;
-	            menu.style.visibility = '';
-	            if (wasHidden) menu.style.display = 'block';
-	        }
+            const vv = window.visualViewport;
+            const viewportLeft = vv?.offsetLeft || 0;
+            const viewportTop = vv?.offsetTop || 0;
+            const viewportWidth = vv?.width || window.innerWidth;
+            const viewportHeight = vv?.height || window.innerHeight;
+            const viewportRight = viewportLeft + viewportWidth;
+            const viewportBottom = viewportTop + viewportHeight;
+            const margin = 12;
+            const gap = 8;
+
+            const rawRect = trigger.getBoundingClientRect();
+            const triggerRect = {
+                left: rawRect.left + viewportLeft,
+                right: rawRect.right + viewportLeft,
+                top: rawRect.top + viewportTop,
+                bottom: rawRect.bottom + viewportTop,
+                width: rawRect.width,
+            };
+
+            const width = Math.min(
+                Math.max(triggerRect.width, 300),
+                viewportWidth - margin * 2
+            );
+            menu.style.width = `${Math.floor(width)}px`;
+            scroll.style.maxHeight = `${Math.floor(Math.min(520, viewportHeight - margin * 2))}px`;
+
+            const measuredHeight = menu.getBoundingClientRect().height;
+            const belowSpace = viewportBottom - margin - triggerRect.bottom - gap;
+            const aboveSpace = triggerRect.top - (viewportTop + margin) - gap;
+            const placeBelow = belowSpace >= Math.min(measuredHeight, 280) || belowSpace >= aboveSpace;
+            const availableHeight = Math.max(160, placeBelow ? belowSpace : aboveSpace);
+            const menuHeight = Math.min(measuredHeight, availableHeight);
+            scroll.style.maxHeight = `${Math.floor(menuHeight)}px`;
+
+            const left = Math.max(
+                viewportLeft + margin,
+                Math.min(triggerRect.left, viewportRight - margin - width)
+            );
+            const top = placeBelow
+                ? triggerRect.bottom + gap
+                : triggerRect.top - gap - menuHeight;
+
+            const originX = Math.max(24, Math.min(triggerRect.left + triggerRect.width / 2 - left, width - 24));
+            menu.style.setProperty('--origin-x', `${Math.floor(originX)}px`);
+            menu.style.setProperty('--origin-y', placeBelow ? '0%' : '100%');
+            menu.setAttribute('data-side', placeBelow ? 'bottom' : 'top');
+            menu.style.left = `${Math.floor(left)}px`;
+            menu.style.top = `${Math.floor(top)}px`;
+            menu.style.visibility = '';
+        }
 
 	        function buildCustomDropdown(selectElement) {
 	            const wrapper = selectElement.parentElement;
 	            if (!wrapper) return;
 	            if (wrapper.querySelector('.dropdown')) return;
 
-	            // 隐藏原生 select，但保留其事件/状态/存储逻辑
-	            selectElement.classList.add('native-select-hidden');
+		            // 隐藏原生 select，但保留其事件/状态/存储逻辑
+		            selectElement.classList.add('native-select-hidden');
+                    selectElement.setAttribute('aria-hidden', 'true');
+                    selectElement.tabIndex = -1;
+                    selectElement.hidden = true;
 
-	            const dropdown = document.createElement('div');
-	            dropdown.className = 'dropdown';
+		            const dropdown = document.createElement('div');
+		            dropdown.className = 'dropdown';
 
 	            const trigger = document.createElement('button');
-	            trigger.type = 'button';
-	            trigger.className = 'dropdown-trigger';
-	            trigger.setAttribute('aria-haspopup', 'listbox');
-	            trigger.setAttribute('aria-expanded', 'false');
+		            trigger.type = 'button';
+		            trigger.className = 'dropdown-trigger';
+		            trigger.setAttribute('aria-haspopup', 'listbox');
+		            trigger.setAttribute('aria-expanded', 'false');
+                    const menuId = `${selectElement.id}-menu`;
+                    trigger.setAttribute('aria-controls', menuId);
 
 	            trigger.innerHTML = `
 	                <span class="dropdown-trigger-left">
@@ -2582,9 +2580,11 @@ function positionDropdownMenu(dropdown) {
 	                </svg>
 	            `;
 
-	            const menu = document.createElement('div');
-	            menu.className = 'dropdown-menu';
-	            menu.setAttribute('role', 'listbox');
+		            const menu = document.createElement('div');
+		            menu.className = 'dropdown-menu';
+                    menu.id = menuId;
+		            menu.setAttribute('role', 'listbox');
+                    menu.setAttribute('aria-label', `${selectElement.getAttribute('aria-label')}选项`);
 	            // 关键：menu 使用 fixed 定位时，如果在 transform 容器内会发生偏移
 	            // 将 menu portal 到 body，保证 fixed 相对视口定位
 	            const scroll = document.createElement('div');
@@ -2598,17 +2598,19 @@ function positionDropdownMenu(dropdown) {
 	            for (const child of children) {
 	                if (child.tagName === 'OPTGROUP') {
 	                    const groupLabel = child.getAttribute('label') || '';
-	                    const groupTitle = document.createElement('div');
-	                    groupTitle.className = 'dropdown-group';
-	                    groupTitle.textContent = groupLabel;
+		                    const groupTitle = document.createElement('div');
+		                    groupTitle.className = 'dropdown-group';
+                            groupTitle.setAttribute('role', 'presentation');
+		                    groupTitle.textContent = groupLabel;
 	                    scroll.appendChild(groupTitle);
 
 	                    const opts = Array.from(child.querySelectorAll('option'));
 	                    for (const opt of opts) {
 	                        const value = opt.value;
 	                        if (value === 'TEMP_CUSTOM_PLACEHOLDER') continue;
-	                        const item = document.createElement('div');
-	                        item.className = 'dropdown-item';
+		                        const item = document.createElement('button');
+                                item.type = 'button';
+		                        item.className = 'dropdown-item';
 	                        item.setAttribute('role', 'option');
 	                        item.setAttribute('data-value', value);
 	                        item.setAttribute('aria-selected', value === selectElement.value ? 'true' : 'false');
@@ -2629,39 +2631,79 @@ function positionDropdownMenu(dropdown) {
 	                        }
 
 		                        const logoHtml = (() => {
-		                            if (logoType === 'image' && logo) return `<span class="dropdown-logo is-image"><img src="${logo}" alt="${displayText}" onerror="this.remove()"></span>`;
+		                            if (logoType === 'image' && logo) return `<span class="dropdown-logo is-image"><img src="${logo}" alt="" onerror="this.remove()"></span>`;
 		                            if (logoType === 'emoji' && logo) return `<span class="dropdown-logo is-emoji"><span class="dropdown-logo-emoji">${logo}</span></span>`;
 		                            return `<span class="dropdown-logo is-emoji"><span class="dropdown-logo-emoji">•</span></span>`;
 		                        })();
 
 	                        item.innerHTML = `${logoHtml}<span class="dropdown-item-text">${displayText}</span>`;
 
-	                        item.addEventListener('click', () => {
-	                            closeAllDropdowns();
-	                            trigger.setAttribute('aria-expanded', 'false');
-	                            selectElement.value = value;
-	                            selectElement.dispatchEvent(new Event('change', { bubbles: true }));
-	                            updateCustomDropdownTrigger(selectElement);
-	                        });
+		                        item.addEventListener('click', () => {
+		                            closeAllDropdowns();
+		                            trigger.setAttribute('aria-expanded', 'false');
+                                    if (value === 'CUSTOM' && selectElement.value !== 'CUSTOM') {
+                                        selectElement.setAttribute('data-previous-value', selectElement.value);
+                                    }
+		                            selectElement.value = value;
+		                            selectElement.dispatchEvent(new Event('change', { bubbles: true }));
+		                            updateCustomDropdownTrigger(selectElement);
+                                    trigger.focus({ preventScroll: true });
+		                        });
 
 	                        scroll.appendChild(item);
 	                    }
 	                }
 	            }
 
-	            trigger.addEventListener('click', (e) => {
-	                e.preventDefault();
-	                const willOpen = !dropdown.classList.contains('open');
-	                closeAllDropdowns(willOpen ? dropdown : null);
-	                dropdown.classList.toggle('open', willOpen);
-	                trigger.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
-	                if (willOpen) {
-	                    menu.style.display = 'block';
-	                    positionDropdownMenu(dropdown);
-	                } else {
-	                    menu.style.display = 'none';
-	                }
-	            });
+                    const setDropdownOpen = (open, focusSelected = false) => {
+                        closeAllDropdowns(open ? dropdown : null);
+                        dropdown.classList.toggle('open', open);
+                        trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+                        menu.style.display = open ? 'block' : 'none';
+                        if (!open) return;
+                        positionDropdownMenu(dropdown);
+                        if (focusSelected) {
+                            requestAnimationFrame(() => {
+                                const selected = menu.querySelector('.dropdown-item[aria-selected="true"]');
+                                const fallback = menu.querySelector('.dropdown-item');
+                                (selected || fallback)?.focus({ preventScroll: true });
+                            });
+                        }
+                    };
+
+		            trigger.addEventListener('click', (e) => {
+		                e.preventDefault();
+		                setDropdownOpen(!dropdown.classList.contains('open'));
+		            });
+
+                    trigger.addEventListener('keydown', (e) => {
+                        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                            e.preventDefault();
+                            setDropdownOpen(true, true);
+                        }
+                    });
+
+                    menu.addEventListener('keydown', (e) => {
+                        const items = Array.from(menu.querySelectorAll('.dropdown-item'));
+                        const currentIndex = items.indexOf(document.activeElement);
+
+                        if (e.key === 'Escape') {
+                            e.preventDefault();
+                            setDropdownOpen(false);
+                            trigger.focus({ preventScroll: true });
+                            return;
+                        }
+
+                        let nextIndex = null;
+                        if (e.key === 'ArrowDown') nextIndex = Math.min(items.length - 1, currentIndex + 1);
+                        if (e.key === 'ArrowUp') nextIndex = Math.max(0, currentIndex - 1);
+                        if (e.key === 'Home') nextIndex = 0;
+                        if (e.key === 'End') nextIndex = items.length - 1;
+                        if (nextIndex != null) {
+                            e.preventDefault();
+                            items[nextIndex]?.focus({ preventScroll: true });
+                        }
+                    });
 
 	            // 监听 select 的变化（包括 restoreState / 自定义代币选择后的更新）
 	            selectElement.addEventListener('change', () => updateCustomDropdownTrigger(selectElement));
@@ -2718,68 +2760,29 @@ function positionDropdownMenu(dropdown) {
         
         // 打开自定义代币弹窗
         function openCustomTokenModal() {
-            document.getElementById('customTokenModal').style.display = 'block';
-            document.getElementById('tokenSearchInput').value = '';
+            const modal = document.getElementById('customTokenModal');
+            const searchInput = document.getElementById('tokenSearchInput');
+            const currentSelect = currentSelectId ? document.getElementById(currentSelectId) : null;
+            customTokenModalReturnFocus =
+                currentSelect?.parentElement?.querySelector('.dropdown-trigger') ||
+                (document.activeElement instanceof HTMLElement ? document.activeElement : null);
+
+            modal.style.display = 'flex';
+            modal.setAttribute('aria-hidden', 'false');
+            syncModalScrollLock();
+            searchInput.value = '';
             document.getElementById('searchResults').innerHTML = '';
             setupSearchInputListener(); // 设置回车键监听
-            
-            // 检测是否为移动设备
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-            
-            // 手机端：先强制所有select失去焦点
-            if (isMobile) {
-                // 立即强制所有select元素失去焦点
-                const allSelects = document.querySelectorAll('select');
-                allSelects.forEach(select => {
-                    select.blur();
-                });
-                
-                // 确保当前没有任何元素有焦点
-                if (document.activeElement && document.activeElement.tagName === 'SELECT') {
-                    document.activeElement.blur();
-                }
-            }
-            
-            // 自动聚焦到输入框
-            if (isMobile) {
-                // 手机端：延长延迟并强制聚焦，确保select事件完全结束
-                setTimeout(() => {
-                    const searchInput = document.getElementById('tokenSearchInput');
-                    if (searchInput) {
-                        searchInput.placeholder = '输入代币名称或符号...';
-                        
-                        // 再次确保没有select元素有焦点
-                        const activeElement = document.activeElement;
-                        if (activeElement && activeElement.tagName === 'SELECT') {
-                            activeElement.blur();
-                        }
-                        
-                        // 强制聚焦到搜索输入框
-                        searchInput.focus();
-                        
-                        // 备选方案：触发点击事件来确保聚焦
-                        setTimeout(() => {
-                            if (document.activeElement !== searchInput) {
-                                searchInput.click();
-                                searchInput.focus();
-                            }
-                        }, 50);
-                    }
-                }, 600); // 更长的延迟确保所有select相关事件完成
-            } else {
-                // 桌面端：正常处理
-                setTimeout(() => {
-                    const searchInput = document.getElementById('tokenSearchInput');
-                    if (searchInput) {
-                        searchInput.focus();
-                    }
-                }, 100);
-            }
+
+            // 自定义触发器不会唤起原生 select，可在下一帧直接聚焦搜索，避免人为等待。
+            requestAnimationFrame(() => searchInput.focus({ preventScroll: true }));
         }
         
         // 关闭自定义代币弹窗
         function closeCustomTokenModal() {
-            document.getElementById('customTokenModal').style.display = 'none';
+            const modal = document.getElementById('customTokenModal');
+            modal.style.display = 'none';
+            modal.setAttribute('aria-hidden', 'true');
             
             // 如果用户没有选择新代币就关闭弹窗，保持当前状态
             if (currentSelectId) {
@@ -2798,16 +2801,27 @@ function positionDropdownMenu(dropdown) {
                         }
                     }
                     // 如果已经有代币，保持CUSTOM选择不变
+                    updateCustomDropdownTrigger(currentSelect);
                 }
             }
             
             currentSelectId = null;
+            syncModalScrollLock();
+            if (customTokenModalReturnFocus?.isConnected) customTokenModalReturnFocus.focus();
+            customTokenModalReturnFocus = null;
         }
         
         // 点击弹窗外部关闭
         window.addEventListener('click', function(event) {
             const modal = document.getElementById('customTokenModal');
             if (event.target === modal) {
+                closeCustomTokenModal();
+            }
+        });
+
+        document.addEventListener('keydown', (event) => {
+            const modal = document.getElementById('customTokenModal');
+            if (event.key === 'Escape' && modal.getAttribute('aria-hidden') === 'false') {
                 closeCustomTokenModal();
             }
         });
@@ -3128,9 +3142,11 @@ function positionDropdownMenu(dropdown) {
             const container = document.querySelector('.container');
             if (!container) return;
 
-            const kb = document.createElement('div');
-            kb.className = 'mobile-keyboard';
-            kb.id = 'mobileKeyboard';
+	            const kb = document.createElement('div');
+	            kb.className = 'mobile-keyboard';
+	            kb.id = 'mobileKeyboard';
+                kb.setAttribute('role', 'group');
+                kb.setAttribute('aria-label', '计算键盘');
 
             // 键盘布局定义
             const rows = [
@@ -3171,14 +3187,24 @@ function positionDropdownMenu(dropdown) {
 
                 row.forEach((key) => {
                     const btn = document.createElement('button');
-                    btn.type = 'button';
-                    btn.className = 'kb-key' + (key.cls ? ` ${key.cls}` : '');
-                    btn.setAttribute('data-value', key.value);
-                    if (key.wide) btn.classList.add('wide');
+	                    btn.type = 'button';
+	                    btn.className = 'kb-key' + (key.cls ? ` ${key.cls}` : '');
+	                    btn.setAttribute('data-value', key.value);
+                        const keyLabels = {
+                            clear: '清空',
+                            backspace: '退格',
+                            '*': '乘',
+                            '/': '除',
+                            '-': '减',
+                            '+': '加',
+                            equals: '等于',
+                        };
+                        btn.setAttribute('aria-label', keyLabels[key.value] || key.label);
+	                    if (key.wide) btn.classList.add('wide');
 
                     if (key.isSvg) {
                         // 退格图标
-                        btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/><line x1="18" y1="9" x2="12" y2="15"/><line x1="12" y1="9" x2="18" y2="15"/></svg>';
+	                        btn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/><line x1="18" y1="9" x2="12" y2="15"/><line x1="12" y1="9" x2="18" y2="15"/></svg>';
                     } else {
                         btn.textContent = key.label;
                     }
