@@ -4,9 +4,6 @@
 
 **在线使用：<https://wolfyxbt.github.io/ValuesCorrector/>**
 
-<img width="1728" height="959" alt="网页界面" src="https://github.com/user-attachments/assets/0e112bfc-159f-42c2-96f0-5c1da16cbe91" />
-<img width="2822" height="1612" alt="分享图示例" src="https://github.com/user-attachments/assets/c09b1541-e85a-4d72-9211-73c61f801977" />
-
 ## 功能
 
 - **多资产实时换算**：6 个栏位联动，任意一栏输入，其余栏位即时换算
