@@ -1801,6 +1801,11 @@
                 font-size: 0.94rem;
             }
 
+            /* iOS Safari 会自动放大小于 16px 的输入框，导致页面聚焦时晃动。 */
+            input {
+                font-size: 16px;
+            }
+
             .dropdown-trigger {
                 gap: 7px;
                 padding-right: 8px;
