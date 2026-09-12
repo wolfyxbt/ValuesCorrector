@@ -576,7 +576,7 @@
         
 	        function getShareRows() {
 	            const rows = [];
-	            const presetCryptoSet = new Set(PRESET_CRYPTO_SYMBOLS);
+
 	            for (let i = 1; i <= 6; i++) {
 	                const amountEl = document.getElementById(`amount${i}`);
 	                const selectEl = document.getElementById(`currency${i}`);
@@ -589,7 +589,7 @@
 	                let logoType = 'none';
 	                let logo = '';
 	                let value = selectEl.value;
-	                const isCrypto = (value === 'CUSTOM') || presetCryptoSet.has(value);
+
 	                
 	                if (value === 'CUSTOM') {
 	                    const customOption = selectEl.querySelector('option[value="CUSTOM"]');
@@ -625,7 +625,7 @@
 	                    label,
 	                    amount: rawAmount,
 	                    value,
-	                    isCrypto,
+
 	                    logoType,
 	                    logo
 	                });
@@ -823,7 +823,7 @@
 						                const amountFont = `400 ${primaryAmountFontSizeForLayout}px "PingFang SC"`;
 						                const tickerFont = `400 ${primaryTickerFontSizeForLayout}px "PingFang SC"`;
 						                const amountW = measureText(amountFont, primaryForMeasure.amount);
-						                const tickerLabel = primaryForMeasure.isCrypto ? `$${primaryForMeasure.label}` : primaryForMeasure.label;
+						                const tickerLabel = primaryForMeasure.label;
 						                const tickerW = measureText(tickerFont, tickerLabel);
 						                const logoW = shouldDrawLogo ? ((44 * SOURCE_ROW_SCALE) + (12 * SOURCE_ROW_SCALE)) : 0;
 						                const rowW = Math.max(amountW, logoW + tickerW) + 20;
@@ -843,7 +843,7 @@
 					                for (const r of secondaryForMeasure) {
 					                    const shouldDrawLogo = rowHasDrawableLogo(r);
 					                    const amountW = measureText(amountFont, r.amount) + 14;
-					                    const tickerLabel = r.isCrypto ? `$${r.label}` : r.label;
+					                    const tickerLabel = r.label;
 					                    const tickerW = measureText(tickerFont, tickerLabel);
 					                    const logoW = shouldDrawLogo ? (iconSize + iconGap) : 0;
 					                    const rowW = padX + prefixW + amountW + logoW + tickerW + padX + 20;
@@ -996,7 +996,7 @@
 						                ctx.fillStyle = ACCENT;
 						                ctx.font = `400 ${amountFontSize}px "PingFang SC"`;
 						                let reservedTail = 0;
-						                const tickerLabel = row.isCrypto ? `$${row.label}` : row.label;
+						                const tickerLabel = row.label;
 						                if (showPrefix) {
 						                    const prevFont = ctx.font;
 						                    ctx.font = `400 ${tickerFontSize}px "PingFang SC"`;
