@@ -29,6 +29,7 @@
             { symbol: 'HKD', category: 'fiat', text: 'HKD', logoType: 'emoji', logo: '🇭🇰' },
             { symbol: 'MYR', category: 'fiat', text: 'MYR', logoType: 'emoji', logo: '🇲🇾' },
             // 实物（priceAmount 为以 priceCurrency 计价的单价）
+            { symbol: 'IPHONE_DUO', category: 'product', text: 'iPhone Duo', logoType: 'emoji', logo: '📱', priceAmount: 2000, priceCurrency: 'USD' },
             { symbol: 'PATEK', category: 'product', text: '嗯哼的百达斐丽', logoType: 'image', logo: 'assets/logos/enheng-patek.png', emoji: '⌚', priceAmount: 1200000, priceCurrency: 'CNY' },
             { symbol: 'XIAOXIAO_HOME', category: 'product', text: '小侠的新房', logoType: 'image', logo: 'assets/logos/xiaoxia-home.png', emoji: '🏠', priceAmount: 74540000, priceCurrency: 'CNY' },
             { symbol: 'FERRARI_SF90', category: 'product', text: '0xSun 的法拉利', logoType: 'image', logo: 'assets/logos/0xsun-ferrari.png', emoji: '🏎️', priceAmount: 8500000, priceCurrency: 'CNY' },
