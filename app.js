@@ -65,7 +65,7 @@
         // 下拉分组（顺序与原 HTML 一致）；加密货币组末尾追加“自定义代币”入口
         const SELECT_GROUPS = [
             { label: '加密货币', category: 'crypto', appendCustom: true },
-            { label: '法币', category: 'fiat' },
+            { label: '法币', category: 'fiat', appendCustomFiat: true },
             { label: '实物', category: 'product' },
         ];
 
@@ -80,6 +80,7 @@
             for (const group of SELECT_GROUPS) {
                 const optgroup = document.createElement('optgroup');
                 optgroup.label = group.label;
+                optgroup.setAttribute('data-category', group.category);
 
                 for (const asset of ASSET_CONFIG) {
                     if (asset.category !== group.category) continue;
@@ -102,6 +103,12 @@
                     optgroup.appendChild(placeholder);
                 }
 
+                if (group.appendCustomFiat) {
+                    const customFiat = document.createElement('option');
+                    customFiat.value = 'CUSTOM_FIAT';
+                    customFiat.textContent = '🔍 自定义法币';
+                    optgroup.appendChild(customFiat);
+                }
                 select.appendChild(optgroup);
             }
         }
@@ -1611,6 +1618,9 @@ window.addEventListener('resize', () => {
                     })
                 ]);
                 const nextPrices = { USD: 1 };
+                for (const { code, rate } of updateFiatCatalog(fiat?.fiatData?.rates, fiat?.source === 'stale-cache')) {
+                    nextPrices[`FIAT:${code}`] = 1 / rate;
+                }
                 for (const [symbol, id] of Object.entries(COINGECKO_COIN_IDS)) {
                     if (crypto.prices[id]) nextPrices[symbol] = crypto.prices[id];
                 }
@@ -1627,7 +1637,9 @@ window.addEventListener('resize', () => {
                     if (info.price) nextPrices[key] = info.price;
                 }
                 usdPrices = nextPrices;
-                const incomplete = crypto.missingIds.length > 0 || FIAT_SYMBOLS.some(symbol => !nextPrices[symbol]);
+                const missingCustomFiat = Array.from({ length: FIELD_COUNT }, (_, i) => document.getElementById(`currency${i + 1}`)?.value)
+                    .some(key => key?.startsWith('FIAT:') && !nextPrices[key]);
+                const incomplete = crypto.missingIds.length > 0 || missingCustomFiat || FIAT_SYMBOLS.some(symbol => !nextPrices[symbol]);
                 const stale = crypto.staleIds.length > 0 || fiat?.source === 'stale-cache';
                 apiStatus.preset = PRESET_CRYPTO_SYMBOLS.every(symbol => !!nextPrices[symbol]);
                 apiStatus.exchangerate = !!fiat;
@@ -1845,8 +1857,12 @@ window.addEventListener('resize', () => {
                             console.log(`  ✅ 金额已恢复为: ${state[`amount${i}`]}`);
                         }
                         if (state[`currency${i}`]) {
+                            if (/^FIAT:[A-Z]{3}$/.test(state[`currency${i}`])) {
+                                ensureFiatOption(selectElement, state[`currency${i}`].slice(5));
+                            }
                             const oldValue = selectElement.value;
                             selectElement.value = state[`currency${i}`];
+                            selectElement.setAttribute('data-previous-value', selectElement.value);
                             console.log(`  ✅ 货币已从 ${oldValue} 恢复为: ${selectElement.value}`);
 
                             // 验证设置是否成功
@@ -2255,6 +2271,11 @@ window.addEventListener('resize', () => {
                 document.getElementById(`currency${i}`).addEventListener('change', function() {
                     console.log('Currency change event triggered for currency' + i);
                     
+                    if (this.value === 'CUSTOM_FIAT') {
+                        this.value = this.getAttribute('data-previous-value') || DEFAULT_CURRENCIES[i - 1];
+                        openCustomFiatModal(this.id);
+                        return;
+                    }
                     // 处理自定义代币选择
                     if (this.value === 'CUSTOM') {
                         currentSelectId = this.id;
@@ -2423,7 +2444,7 @@ window.addEventListener('resize', () => {
 	            // 菜单 portal 在 body 下，通过保存的引用同步选中态。
 	            dropdown._menu?.querySelectorAll('.dropdown-item').forEach((item) => {
 	                const v = item.getAttribute('data-value');
-	                const selected = v === selectElement.value;
+	                const selected = v === selectElement.value || (v === 'CUSTOM_FIAT' && selectElement.value.startsWith('FIAT:'));
 	                item.setAttribute('aria-selected', selected ? 'true' : 'false');
 	            });
 	        }
@@ -2559,7 +2580,7 @@ window.addEventListener('resize', () => {
 	                    const opts = Array.from(child.querySelectorAll('option'));
 	                    for (const opt of opts) {
 	                        const value = opt.value;
-	                        if (value === 'TEMP_CUSTOM_PLACEHOLDER') continue;
+	                        if (value === 'TEMP_CUSTOM_PLACEHOLDER' || value.startsWith('FIAT:')) continue;
 		                        const item = document.createElement('button');
                                 item.type = 'button';
 		                        item.className = 'dropdown-item';
@@ -2571,8 +2592,8 @@ window.addEventListener('resize', () => {
 	                        let displayText = (opt.textContent || value).trim();
 	                        let logoType = 'none';
 	                        let logo = '';
-	                        if (value === 'CUSTOM') {
-	                            displayText = '自定义代币';
+	                        if (value === 'CUSTOM' || value === 'CUSTOM_FIAT') {
+	                            displayText = value === 'CUSTOM_FIAT' ? '自定义法币' : '自定义代币';
 	                            logoType = 'emoji';
 	                            logo = '🔍';
 	                        } else if (currencyLogos?.[value]) {
@@ -2593,6 +2614,10 @@ window.addEventListener('resize', () => {
 		                        item.addEventListener('click', () => {
 		                            closeAllDropdowns();
 		                            trigger.setAttribute('aria-expanded', 'false');
+                                    if (value === 'CUSTOM_FIAT') {
+                                        openCustomFiatModal(selectElement.id);
+                                        return;
+                                    }
                                     if (value === 'CUSTOM' && selectElement.value !== 'CUSTOM') {
                                         selectElement.setAttribute('data-previous-value', selectElement.value);
                                     }

@@ -16,4 +16,8 @@ Unmodified SVGs from [HatScripts / Circle Flags](https://github.com/HatScripts/c
 
 The mapping lives in `ASSET_CONFIG` in `app.js`, shared by dropdowns and the share image. ExchangeRate-API supplies quotes independently of these bundled images.
 
-For future custom fiat support, bundle additional flags from the same collection and map ISO 4217 currency codes explicitly to flag files. Do not derive a country from the first two currency-code letters: shared currencies such as EUR need an explicit choice. A neutral circular currency-code badge can serve as the fallback for unmapped currencies. This is an extension recommendation; custom fiat selection is not implemented yet.
+The full set of 248 two-letter country/region SVGs is bundled for extension, plus `european_union.svg` and `sh-hl.svg`. Images are separate files: unused flags are not downloaded by the browser. Search-result images load lazily.
+
+Custom fiat support in `fiat.js` uses an explicit currency-to-flag mapping. The searchable list is derived from valid positive quotes returned by the existing API, with Chinese and English names supplied by browser `Intl.DisplayNames`. Regional/shared units without a single representative flag (XAF, XCD, XDR, XOF, XPF), as well as new unmapped codes, receive a local circular currency-code SVG badge. No image API is needed.
+
+Custom selections use `FIAT:CODE` keys, preserving crypto identifiers and restoring their options before saved values are applied. Quotes are always refreshed from the existing fiat cache/API; saved selections never carry an invented quote.

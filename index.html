@@ -15,7 +15,7 @@
     <link rel="shortcut icon" type="image/x-icon" href="favicon/favicon.ico">
     <meta name="theme-color" content="#080808">
     <!-- Apply the saved appearance before styles load to avoid a light flash. -->
-    <script src="theme.js?v=20260913-8"></script>
+    <script src="theme.js?v=20260913-9"></script>
 
     <!-- PWA Meta Tags -->
     <meta name="mobile-web-app-capable" content="yes">
@@ -33,7 +33,7 @@
       gtag('config', 'G-XEZ049M5R2');
     </script>
     
-	    <link rel="stylesheet" href="styles.css?v=20260913-8">
+	    <link rel="stylesheet" href="styles.css?v=20260913-9">
 </head>
 <body>
     <main class="container">
@@ -104,7 +104,8 @@
 	        </div>
 	    </footer>
 
-			    <script src="app.js?v=20260913-8"></script>
+			    <script src="fiat.js?v=20260913-9"></script>
+                <script src="app.js?v=20260913-9"></script>
     </main>
 
 	    <!-- Toast 提示 -->
@@ -132,6 +133,23 @@
             </div>
 	        </div>
 	    </div>
+
+    <!-- 自定义法币：沿用代币搜索弹窗的布局和键盘操作 -->
+    <div id="customFiatModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="customFiatModalTitle" aria-hidden="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="customFiatModalTitle">自定义法币搜索</h3>
+                <button class="close" type="button" aria-label="关闭自定义法币搜索">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="search-container">
+                    <input id="fiatSearchInput" type="text" aria-label="搜索法币" placeholder="输入法币名称或代码，如欧元、EUR" autocomplete="off" spellcheck="false" />
+                </div>
+                <p id="fiatSearchStatus" class="fiat-search-status" role="status" aria-live="polite"></p>
+                <div id="fiatSearchResults" class="search-results"></div>
+            </div>
+        </div>
+    </div>
 
 	    <!-- 分享图预览弹窗 -->
 	    <div id="shareImageModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="shareImageModalTitle" aria-hidden="true">

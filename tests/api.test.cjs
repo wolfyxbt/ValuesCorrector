@@ -6,7 +6,8 @@ const source = fs.readFileSync(require('node:path').join(__dirname, '../app.js')
 function setup(fetch) {
   let time = Date.now();
   const ctx = vm.createContext({ fetch, URL, URLSearchParams, AbortController, setTimeout, clearTimeout,
-    apiStatus: {}, console: { log() {}, error() {}, warn() {} }, Date: { now: () => time }, localStorage: {}, document: { getElementById() { return null; } } });
+    apiStatus: {}, console: { log() {}, error() {}, warn() {} }, Date: { now: () => time }, localStorage: {}, document: { getElementById() { return null; }, addEventListener() {} } });
+  vm.runInContext(fs.readFileSync(require('node:path').join(__dirname, '../fiat.js'), 'utf8'), ctx);
   vm.runInContext(source.slice(0, source.indexOf('// PWA 添加到主屏幕功能')), ctx);
   return { run: code => vm.runInContext(code, ctx), ctx, tick: ms => { time += ms; } };
 }
@@ -81,7 +82,7 @@ test('all preset and active custom quotes share a batch; missing prices leave ot
 
 test('restored token ID avoids symbol collisions; saved estimated quotes are discarded',()=>{
   const {ctx,run}=setup();ctx.customTokens=new Map();ctx.updateSelectDisplay=()=>{};
-  const attrs={};const els={};for(let i=1;i<=6;i++){els['amount'+i]={value:''};els['currency'+i]={value:'USD',querySelector(){return {setAttribute(k,v){attrs[i+':'+k]=v;}};}};}ctx.document.getElementById=id=>els[id];
+  const attrs={};const els={};for(let i=1;i<=6;i++){els['amount'+i]={value:''};els['currency'+i]={value:'USD',setAttribute(){},querySelector(){return {setAttribute(k,v){attrs[i+':'+k]=v;}};}};}ctx.document.getElementById=id=>els[id];
   const state={currency1:'CUSTOM',amount1:'2',customToken1:{tokenKey:'BTC',tokenLogo:'https://assets.coingecko.com/coins/images/5/large/dogecoin.png'},customTokens:[['BTC',{id:'unrelated-token',symbol:'BTC',price:50,isEstimated:true}]]};
   ctx.localStorage={getItem:()=>JSON.stringify(state)};
   vm.runInContext(source.slice(source.indexOf('function restoreState()'),source.indexOf('function convert(sourceIndex)')),ctx);
@@ -90,7 +91,7 @@ test('restored token ID avoids symbol collisions; saved estimated quotes are dis
 
 test('removed products restore their dollar value without changing active products',()=>{
   const {ctx,run}=setup();ctx.customTokens=new Map();ctx.updateSelectDisplay=()=>{};
-  const els={};for(let i=1;i<=6;i++){els['amount'+i]={value:''};els['currency'+i]={value:'USD'};}
+  const els={};for(let i=1;i<=6;i++){els['amount'+i]={value:''};els['currency'+i]={value:'USD',setAttribute(){}};}
   ctx.document.getElementById=id=>els[id];
   ctx.localStorage={getItem:()=>JSON.stringify({currency1:'MACBOOK',amount1:'2',currency2:'IPHONE17',amount2:'3',currency3:'KFC',amount3:'4'})};
   vm.runInContext(source.slice(source.indexOf('function restoreState()'),source.indexOf('function convert(sourceIndex)')),ctx);
@@ -123,4 +124,57 @@ test('out-of-order searches and responses after closing the modal cannot replace
   pending.new({coins:[{id:'new',name:'New',symbol:'NEW'}]});await second;
   pending.old({coins:[{id:'old',name:'Old',symbol:'OLD'}]});await first;assert.equal(displayed[0].id,'new');
   nodes.tokenSearchInput.value='closing';const third=run('searchTokens()');ctx.currentSelectId=null;run('invalidateTokenSearch()');pending.closing({coins:[{id:'closing',name:'Close',symbol:'CLOSE'}]});await third;assert.equal(displayed[0].id,'new');
+});
+
+test('fiat catalog validates rates and searches Chinese, English, aliases and currency codes',()=>{
+  const {run}=setup();
+  run(`updateFiatCatalog({USD:1,EUR:.9,MYR:4.2,GBP:.8,ZAR:18,ZERO:0,JPY:0,BAD:-1,NAN:'2','<x>':1})`);
+  assert.equal(run('fiatCatalog.length'),5);
+  for(const query of ['欧元','euro','eur']) assert.equal(run(`findFiatCurrencies(${JSON.stringify(query)})[0].code`),'EUR');
+  assert.equal(run(`findFiatCurrencies('马币')[0].code`),'MYR');
+  assert.equal(run(`getFiatLogo('EUR')`),'assets/logos/fiat/european_union.svg');
+  assert.ok(run(`getFiatLogo('XDR')`).startsWith('data:image/svg+xml;'));
+  assert.equal(run(`getFiatLogo('<x>')`),'');
+});
+
+test('custom fiat quotes refresh independently of crypto and disappear when unavailable',async()=>{
+  const {ctx,run}=setup(async()=>reply({}));
+  ctx.customTokens=new Map();ctx.window={};ctx.setInterval=()=>1;ctx.convert=()=>{};ctx.updateApiStatusDisplay=()=>{};
+  ctx.document.getElementById=id=>id.startsWith('amount')?{value:''}:{value:'FIAT:EUR'};
+  vm.runInContext(source.slice(source.indexOf('async function loadRates({'),source.indexOf('// 检测 localStorage 是否可用')),ctx);
+  run(`getCoinGeckoPrices=async()=>({prices:{bitcoin:100000},staleIds:[],missingIds:[]});getFiatRates=async()=>({fiatData:{rates:{USD:1,EUR:.8,BTC:2}},source:'realtime'})`);
+  await run('loadRates()');
+  assert.equal(run(`usdPrices['FIAT:EUR']`),1.25);
+  assert.equal(run('usdPrices.BTC'),100000);assert.equal(run(`usdPrices['FIAT:BTC']`),.5);
+  assert.equal(run(`getConversionRate('FIAT:EUR','USD')`),1.25);
+  run(`getFiatRates=async()=>({fiatData:{rates:{EUR:.5}},source:'stale-cache'})`);
+  await run('loadRates()');assert.equal(run(`usdPrices['FIAT:EUR']`),2);assert.equal(run('fiatCatalogStale'),true);
+  run(`getFiatRates=async()=>{throw Error('offline')}`);
+  await run('loadRates()');assert.equal(run(`usdPrices['FIAT:EUR']`),undefined);assert.equal(run('fiatCatalog.length'),0);
+});
+
+test('saved custom fiat is recreated before selection and retains its share logo',()=>{
+  const {ctx,run}=setup();ctx.customTokens=new Map();ctx.updateSelectDisplay=()=>{};
+  const els={};for(let i=1;i<=6;i++){
+    let value='USD';const options=[{value:'USD'}];
+    els['amount'+i]={value:''};
+    els['currency'+i]={options,setAttribute(){},get value(){return value},set value(v){value=options.some(o=>o.value===v)?v:''},querySelector(){return {appendChild:o=>options.push(o)}}};
+  }
+  ctx.document.createElement=()=>({});ctx.document.getElementById=id=>els[id];
+  ctx.localStorage={getItem:()=>JSON.stringify({currency1:'FIAT:EUR',amount1:'123'})};
+  vm.runInContext(source.slice(source.indexOf('function restoreState()'),source.indexOf('function convert(sourceIndex)')),ctx);
+  run('restoreState()');assert.equal(els.currency1.value,'FIAT:EUR');assert.equal(els.amount1.value,'123');
+  run(`ensureFiatOption(document.getElementById('currency1'),'EUR')`);assert.equal(els.currency1.options.length,2);
+  vm.runInContext(source.slice(source.indexOf('function getShareRows()'),source.indexOf('function formatShareTimestamp()')),ctx);
+  const row=run('getShareRows()[0]');assert.equal(row.label,'EUR');assert.equal(row.logoType,'image');assert.equal(row.logo,'assets/logos/fiat/european_union.svg');
+});
+
+test('choosing a custom target fiat preserves the last entered source field',()=>{
+  const {ctx,run}=setup();
+  const options=[];const select={value:'USD',options,setAttribute(){},querySelector(){return {appendChild:o=>options.push(o)}}};
+  ctx.document.createElement=()=>({});ctx.document.getElementById=()=>select;
+  ctx.updateSelectDisplay=()=>{};ctx.saveState=()=>{};
+  let sourceField;ctx.convert=index=>{sourceField=index;};
+  run(`closeCustomFiatModal=()=>{fiatPickerSelectId=null;};updateFiatCatalog({EUR:.8});usdPrices={'FIAT:EUR':1.25};lastInputField=1;fiatPickerSelectId='currency2';selectCustomFiat('EUR')`);
+  assert.equal(select.value,'FIAT:EUR');assert.equal(sourceField,1);
 });
