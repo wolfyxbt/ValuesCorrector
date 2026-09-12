@@ -88,6 +88,19 @@ test('restored token ID avoids symbol collisions; saved estimated quotes are dis
   run('restoreState()');assert.equal(attrs['1:data-token-key'],'CG:unrelated-token');assert.equal(ctx.customTokens.get('CG:unrelated-token').price,null);assert.ok(attrs['1:data-token-logo'].startsWith('https://coin-images.coingecko.com/'));
 });
 
+test('removed products restore their dollar value without changing active products',()=>{
+  const {ctx,run}=setup();ctx.customTokens=new Map();ctx.updateSelectDisplay=()=>{};
+  const els={};for(let i=1;i<=6;i++){els['amount'+i]={value:''};els['currency'+i]={value:'USD'};}
+  ctx.document.getElementById=id=>els[id];
+  ctx.localStorage={getItem:()=>JSON.stringify({currency1:'MACBOOK',amount1:'2',currency2:'IPHONE17',amount2:'3',currency3:'KFC',amount3:'4'})};
+  vm.runInContext(source.slice(source.indexOf('function restoreState()'),source.indexOf('function convert(sourceIndex)')),ctx);
+  run('restoreState()');
+  assert.equal(els.currency1.value,'USD');assert.equal(els.amount1.value,'1,998');
+  assert.equal(els.currency2.value,'USD');assert.equal(els.amount2.value,'2,397');
+  assert.equal(els.currency3.value,'KFC');assert.equal(els.amount3.value,'4');
+  assert.equal(run(`ASSET_CONFIG.some(asset=>asset.symbol==='MACBOOK')`),false);
+});
+
 test('share export keeps good logos and skips failed logos; successful images are reused',async()=>{
   let calls=0;const {ctx,run}=setup(async url=>{calls++;if(url==='broken.png')throw Error('network failure');return new Response(new Uint8Array([1,2,3]),{headers:{'Content-Type':'image/png'}});});
   ctx.URL={createObjectURL:()=> 'blob:test',revokeObjectURL(){}};
