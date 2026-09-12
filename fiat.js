@@ -273,8 +273,13 @@ function openCustomFiatModal(selectId) {
     document.getElementById('fiatSearchInput').value = '';
     syncModalScrollLock();
     if (fiatCatalog.length) renderFiatResults(); else refreshFiatPicker();
+    const version = fiatPickerVersion;
     requestAnimationFrame(() => {
-        if (fiatPickerSelectId === selectId) document.getElementById('fiatSearchInput').focus({ preventScroll: true });
+        if (fiatPickerSelectId !== selectId || fiatPickerVersion !== version) return;
+        // Touch users can browse immediately; only an explicit tap opens the keyboard.
+        const touchDevice = window.matchMedia('(any-pointer: coarse)').matches;
+        const target = touchDevice ? modal.querySelector('.close') : document.getElementById('fiatSearchInput');
+        target.focus({ preventScroll: true });
     });
 }
 

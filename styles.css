@@ -1991,3 +1991,25 @@
         .fiat-result .token-symbol { text-transform: none; font-size: 0.8rem; overflow-wrap: anywhere; }
         .fiat-result:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
         .fiat-search-status { color: var(--muted); font-size: 0.82rem; margin: 0 0 12px; }
+
+        /* Keep one scrolling surface inside the fiat picker, including on touch devices. */
+        #customFiatModal .modal-content {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            animation: modalBackdropIn 180ms ease-out;
+        }
+        #customFiatModal .modal-header,
+        #customFiatModal .search-container,
+        #customFiatModal .fiat-search-status { flex-shrink: 0; }
+        #customFiatModal .modal-body {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+        #fiatSearchResults {
+            min-height: 0;
+            overscroll-behavior-y: contain;
+            touch-action: pan-y pinch-zoom;
+            -webkit-overflow-scrolling: touch;
+        }

@@ -178,3 +178,20 @@ test('choosing a custom target fiat preserves the last entered source field',()=
   run(`closeCustomFiatModal=()=>{fiatPickerSelectId=null;};updateFiatCatalog({EUR:.8});usdPrices={'FIAT:EUR':1.25};lastInputField=1;fiatPickerSelectId='currency2';selectCustomFiat('EUR')`);
   assert.equal(select.value,'FIAT:EUR');assert.equal(sourceField,1);
 });
+
+test('touch fiat picker leaves search unfocused and ignores stale opening callbacks',()=>{
+  const {ctx,run}=setup();let coarse=true;const focused=[];const frames=[];
+  const close={focus:()=>focused.push('close')};
+  const modal={style:{},setAttribute(){},querySelector:()=>close};
+  const input={value:'',focus:()=>focused.push('search')};
+  const select={parentElement:{querySelector:()=>null}};
+  ctx.window={matchMedia:()=>({matches:coarse})};ctx.requestAnimationFrame=fn=>frames.push(fn);
+  ctx.document.getElementById=id=>id==='customFiatModal'?modal:id==='fiatSearchInput'?input:select;
+  ctx.closeAllDropdowns=()=>{};ctx.syncModalScrollLock=()=>{};
+  run(`renderFiatResults=()=>{};updateFiatCatalog({USD:1});openCustomFiatModal('currency1')`);
+  frames.shift()();assert.deepEqual(focused,['close']);
+  coarse=false;run(`openCustomFiatModal('currency1')`);frames.shift()();assert.deepEqual(focused,['close','search']);
+  run(`openCustomFiatModal('currency1');closeCustomFiatModal();openCustomFiatModal('currency1')`);
+  frames.shift()();assert.equal(focused.length,2);
+  frames.shift()();assert.equal(focused.length,3);
+});
