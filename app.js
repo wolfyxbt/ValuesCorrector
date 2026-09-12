@@ -1336,218 +1336,101 @@ window.addEventListener('resize', () => {
             deferredPrompt = e;
             // 显示添加到主屏幕按钮
             addToHomeBtn.style.display = 'inline-flex';
+            if (document.getElementById('installGuideModal')?.getAttribute('aria-hidden') === 'false') {
+                document.getElementById('installGuideAction').textContent = '立即添加';
+            }
         });
         
-        // 点击添加到主屏幕按钮
-        addToHomeBtn.addEventListener('click', async () => {
-            const isMobile = isMobileDevice();
-            
-            if (!isMobile) {
-                // 桌面端提示
-                showDesktopPrompt();
-                return;
-            }
-            
-            if (deferredPrompt) {
-                // Android Chrome: 直接触发安装提示
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                console.log(`PWA安装结果: ${outcome}`);
-                if (outcome === 'accepted') {
-                    alert('应用已成功添加到主屏幕！🎉');
-                }
+        let installReturnFocus = null;
+
+        function getInstallGuide() {
+            const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+            if (ios) return {
+                platform: 'iPhone / iPad',
+                steps: [
+                    ['打开分享菜单', '在 Safari 中打开本网站，轻点浏览器的分享按钮。'],
+                    ['添加到主屏幕', '在分享菜单中向下找“添加到主屏幕”。'],
+                    ['确认添加', '确认名称后轻点“添加”，回到主屏幕即可找到。']
+                ]
+            };
+            if (/Android/.test(navigator.userAgent)) return {
+                platform: 'Android',
+                steps: [
+                    ['打开浏览器菜单', '使用 Chrome 打开本网站，轻点右上角菜单。'],
+                    ['选择添加或安装', '找到“添加到主屏幕”或“安装应用”。'],
+                    ['确认添加', '按浏览器提示完成，之后从主屏幕打开。']
+                ]
+            };
+            return {
+                platform: '电脑浏览器',
+                steps: [
+                    ['打开浏览器菜单', '在 Chrome 中查找安装应用入口；Safari 可使用“添加到程序坞”。'],
+                    ['确认安装', '按浏览器提示确认名称和安装位置。'],
+                    ['随时打开', '从应用列表或程序坞启动；手机上也可以添加到主屏幕。']
+                ]
+            };
+        }
+
+        function showInstallGuide() {
+            const modal = document.getElementById('installGuideModal');
+            const guide = getInstallGuide();
+            document.getElementById('installPlatform').textContent = guide.platform;
+            const steps = document.getElementById('installSteps');
+            steps.replaceChildren();
+            guide.steps.forEach(([title, detail]) => {
+                const row = document.createElement('li');
+                const heading = document.createElement('strong'); heading.textContent = title;
+                const description = document.createElement('p'); description.textContent = detail;
+                row.append(heading, description); steps.append(row);
+            });
+            const action = document.getElementById('installGuideAction');
+            action.textContent = deferredPrompt ? '立即添加' : '知道了';
+            installReturnFocus = document.activeElement;
+            modal.style.display = 'flex'; modal.setAttribute('aria-hidden', 'false');
+            syncModalScrollLock();
+            requestAnimationFrame(() => {
+                if (modal.getAttribute('aria-hidden') === 'false') action.focus({ preventScroll: true });
+            });
+        }
+
+        function closeInstallGuide() {
+            const modal = document.getElementById('installGuideModal');
+            modal.style.display = 'none'; modal.setAttribute('aria-hidden', 'true');
+            syncModalScrollLock();
+            if (installReturnFocus?.isConnected) installReturnFocus.focus({ preventScroll: true });
+            installReturnFocus = null;
+        }
+
+        addToHomeBtn.addEventListener('click', showInstallGuide);
+        document.addEventListener('DOMContentLoaded', () => {
+            const modal = document.getElementById('installGuideModal');
+            modal.querySelector('.close').addEventListener('click', closeInstallGuide);
+            modal.addEventListener('click', event => { if (event.target === modal) closeInstallGuide(); });
+            document.getElementById('installGuideAction').addEventListener('click', async () => {
+                if (!deferredPrompt) { closeInstallGuide(); return; }
+                const prompt = deferredPrompt;
                 deferredPrompt = null;
-            } else {
-                // 移动端手动指引
-                if (window.navigator.standalone === false) {
-                    // iOS Safari: 显示更直观的添加指引
-                    showIOSInstallPrompt();
-                } else {
-                    // 显示手动添加指引
-                    showManualInstallInstructions();
-                }
-            }
+                const action = document.getElementById('installGuideAction');
+                action.disabled = true;
+                try {
+                    await prompt.prompt();
+                    const { outcome } = await prompt.userChoice;
+                    if (outcome === 'accepted') closeInstallGuide();
+                } catch { showToast('暂时无法自动添加，请按上方步骤操作'); }
+                finally { action.disabled = false; action.textContent = '知道了'; }
+            });
         });
-        
-        // 桌面端提示
-        function showDesktopPrompt() {
-            const popup = document.createElement('div');
-            popup.innerHTML = `
-                <div style="
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    background: rgba(0,0,0,0.8);
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    z-index: 10000;
-	                    font-family: "PingFang SC";
-                    animation: fadeIn 0.3s ease-out;
-                ">
-                    <div style="
-                        background: var(--surface);
-                        padding: 30px;
-                        border-radius: 20px;
-                        text-align: center;
-                        max-width: 380px;
-                        margin: 20px;
-                        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-                        animation: slideUp 0.3s ease-out;
-                    ">
-                        <div style="margin-bottom: 20px;">
-                            <svg width="60" height="60" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-	                                <path d="M17 1H7c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2zM7 4V3h10v1H7zM7 18V6h10v12H7zM7 21v-1h10v1H7z" fill="var(--text)"/>
-	                                <path d="M12 8l-4 4h2.5v3h3v-3H16l-4-4z" fill="var(--text)"/>
-	                            </svg>
-	                        </div>
-	                        <h3 style="margin: 0 0 15px 0; color: var(--text); font-size: 24px;">移动设备专享</h3>
-	                        <p style="color: var(--muted); font-size: 16px; line-height: 1.6; margin: 15px 0;">
-	                            添加到主屏幕功能需要在手机上使用
-	                        </p>
-	                        <p style="color: var(--muted); font-size: 14px; line-height: 1.5; margin: 15px 0;">
-	                            请用手机浏览器打开本网站，<br>
-	                            即可将价值观纠正器添加到手机主屏幕
-	                        </p>
-	                        <button onclick="this.parentElement.parentElement.remove()" style="
-	                            background: var(--text);
-	                            color: var(--surface);
-	                            border: none;
-	                            padding: 12px 30px;
-                            border-radius: 25px;
-                            font-size: 16px;
-                            cursor: pointer;
-                            transition: transform 0.2s;
-                            margin-top: 10px;
-                        ">知道了</button>
-                    </div>
-                </div>
-                <style>
-                    @keyframes fadeIn {
-                        from { opacity: 0; }
-                        to { opacity: 1; }
-                    }
-                    @keyframes slideUp {
-                        from { transform: translateY(30px); opacity: 0; }
-                        to { transform: translateY(0); opacity: 1; }
-                    }
-                </style>
-            `;
-            document.body.appendChild(popup);
-            
-            // 点击外部关闭
-            popup.addEventListener('click', (e) => {
-                if (e.target === popup) {
-                    popup.remove();
-                }
-            });
-        }
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Escape' && document.getElementById('installGuideModal')?.getAttribute('aria-hidden') === 'false') closeInstallGuide();
+        });
 
-        // iOS专门的安装提示
-        function showIOSInstallPrompt() {
-            const popup = document.createElement('div');
-            popup.innerHTML = `
-                <div style="
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    background: rgba(0,0,0,0.8);
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    z-index: 10000;
-                    font-family: "PingFang SC";
-                    animation: fadeIn 0.3s ease-out;
-                ">
-                    <div style="
-                        background: var(--surface);
-                        padding: 25px;
-                        border-radius: 20px;
-                        text-align: center;
-                        max-width: 320px;
-                        margin: 20px;
-                        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-                        animation: slideUp 0.3s ease-out;
-                    ">
-                        <div style="margin-bottom: 15px;">
-                            <svg width="50" height="50" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-	                                <path d="M17 1H7c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2zM7 4V3h10v1H7zM7 18V6h10v12H7zM7 21v-1h10v1H7z" fill="var(--text)"/>
-	                                <path d="M12 8l-4 4h2.5v3h3v-3H16l-4-4z" fill="var(--text)"/>
-	                            </svg>
-	                        </div>
-	                        <h3 style="margin: 0 0 15px 0; color: var(--text); font-size: 20px;">添加到主屏幕</h3>
-	                        <p style="color: var(--text); font-size: 14px; line-height: 1.5; margin: 10px 0;">
-	                            <span style="display: inline-block; width: 20px; height: 20px; background: var(--text); color: var(--surface); border-radius: 50%; text-align: center; line-height: 20px; font-size: 12px; margin-right: 8px;">1</span>
-	                            点击底部的"分享"按钮
-	                        </p>
-	                        <p style="color: var(--text); font-size: 14px; line-height: 1.5; margin: 10px 0;">
-	                            <span style="display: inline-block; width: 20px; height: 20px; background: var(--text); color: var(--surface); border-radius: 50%; text-align: center; line-height: 20px; font-size: 12px; margin-right: 8px;">2</span>
-	                            选择"添加到主屏幕"
-	                        </p>
-	                        <p style="color: var(--text); font-size: 14px; line-height: 1.5; margin: 10px 0 20px 0;">
-	                            <span style="display: inline-block; width: 20px; height: 20px; background: var(--text); color: var(--surface); border-radius: 50%; text-align: center; line-height: 20px; font-size: 12px; margin-right: 8px;">3</span>
-	                            点击"添加"完成
-	                        </p>
-	                        <button onclick="this.parentElement.parentElement.remove()" style="
-	                            background: var(--text);
-	                            color: var(--surface);
-	                            border: none;
-	                            padding: 12px 30px;
-                            border-radius: 25px;
-                            font-size: 16px;
-                            cursor: pointer;
-                            transition: transform 0.2s;
-                        ">知道了</button>
-                    </div>
-                </div>
-                <style>
-                    @keyframes fadeIn {
-                        from { opacity: 0; }
-                        to { opacity: 1; }
-                    }
-                    @keyframes slideUp {
-                        from { transform: translateY(30px); opacity: 0; }
-                        to { transform: translateY(0); opacity: 1; }
-                    }
-                </style>
-            `;
-            document.body.appendChild(popup);
-            
-            // 点击外部关闭
-            popup.addEventListener('click', (e) => {
-                if (e.target === popup) {
-                    popup.remove();
-                }
-            });
-        }
-
-        // 手动添加指引
-        function showManualInstallInstructions() {
-            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-            const isAndroid = /Android/.test(navigator.userAgent);
-            
-            let message = '';
-            if (isIOS) {
-                message = '在Safari中：\n1. 点击底部分享按钮 📤\n2. 选择"添加到主屏幕"\n3. 点击"添加"';
-            } else if (isAndroid) {
-                message = '在Chrome中：\n1. 点击右上角菜单 ⋮\n2. 选择"添加到主屏幕"\n3. 点击"添加"';
-            } else {
-                message = '请在移动设备上使用浏览器的"添加到主屏幕"功能';
-            }
-            
-            alert(message);
-        }
-        
-        // 检查是否已经安装
         window.addEventListener('appinstalled', () => {
-            console.log('PWA已安装到主屏幕');
             addToHomeBtn.style.display = 'none';
+            closeInstallGuide();
+            showToast('应用已添加');
         });
-        
+
         // 检测移动设备并显示按钮
         function isMobileDevice() {
             return window.innerWidth <= 768 || /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);

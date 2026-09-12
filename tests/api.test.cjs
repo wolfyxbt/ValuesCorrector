@@ -195,3 +195,12 @@ test('touch fiat picker leaves search unfocused and ignores stale opening callba
   frames.shift()();assert.equal(focused.length,2);
   frames.shift()();assert.equal(focused.length,3);
 });
+
+test('install guide selects mobile instructions from device identity, not viewport width',()=>{
+  const {ctx,run}=setup();
+  vm.runInContext(source.slice(source.indexOf('function getInstallGuide()'),source.indexOf('function showInstallGuide()')),ctx);
+  ctx.navigator={userAgent:'iPhone',platform:'iPhone',maxTouchPoints:5};assert.equal(run('getInstallGuide().platform'),'iPhone / iPad');
+  ctx.navigator={userAgent:'Macintosh',platform:'MacIntel',maxTouchPoints:5};assert.equal(run('getInstallGuide().platform'),'iPhone / iPad');
+  ctx.navigator={userAgent:'Android',platform:'Linux',maxTouchPoints:5};assert.equal(run('getInstallGuide().platform'),'Android');
+  ctx.navigator={userAgent:'Macintosh',platform:'MacIntel',maxTouchPoints:0};assert.equal(run('getInstallGuide().platform'),'电脑浏览器');
+});

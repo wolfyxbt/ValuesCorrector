@@ -1177,6 +1177,10 @@
             --material: rgba(255, 255, 255, 0.78);
             --material-strong: rgba(255, 255, 255, 0.92);
             --control-bg: rgba(255, 255, 255, 0.72);
+            --primary-bg: #e5e5e9;
+            --primary-hover: #dcdce1;
+            --primary-border: #c8c8ce;
+            --primary-text: #28282a;
             --shadow: 0 28px 80px rgba(0, 0, 0, 0.10), 0 2px 10px rgba(0, 0, 0, 0.04);
             --focus: rgba(255, 159, 10, 0.28);
             --accent: #ff9f0a;
@@ -1197,6 +1201,10 @@
             --material: rgba(20, 20, 20, 0.94);
             --material-strong: #1c1c1c;
             --control-bg: #202020;
+            --primary-bg: #2d2d2f;
+            --primary-hover: #363638;
+            --primary-border: #46464a;
+            --primary-text: #e7e7e9;
             --shadow: 0 28px 80px rgba(0, 0, 0, 0.35);
             --focus: rgba(255, 159, 10, 0.34);
             --warning: #e6aa45;
@@ -1915,20 +1923,21 @@
 
         .app-header {
             display: grid;
-            grid-template-columns: 44px minmax(0, 1fr) 44px;
+            grid-template-columns: minmax(0, 1fr) auto;
             align-items: center;
             gap: 8px;
             margin-bottom: 30px;
         }
 
         .app-header h1 {
-            grid-column: 2;
             margin: 0;
-            text-align: center;
+            text-align: left;
         }
 
+        .header-actions { display: flex; align-items: center; gap: 6px; }
+
+        .header-actions .author,
         .theme-toggle {
-            grid-column: 3;
             width: 44px;
             height: 44px;
             display: inline-flex;
@@ -1940,8 +1949,11 @@
             background: var(--control-bg);
             color: var(--text);
             cursor: pointer;
+            opacity: 1;
+            flex-shrink: 0;
         }
 
+        .header-actions .author:hover,
         .theme-toggle:hover {
             background: var(--surface-muted);
         }
@@ -1961,14 +1973,40 @@
             stroke-linejoin: round;
         }
 
+        .header-actions .author svg { width: 20px; height: 20px; fill: currentColor; }
+        .social-links { display: flex; justify-content: flex-end; }
+
+        .install-guide { max-width: 440px; }
+        .install-intro { display: flex; align-items: center; gap: 14px; margin: 12px 0 22px; }
+        .install-app-icon { flex-shrink: 0; border-radius: 16px; border: 1px solid var(--border); }
+        .install-intro strong { font-size: 1rem; font-weight: 600; }
+        .install-intro p { margin: 6px 0 0; font-size: 0.85rem; line-height: 1.5; color: var(--muted); }
+        .install-platform { display: inline-block; padding: 5px 10px; border-radius: 20px; background: var(--surface-muted); color: var(--muted); font-size: 0.75rem; }
+        .install-steps { list-style: none; counter-reset: install-step; padding: 0; margin: 18px 0 24px; }
+        .install-steps li { position: relative; padding: 0 0 20px 40px; counter-increment: install-step; }
+        .install-steps li:last-child { padding-bottom: 0; }
+        .install-steps li::before { content: counter(install-step); position: absolute; left: 0; top: 0; width: 26px; height: 26px; display: grid; place-items: center; border: 1px solid var(--border); border-radius: 50%; color: var(--text); background: var(--control-bg); font-size: 0.78rem; }
+        .install-steps strong { display: block; font-size: 0.9rem; line-height: 26px; font-weight: 500; }
+        .install-steps p { margin: 4px 0 0; font-size: 0.82rem; line-height: 1.65; color: var(--muted); }
+        #installGuideAction { width: 100%; }
+        #installGuideAction:disabled { opacity: 0.5; cursor: wait; }
+
         .share-actions button svg {
             fill: currentColor;
         }
 
+        .share-btn.primary,
+        .share-actions button.primary {
+            background: var(--primary-bg);
+            border-color: var(--primary-border);
+            color: var(--primary-text);
+        }
+
+        .share-btn.primary:hover,
         .share-actions button.primary:hover {
-            background: var(--text);
-            border-color: var(--text);
-            opacity: 0.86;
+            background: var(--primary-hover);
+            border-color: var(--primary-border);
+            opacity: 1;
         }
 
         .theme-icon-moon,
@@ -1976,8 +2014,13 @@
         [data-theme="light"] .theme-icon-moon { display: block; }
 
         @media (max-width: 768px) {
-            .app-header { margin-bottom: 22px; gap: 4px; }
-            .app-header h1 { font-size: clamp(1.4rem, 6.7vw, 2.65rem); }
+            .app-header { margin-bottom: 22px; gap: 8px; }
+            .app-header h1 { font-size: clamp(1.05rem, 5vw, 1.5rem); white-space: nowrap; }
+            .header-actions { gap: 4px; }
+            .header-actions .author,
+            .header-actions .theme-toggle { width: 36px; height: 36px; }
+            .header-actions .author svg,
+            .header-actions .theme-toggle svg { width: 18px; height: 18px; }
         }
 
         .fiat-result {
