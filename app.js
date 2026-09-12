@@ -716,7 +716,8 @@
                         const timeout = setTimeout(() => controller.abort(), 5000);
                         let objectUrl;
                         try {
-                            const response = await fetch(src, { mode: 'cors', credentials: 'omit', signal: controller.signal });
+                            // 避免复用界面 <img> 以 no-cors 加载留下的浏览器缓存。
+                            const response = await fetch(src, { mode: 'cors', credentials: 'omit', cache: 'no-store', signal: controller.signal });
                             if (!response.ok) throw new Error('Logo unavailable');
                             const blob = await response.blob();
                             if (!blob.type.startsWith('image/') || blob.size > 5 * 1024 * 1024) throw new Error('Invalid logo');
@@ -740,7 +741,10 @@
                     if (shareLogoCache.size > 32) shareLogoCache.delete(shareLogoCache.keys().next().value);
                 }
                 try { bitmaps.set(src, await shareLogoCache.get(src)); }
-                catch { shareLogoCache.delete(src); bitmaps.set(src, null); }
+                catch (error) {
+                    console.warn('分享图 Logo 加载失败，使用文字', error);
+                    shareLogoCache.delete(src); bitmaps.set(src, null);
+                }
             }));
             return bitmaps;
         }
