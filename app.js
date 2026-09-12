@@ -1381,7 +1381,7 @@ window.addEventListener('resize', () => {
                     animation: fadeIn 0.3s ease-out;
                 ">
                     <div style="
-                        background: white;
+                        background: var(--surface);
                         padding: 30px;
                         border-radius: 20px;
                         text-align: center;
@@ -1392,21 +1392,21 @@ window.addEventListener('resize', () => {
                     ">
                         <div style="margin-bottom: 20px;">
                             <svg width="60" height="60" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-	                                <path d="M17 1H7c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2zM7 4V3h10v1H7zM7 18V6h10v12H7zM7 21v-1h10v1H7z" fill="#1d1d1f"/>
-	                                <path d="M12 8l-4 4h2.5v3h3v-3H16l-4-4z" fill="#1d1d1f"/>
+	                                <path d="M17 1H7c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2zM7 4V3h10v1H7zM7 18V6h10v12H7zM7 21v-1h10v1H7z" fill="var(--text)"/>
+	                                <path d="M12 8l-4 4h2.5v3h3v-3H16l-4-4z" fill="var(--text)"/>
 	                            </svg>
 	                        </div>
-	                        <h3 style="margin: 0 0 15px 0; color: #1d1d1f; font-size: 24px;">移动设备专享</h3>
-	                        <p style="color: #6e6e73; font-size: 16px; line-height: 1.6; margin: 15px 0;">
+	                        <h3 style="margin: 0 0 15px 0; color: var(--text); font-size: 24px;">移动设备专享</h3>
+	                        <p style="color: var(--muted); font-size: 16px; line-height: 1.6; margin: 15px 0;">
 	                            添加到主屏幕功能需要在手机上使用
 	                        </p>
-	                        <p style="color: #6e6e73; font-size: 14px; line-height: 1.5; margin: 15px 0;">
+	                        <p style="color: var(--muted); font-size: 14px; line-height: 1.5; margin: 15px 0;">
 	                            请用手机浏览器打开本网站，<br>
 	                            即可将价值观纠正器添加到手机主屏幕
 	                        </p>
 	                        <button onclick="this.parentElement.parentElement.remove()" style="
-	                            background: #1d1d1f;
-	                            color: white;
+	                            background: var(--text);
+	                            color: var(--surface);
 	                            border: none;
 	                            padding: 12px 30px;
                             border-radius: 25px;
@@ -1457,7 +1457,7 @@ window.addEventListener('resize', () => {
                     animation: fadeIn 0.3s ease-out;
                 ">
                     <div style="
-                        background: white;
+                        background: var(--surface);
                         padding: 25px;
                         border-radius: 20px;
                         text-align: center;
@@ -1468,26 +1468,26 @@ window.addEventListener('resize', () => {
                     ">
                         <div style="margin-bottom: 15px;">
                             <svg width="50" height="50" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-	                                <path d="M17 1H7c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2zM7 4V3h10v1H7zM7 18V6h10v12H7zM7 21v-1h10v1H7z" fill="#1d1d1f"/>
-	                                <path d="M12 8l-4 4h2.5v3h3v-3H16l-4-4z" fill="#1d1d1f"/>
+	                                <path d="M17 1H7c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2zM7 4V3h10v1H7zM7 18V6h10v12H7zM7 21v-1h10v1H7z" fill="var(--text)"/>
+	                                <path d="M12 8l-4 4h2.5v3h3v-3H16l-4-4z" fill="var(--text)"/>
 	                            </svg>
 	                        </div>
-	                        <h3 style="margin: 0 0 15px 0; color: #1d1d1f; font-size: 20px;">添加到主屏幕</h3>
-	                        <p style="color: #1d1d1f; font-size: 14px; line-height: 1.5; margin: 10px 0;">
-	                            <span style="display: inline-block; width: 20px; height: 20px; background: #1d1d1f; color: white; border-radius: 50%; text-align: center; line-height: 20px; font-size: 12px; margin-right: 8px;">1</span>
+	                        <h3 style="margin: 0 0 15px 0; color: var(--text); font-size: 20px;">添加到主屏幕</h3>
+	                        <p style="color: var(--text); font-size: 14px; line-height: 1.5; margin: 10px 0;">
+	                            <span style="display: inline-block; width: 20px; height: 20px; background: var(--text); color: var(--surface); border-radius: 50%; text-align: center; line-height: 20px; font-size: 12px; margin-right: 8px;">1</span>
 	                            点击底部的"分享"按钮
 	                        </p>
-	                        <p style="color: #1d1d1f; font-size: 14px; line-height: 1.5; margin: 10px 0;">
-	                            <span style="display: inline-block; width: 20px; height: 20px; background: #1d1d1f; color: white; border-radius: 50%; text-align: center; line-height: 20px; font-size: 12px; margin-right: 8px;">2</span>
+	                        <p style="color: var(--text); font-size: 14px; line-height: 1.5; margin: 10px 0;">
+	                            <span style="display: inline-block; width: 20px; height: 20px; background: var(--text); color: var(--surface); border-radius: 50%; text-align: center; line-height: 20px; font-size: 12px; margin-right: 8px;">2</span>
 	                            选择"添加到主屏幕"
 	                        </p>
-	                        <p style="color: #1d1d1f; font-size: 14px; line-height: 1.5; margin: 10px 0 20px 0;">
-	                            <span style="display: inline-block; width: 20px; height: 20px; background: #1d1d1f; color: white; border-radius: 50%; text-align: center; line-height: 20px; font-size: 12px; margin-right: 8px;">3</span>
+	                        <p style="color: var(--text); font-size: 14px; line-height: 1.5; margin: 10px 0 20px 0;">
+	                            <span style="display: inline-block; width: 20px; height: 20px; background: var(--text); color: var(--surface); border-radius: 50%; text-align: center; line-height: 20px; font-size: 12px; margin-right: 8px;">3</span>
 	                            点击"添加"完成
 	                        </p>
 	                        <button onclick="this.parentElement.parentElement.remove()" style="
-	                            background: #1d1d1f;
-	                            color: white;
+	                            background: var(--text);
+	                            color: var(--surface);
 	                            border: none;
 	                            padding: 12px 30px;
                             border-radius: 25px;
@@ -1579,7 +1579,7 @@ window.addEventListener('resize', () => {
 	            
 	            if (isRealTime) {
 	                statusElement.innerHTML = '汇率已加载';
-	                statusElement.style.color = '#6e6e73';
+	                statusElement.style.color = 'var(--muted)';
 	                return;
 	            }
 	            
@@ -1593,7 +1593,7 @@ window.addEventListener('resize', () => {
 	        async function loadRates({ forceRefresh = false, reason = 'unknown' } = {}) {
             if (loadRatesInFlight) return loadRatesInFlight;
             loadRatesInFlight = (async () => {
-                updateApiStatusDisplay({ message: '汇率加载中', color: '#6e6e73' });
+                updateApiStatusDisplay({ message: '汇率加载中', color: 'var(--muted)' });
                 const activeCustom = new Map();
                 for (let i = 1; i <= FIELD_COUNT; i++) {
                     const select = document.getElementById(`currency${i}`);
@@ -1633,7 +1633,7 @@ window.addEventListener('resize', () => {
                 apiStatus.exchangerate = !!fiat;
                 updateApiStatusDisplay({
                     message: incomplete ? '部分价格暂不可用' : stale ? '正在使用缓存价格' : '汇率已加载',
-                    color: incomplete || stale ? '#9a6700' : '#6e6e73'
+                    color: incomplete || stale ? 'var(--warning)' : 'var(--muted)'
                 });
                 if (document.getElementById(`amount${lastInputField}`)?.value.trim()) convert(lastInputField);
                 if (!window.rateRefreshInterval) {

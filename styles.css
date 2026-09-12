@@ -1082,7 +1082,7 @@
                 align-items: stretch;
             }
 
-            .container > h1 {
+            .container > .app-header {
                 grid-area: title;
             }
 
@@ -1167,7 +1167,7 @@
 
         /* ===== Apple design pass: responsive material, type, feedback, accessibility ===== */
         :root {
-            color-scheme: light dark;
+            color-scheme: light;
             --bg: #f5f5f7;
             --surface: #ffffff;
             --surface-muted: #f2f2f7;
@@ -1181,22 +1181,27 @@
             --focus: rgba(255, 159, 10, 0.28);
             --accent: #ff9f0a;
             --accent-soft: rgba(255, 159, 10, 0.20);
+            --warning: #9a6700;
+            --glass-border: rgba(255, 255, 255, 0.52);
+            --control-highlight: rgba(255, 255, 255, 0.42);
         }
 
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --bg: #0b0b0f;
-                --surface: #1c1c1e;
-                --surface-muted: #2c2c2e;
-                --text: #f5f5f7;
-                --muted: #aeaeb2;
-                --border: rgba(235, 235, 245, 0.16);
-                --material: rgba(28, 28, 30, 0.78);
-                --material-strong: rgba(28, 28, 30, 0.94);
-                --control-bg: rgba(44, 44, 46, 0.72);
-                --shadow: 0 30px 90px rgba(0, 0, 0, 0.42), 0 2px 12px rgba(0, 0, 0, 0.20);
-                --focus: rgba(255, 159, 10, 0.34);
-            }
+        :root:not([data-theme="light"]) {
+            color-scheme: dark;
+            --bg: #080808;
+            --surface: #141414;
+            --surface-muted: #242424;
+            --text: #f5f5f7;
+            --muted: #aeaeb2;
+            --border: rgba(235, 235, 245, 0.16);
+            --material: rgba(20, 20, 20, 0.94);
+            --material-strong: #1c1c1c;
+            --control-bg: #202020;
+            --shadow: 0 28px 80px rgba(0, 0, 0, 0.35);
+            --focus: rgba(255, 159, 10, 0.34);
+            --warning: #e6aa45;
+            --glass-border: rgba(255, 255, 255, 0.10);
+            --control-highlight: rgba(255, 255, 255, 0.04);
         }
 
         *,
@@ -1247,7 +1252,7 @@
             padding: clamp(28px, 4vw, 44px);
             transform: none;
             overflow: visible;
-            border: 1px solid rgba(255, 255, 255, 0.52);
+            border: 1px solid var(--glass-border);
             border-radius: 32px;
             background: var(--material);
             box-shadow: var(--shadow);
@@ -1296,7 +1301,7 @@
             border-radius: 16px;
             background: var(--control-bg);
             color: var(--text);
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.42);
+            box-shadow: inset 0 1px 0 var(--control-highlight);
             transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 100ms ease-out;
         }
 
@@ -1352,7 +1357,7 @@
             outline: none;
             border-color: var(--accent);
             background: var(--material-strong);
-            box-shadow: 0 0 0 4px var(--accent-soft), inset 0 1px 0 rgba(255, 255, 255, 0.48);
+            box-shadow: 0 0 0 4px var(--accent-soft), inset 0 1px 0 var(--control-highlight);
         }
 
         .dropdown-trigger:active,
@@ -1366,7 +1371,7 @@
 
         .dropdown-menu {
             overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.52);
+            border: 1px solid var(--glass-border);
             border-radius: 18px;
             background: var(--material-strong);
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.20), 0 2px 8px rgba(0, 0, 0, 0.08);
@@ -1570,7 +1575,7 @@
             max-height: calc(100dvh - 36px);
             margin: 0;
             overflow: auto;
-            border: 1px solid rgba(255, 255, 255, 0.48);
+            border: 1px solid var(--glass-border);
             border-radius: 24px;
             background: var(--material-strong);
             box-shadow: 0 30px 90px rgba(0, 0, 0, 0.30);
@@ -1677,7 +1682,7 @@
 
         .toast {
             bottom: max(24px, env(safe-area-inset-bottom));
-            border-color: rgba(255, 255, 255, 0.52);
+            border-color: var(--glass-border);
             background: var(--material-strong);
             color: var(--text);
             backdrop-filter: blur(24px) saturate(160%);
@@ -1901,4 +1906,76 @@
                 border-color: var(--text);
                 background: var(--surface);
             }
+        }
+
+        /* Explicit theme selection takes precedence over the device appearance. */
+        :root:not([data-theme="light"]) body {
+            background: var(--bg);
+        }
+
+        .app-header {
+            display: grid;
+            grid-template-columns: 44px minmax(0, 1fr) 44px;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 30px;
+        }
+
+        .app-header h1 {
+            grid-column: 2;
+            margin: 0;
+            text-align: center;
+        }
+
+        .theme-toggle {
+            grid-column: 3;
+            width: 44px;
+            height: 44px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            border: 1px solid var(--border);
+            border-radius: 50%;
+            background: var(--control-bg);
+            color: var(--text);
+            cursor: pointer;
+        }
+
+        .theme-toggle:hover {
+            background: var(--surface-muted);
+        }
+
+        .theme-toggle:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 3px;
+        }
+
+        .theme-toggle svg {
+            width: 20px;
+            height: 20px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 1.7;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .share-actions button svg {
+            fill: currentColor;
+        }
+
+        .share-actions button.primary:hover {
+            background: var(--text);
+            border-color: var(--text);
+            opacity: 0.86;
+        }
+
+        .theme-icon-moon,
+        [data-theme="light"] .theme-icon-sun { display: none; }
+        [data-theme="light"] .theme-icon-moon { display: block; }
+
+        @media (max-width: 768px) {
+            .app-header { margin-bottom: 22px; gap: 4px; }
+            .app-header h1 { font-size: clamp(1.4rem, 6.7vw, 2.65rem); }
         }
