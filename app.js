@@ -6,9 +6,8 @@
 
         // ===== 资产配置（集中定义所有可换算的币种 / 法币 / 实物）=====
         // 新增一项只需在此数组加一行，下面的 currencyLogos、分类列表、汇率换算都会自动派生。
-        // ⚠️ 例外：新增 crypto 时还必须在 COINPAPRIKA_TICKER_URLS 补上对应的行情接口地址，
-        //    否则 getPresetCryptoPrices 校验会因缺价抛错，导致整个汇率加载失败（所有换算不可用）。
-        // category: 'crypto'（实时价来自 CoinPaprika）| 'fiat'（以 USD 为基准）| 'product'（按 priceAmount + priceCurrency 计价）
+        // 新增 crypto 时同时在 COINGECKO_COIN_IDS 填入 CoinGecko ID。
+        // category: 'crypto'（实时价来自 CoinGecko）| 'fiat'（以 USD 为基准）| 'product'（按 priceAmount + priceCurrency 计价）
         // logoType: 'image' | 'emoji'
         const ASSET_CONFIG = [
             // 加密货币
@@ -390,62 +389,34 @@
 			        }
 		        
 		        // ===== API / 缓存工具 =====
-		        const CACHE_VERSION = 1;
+		        const CACHE_VERSION = 2;
 		        const CACHE_KEYS = {
-	            presetCryptoPrices: `valueConverter:caches:v${CACHE_VERSION}:presetCryptoPrices`,
-	            binanceSpotPrices: `valueConverter:caches:v${CACHE_VERSION}:binanceSpotPrices`,
-	            okxSpotPrices: `valueConverter:caches:v${CACHE_VERSION}:okxSpotPrices`,
-	            fiatRates: `valueConverter:caches:v${CACHE_VERSION}:fiatRates`,
-	            coingeckoTokenPrice: `valueConverter:caches:v${CACHE_VERSION}:coingeckoTokenPrice`
-	        };
-	        
-	        const memoryCache = new Map();
-	        
-	        function nowMs() {
-	            return Date.now();
-	        }
-	        
-	        function readCache(key, maxAgeMs) {
-	            const raw = (() => {
-	                if (localStorageAvailable) {
-	                    try {
-	                        return localStorage.getItem(key);
-	                    } catch (e) {
-	                        return null;
-	                    }
-	                }
-	                return memoryCache.get(key) || null;
-	            })();
-	            
-	            if (!raw) return null;
-	            
-	            try {
-	                const payload = typeof raw === 'string' ? JSON.parse(raw) : raw;
-	                if (!payload || typeof payload.ts !== 'number') return null;
-	                if (typeof maxAgeMs === 'number' && maxAgeMs >= 0) {
-	                    if (nowMs() - payload.ts > maxAgeMs) return null;
-	                }
-	                return payload;
-	            } catch (e) {
-	                return null;
-	            }
-	        }
-	        
-	        function writeCache(key, data) {
-	            const payload = { ts: nowMs(), data };
-	            if (localStorageAvailable) {
-	                try {
-	                    localStorage.setItem(key, JSON.stringify(payload));
-	                } catch (e) {
-	                    // localStorage 满了或不可用时，退回内存缓存
-	                    memoryCache.set(key, payload);
-	                }
-	            } else {
-	                memoryCache.set(key, payload);
-	            }
-	        }
-	        
-	        function formatAge(ts) {
+            fiatRates: `valueConverter:caches:v${CACHE_VERSION}:fiatRates`,
+            coingeckoTokenPrice: `valueConverter:caches:v${CACHE_VERSION}:coingeckoTokenPrice`
+        };
+        const memoryCache = new Map();
+        function nowMs() { return Date.now(); }
+        function readCache(key, maxAgeMs) {
+            let raw = memoryCache.get(key);
+            if (!raw && localStorageAvailable) {
+                try { raw = localStorage.getItem(key); } catch { /* 内存缓存仍可用 */ }
+            }
+            try {
+                const payload = typeof raw === 'string' ? JSON.parse(raw) : raw;
+                if (!payload || !Number.isFinite(payload.ts)) return null;
+                if (maxAgeMs >= 0 && nowMs() - payload.ts > maxAgeMs) return null;
+                return payload;
+            } catch { return null; }
+        }
+        function writeCache(key, data) {
+            const payload = { ts: nowMs(), data };
+            memoryCache.set(key, payload);
+            if (localStorageAvailable) {
+                try { localStorage.setItem(key, JSON.stringify(payload)); } catch { /* 满额时使用内存 */ }
+            }
+        }
+
+        function formatAge(ts) {
 	            const diffSec = Math.max(0, Math.floor((nowMs() - ts) / 1000));
 	            if (diffSec < 60) return `${diffSec}秒前`;
 	            const diffMin = Math.floor(diffSec / 60);
@@ -465,57 +436,97 @@
 	            }
 	        }
 	        
-		        // ===== 预设币种实时价格（CoinPaprika）=====
-		        // 说明：使用 CoinPaprika 的 ticker 接口获取 5 个预设主流代币的 USD 实时价格。
-		        const COINPAPRIKA_TICKER_URLS = {
-		            BTC: 'https://api.coinpaprika.com/v1/tickers/btc-bitcoin/',
-		            ETH: 'https://api.coinpaprika.com/v1/tickers/eth-ethereum',
-		            BNB: 'https://api.coinpaprika.com/v1/tickers/bnb-bnb/',
-		            OKB: 'https://api.coinpaprika.com/v1/tickers/okb-okb/',
-		            SOL: 'https://api.coinpaprika.com/v1/tickers/sol-solana/'
-		        };
-		        
-		        async function fetchCoinPaprikaUsdPrice({ symbol, url }) {
-		            const res = await fetchJsonWithTimeout(url, { method: 'GET' }, 8000);
-		            if (!res.ok) {
-		                const error = new Error(`CoinPaprika 请求失败（${symbol}）: ${res.status}`);
-		                error.status = res.status;
-		                throw error;
-		            }
-		            
-		            const data = await res.json();
-		            const priceRaw = data?.quotes?.USD?.price;
-		            const price = typeof priceRaw === 'number' ? priceRaw : parseFloat(priceRaw);
-		            if (!Number.isFinite(price) || price <= 0) {
-		                throw new Error(`CoinPaprika 返回数据异常，缺少 ${symbol} USD 价格`);
-		            }
-		            return price;
-		        }
-		        
-		        async function getPresetCryptoPrices({ forceRefresh = false } = {}) {
-		            const TTL_MS = 30 * 1000; // 30秒：组合价格缓存
-		            if (!forceRefresh) {
-		                const cached = readCache(CACHE_KEYS.presetCryptoPrices, TTL_MS);
-		                if (cached?.data) return { prices: cached.data, source: 'cache', ts: cached.ts };
-		            }
-		            
-		            const entries = await Promise.all(
-		                Object.entries(COINPAPRIKA_TICKER_URLS).map(async ([symbol, url]) => {
-		                    const price = await fetchCoinPaprikaUsdPrice({ symbol, url });
-		                    return [symbol, price];
-		                })
-		            );
-		            const prices = Object.fromEntries(entries);
-		            
-		            for (const k of PRESET_CRYPTO_SYMBOLS) {
-		                if (!Number.isFinite(prices[k]) || prices[k] <= 0) throw new Error(`预设币种价格不完整，缺少 ${k}`);
-		            }
-		            
-		            writeCache(CACHE_KEYS.presetCryptoPrices, prices);
-		            return { prices, source: 'realtime', ts: nowMs() };
-		        }
-	        
-	        async function getFiatRates({ forceRefresh = false } = {}) {
+		        // ===== CoinGecko：统一币价、请求去重与限流退避 =====
+        const COINGECKO_COIN_IDS = {
+            BTC: 'bitcoin', ETH: 'ethereum', SOL: 'solana', BNB: 'binancecoin', OKB: 'okb'
+        };
+        const coinGeckoInFlight = new Map();
+        let coinGeckoBackoffUntil = 0;
+        const PRICE_TTL_MS = 60 * 1000;
+        const PRICE_MAX_AGE_MS = 15 * 60 * 1000;
+
+        function normalizeTokenLogo(raw) {
+            if (typeof raw !== 'string' || !raw.trim()) return '';
+            try {
+                const url = new URL(raw);
+                if (url.protocol !== 'https:' || url.username || url.password) return '';
+                // 仅迁移已知 CoinGecko 币种图片路径，保留路径及版本参数。
+                if (url.hostname === 'assets.coingecko.com' && url.pathname.startsWith('/coins/images/')) {
+                    url.hostname = 'coin-images.coingecko.com';
+                }
+                return url.href;
+            } catch { return ''; }
+        }
+
+        function fetchCoinGeckoJson(path, params) {
+            const url = `https://api.coingecko.com/api/v3/${path}?${new URLSearchParams(params)}`;
+            if (coinGeckoInFlight.has(url)) return coinGeckoInFlight.get(url);
+            if (nowMs() < coinGeckoBackoffUntil) {
+                return Promise.reject(Object.assign(new Error('CoinGecko 请求过于频繁，请稍后重试'), { status: 429 }));
+            }
+            const request = (async () => {
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 8000);
+                try {
+                    const response = await fetch(url, { signal: controller.signal, mode: 'cors', credentials: 'omit' });
+                    if (!response.ok) {
+                        if (response.status === 429) {
+                            const header = response.headers.get('Retry-After');
+                            const seconds = Number(header);
+                            const delay = header && Number.isFinite(seconds) ? seconds * 1000 : Date.parse(header) - nowMs();
+                            coinGeckoBackoffUntil = nowMs() + Math.max(60000, Number.isFinite(delay) ? delay : 0);
+                        }
+                        throw Object.assign(new Error(`CoinGecko 请求失败 (${response.status})`), { status: response.status });
+                    }
+                    const data = await response.json(); // 超时覆盖响应体解析
+                    apiStatus.coingecko = true;
+                    return data;
+                } catch (error) {
+                    apiStatus.coingecko = false;
+                    throw error;
+                } finally { clearTimeout(timeout); }
+            })().finally(() => coinGeckoInFlight.delete(url));
+            coinGeckoInFlight.set(url, request);
+            return request;
+        }
+
+        async function getCoinGeckoPrices(ids, { forceRefresh = false } = {}) {
+            const uniqueIds = [...new Set(ids.filter(id => typeof id === 'string' && id))].sort();
+            const keyFor = id => `${CACHE_KEYS.coingeckoTokenPrice}:${id}`;
+            const valid = entry => Number.isFinite(entry?.data?.price) && entry.data.price > 0 && !entry.data.isEstimated;
+            const missing = uniqueIds.filter(id => forceRefresh || !valid(readCache(keyFor(id), PRICE_TTL_MS)));
+            let error = null;
+            const refreshed = new Set();
+            if (missing.length) {
+                try {
+                    const data = await fetchCoinGeckoJson('simple/price', {
+                        ids: missing.join(','), vs_currencies: 'usd', include_last_updated_at: 'true'
+                    });
+                    for (const id of missing) {
+                        const price = data?.[id]?.usd;
+                        const updatedAt = data?.[id]?.last_updated_at;
+                        if (!Number.isFinite(price) || price <= 0) continue;
+                        // 拒绝明确过期的上游报价；未返回时间时以本次获取时间计。
+                        if (updatedAt && nowMs() - updatedAt * 1000 > PRICE_MAX_AGE_MS) continue;
+                        writeCache(keyFor(id), { price, updatedAt });
+                        refreshed.add(id);
+                    }
+                } catch (e) { error = e; }
+            }
+            const prices = {}, staleIds = [], missingIds = [];
+            for (const id of uniqueIds) {
+                const cached = readCache(keyFor(id), PRICE_MAX_AGE_MS);
+                if (!valid(cached) || (cached.data.updatedAt && nowMs() - cached.data.updatedAt * 1000 > PRICE_MAX_AGE_MS)) {
+                    missingIds.push(id);
+                    continue;
+                }
+                prices[id] = cached.data.price;
+                if ((missing.includes(id) && !refreshed.has(id)) || nowMs() - cached.ts >= PRICE_TTL_MS) staleIds.push(id);
+            }
+            return { prices, staleIds, missingIds, error };
+        }
+
+        async function getFiatRates({ forceRefresh = false } = {}) {
 	            const TTL_MS = 6 * 60 * 60 * 1000; // 6小时：法币汇率更新没那么频繁
 	            if (!forceRefresh) {
 	                const cached = readCache(CACHE_KEYS.fiatRates, TTL_MS);
@@ -584,9 +595,9 @@
 	                    const customOption = selectEl.querySelector('option[value="CUSTOM"]');
 	                    const displayText = customOption?.getAttribute('data-display-text');
 	                    label = displayText ? `${displayText}` : '自定义代币';
-	                    // 分享图：自定义代币 logo 是外链图片（会污染 canvas），不展示，只在 ticker 前加 $
-	                    logoType = 'none';
-	                    logo = '';
+	                    // 新版 CoinGecko 图片支持 CORS；加载失败时只省略 Logo。
+                        logo = normalizeTokenLogo(customOption?.getAttribute('data-token-logo'));
+                        logoType = logo ? 'image' : 'none';
 	                } else {
 	                    // 优先使用与界面一致的映射（emoji/logo + 显示文本）
 	                    const mapped = (typeof currencyLogos !== 'undefined') ? currencyLogos[value] : null;
@@ -694,45 +705,47 @@
 	            ctx.restore();
 	        }
 
-	        async function preloadShareLogoBitmaps(rows) {
-	            const sources = Array.from(
-	                new Set(
-	                    rows
-	                        .filter((row) => row.logoType === 'image' && row.logo)
-	                        .map((row) => row.logo)
-	                )
-	            );
-	            const bitmaps = new Map();
-	            await Promise.all(
-	                sources.map(async (src) => {
-	                    try {
-	                        const res = await fetch(src, { mode: 'cors', credentials: 'same-origin' });
-	                        if (!res.ok) throw new Error(`logo fetch failed: ${res.status}`);
-	                        const blob = await res.blob();
-	                        await new Promise((resolve) => {
-	                            const img = new Image();
-	                            const objectUrl = URL.createObjectURL(blob);
-	                            img.onload = () => {
-	                                URL.revokeObjectURL(objectUrl);
-	                                bitmaps.set(src, img);
-	                                resolve();
-	                            };
-	                            img.onerror = () => {
-	                                URL.revokeObjectURL(objectUrl);
-	                                bitmaps.set(src, null);
-	                                resolve();
-	                            };
-	                            img.src = objectUrl;
-	                        });
-	                    } catch (e) {
-	                        bitmaps.set(src, null);
-	                    }
-	                })
-	            );
-	            return bitmaps;
-	        }
-        
-	        // 行是否有可绘制的 logo（image 需 bitmap 已加载成功；emoji 需有字符）
+	        const shareLogoCache = new Map();
+        async function preloadShareLogoBitmaps(rows) {
+            const sources = [...new Set(rows.filter(row => row.logoType === 'image' && row.logo).map(row => row.logo))];
+            const bitmaps = new Map();
+            await Promise.all(sources.map(async src => {
+                if (!shareLogoCache.has(src)) {
+                    const pending = (async () => {
+                        const controller = new AbortController();
+                        const timeout = setTimeout(() => controller.abort(), 5000);
+                        let objectUrl;
+                        try {
+                            const response = await fetch(src, { mode: 'cors', credentials: 'omit', signal: controller.signal });
+                            if (!response.ok) throw new Error('Logo unavailable');
+                            const blob = await response.blob();
+                            if (!blob.type.startsWith('image/') || blob.size > 5 * 1024 * 1024) throw new Error('Invalid logo');
+                            objectUrl = URL.createObjectURL(blob);
+                            const img = new Image();
+                            await new Promise((resolve, reject) => {
+                                const onAbort = () => { img.src = ''; reject(new Error('Logo timeout')); };
+                                controller.signal.addEventListener('abort', onAbort, { once: true });
+                                img.onload = () => { controller.signal.removeEventListener('abort', onAbort); resolve(); };
+                                img.onerror = () => { controller.signal.removeEventListener('abort', onAbort); reject(new Error('Logo decode failed')); };
+                                if (controller.signal.aborted) return onAbort();
+                                img.src = objectUrl;
+                            });
+                            return img;
+                        } finally {
+                            clearTimeout(timeout);
+                            if (objectUrl) URL.revokeObjectURL(objectUrl);
+                        }
+                    })();
+                    shareLogoCache.set(src, pending);
+                    if (shareLogoCache.size > 32) shareLogoCache.delete(shareLogoCache.keys().next().value);
+                }
+                try { bitmaps.set(src, await shareLogoCache.get(src)); }
+                catch { shareLogoCache.delete(src); bitmaps.set(src, null); }
+            }));
+            return bitmaps;
+        }
+
+        // 行是否有可绘制的 logo（image 需 bitmap 已加载成功；emoji 需有字符）
 	        function rowHasDrawableLogo(row) {
 	            if (!row) return false;
 	            if (row.logoType === 'emoji') return !!row.logo;
@@ -1541,11 +1554,9 @@ window.addEventListener('resize', () => {
 	        // API状态跟踪
 		        let apiStatus = {
 		            preset: true,
-		            coinpaprika: true,
 		            exchangerate: true,
-		            coingecko: true, // 仅用于“自定义代币”相关功能（搜索/价格）
-		            rateLimited: false,
-		            backoffUntil: 0
+                    coingecko: true // 所有币种价格与自定义代币搜索
+
 		        };
 
 	        // 更新API状态显示
@@ -1577,150 +1588,64 @@ window.addEventListener('resize', () => {
 
 	        // 获取真实汇率
 	        async function loadRates({ forceRefresh = false, reason = 'unknown' } = {}) {
-	            if (loadRatesInFlight) return loadRatesInFlight;
-	            
-	            loadRatesInFlight = (async () => {
-	            // 显示加载状态
-	            const statusElement = document.getElementById('apiStatus');
-	            if (statusElement) {
-	                statusElement.innerHTML = '汇率加载中';
-                statusElement.style.color = '#6e6e73';
-                statusElement.style.display = 'block';
-	            }
-	            
-	            try {
-	                console.log(`loadRates 开始，原因: ${reason}, forceRefresh: ${forceRefresh}`);
-	                
-	                // 如果正在退避（例如被限流），强制走缓存，避免雪上加霜
-	                if (apiStatus.backoffUntil && nowMs() < apiStatus.backoffUntil) {
-	                    forceRefresh = false;
-	                }
-	                
-	                const [{ prices: cryptoPrices, source: cryptoSource, ts: cryptoTs }, { fiatData, source: fiatSource, ts: fiatTs }] =
-	                    await Promise.all([
-		                        (async () => {
-			                            try {
-			                                const r = await getPresetCryptoPrices({ forceRefresh });
-			                                apiStatus.preset = true;
-			                                apiStatus.coinpaprika = true;
-			                                apiStatus.rateLimited = false;
-			                                return r;
-			                            } catch (e) {
-			                                console.warn('预设币种价格获取失败，尝试使用缓存:', e);
-			                                apiStatus.preset = false;
-			                                apiStatus.coinpaprika = false;
-			                                if (e?.status === 429) {
-			                                    apiStatus.rateLimited = true;
-			                                    apiStatus.backoffUntil = nowMs() + 10 * 60 * 1000; // 10分钟退避
-			                                }
-	                                const stale = readCache(CACHE_KEYS.presetCryptoPrices, -1);
-	                                if (stale?.data) return { prices: stale.data, source: 'stale-cache', ts: stale.ts };
-	                                throw e;
-	                            }
-	                        })(),
-		                        (async () => {
-		                            try {
-		                                const r = await getFiatRates({ forceRefresh });
-		                                apiStatus.exchangerate = true;
-		                                apiStatus.rateLimited = false;
-		                                return r;
-		                            } catch (e) {
-		                                console.warn('ExchangeRate 获取失败，尝试使用缓存:', e);
-		                                apiStatus.exchangerate = false;
-		                                if (e?.status === 429) {
-		                                    apiStatus.rateLimited = true;
-		                                    apiStatus.backoffUntil = nowMs() + 10 * 60 * 1000; // 10分钟退避
-		                                }
-	                                const stale = readCache(CACHE_KEYS.fiatRates, -1);
-	                                if (stale?.data) return { fiatData: stale.data, source: 'stale-cache', ts: stale.ts };
-	                                throw e;
-	                            }
-	                        })()
-	                    ]);
-	                
-                // 计算每种资产相对 USD 的单价（单一数据源），换算时按需 from→to 计算
-                usdPrices = { USD: 1 };
-                for (const symbol of PRESET_CRYPTO_SYMBOLS) {
-                    usdPrices[symbol] = cryptoPrices[symbol];
+            if (loadRatesInFlight) return loadRatesInFlight;
+            loadRatesInFlight = (async () => {
+                updateApiStatusDisplay({ message: '汇率加载中', color: '#6e6e73' });
+                const activeCustom = new Map();
+                for (let i = 1; i <= FIELD_COUNT; i++) {
+                    const select = document.getElementById(`currency${i}`);
+                    if (select?.value !== 'CUSTOM') continue;
+                    const key = select.querySelector('option[value="CUSTOM"]')?.getAttribute('data-token-key');
+                    const info = customTokens.get(key);
+                    if (info?.id) activeCustom.set(key, info);
+                }
+                const ids = [...Object.values(COINGECKO_COIN_IDS), ...[...activeCustom.values()].map(info => info.id)];
+                const [crypto, fiat] = await Promise.all([
+                    getCoinGeckoPrices(ids, { forceRefresh }),
+                    getFiatRates({ forceRefresh }).catch(() => {
+                        const cached = readCache(CACHE_KEYS.fiatRates, 7 * 24 * 60 * 60 * 1000);
+                        return cached?.data ? { fiatData: cached.data, source: 'stale-cache', ts: cached.ts } : null;
+                    })
+                ]);
+                const nextPrices = { USD: 1 };
+                for (const [symbol, id] of Object.entries(COINGECKO_COIN_IDS)) {
+                    if (crypto.prices[id]) nextPrices[symbol] = crypto.prices[id];
                 }
                 for (const symbol of FIAT_SYMBOLS) {
-                    usdPrices[symbol] = 1 / fiatData.rates[symbol];
+                    const rate = fiat?.fiatData?.rates?.[symbol];
+                    if (Number.isFinite(rate) && rate > 0) nextPrices[symbol] = 1 / rate;
                 }
                 for (const asset of PRODUCT_ASSETS) {
-                    usdPrices[asset.symbol] = asset.priceCurrency === 'USD'
-                        ? asset.priceAmount
-                        : asset.priceAmount / fiatData.rates[asset.priceCurrency];
+                    if (nextPrices[asset.priceCurrency]) nextPrices[asset.symbol] = asset.priceAmount * nextPrices[asset.priceCurrency];
                 }
-                // 自定义代币：直接使用其 USD 价格
-                if (customTokens) {
-                    for (const [symbol, info] of customTokens.entries()) {
-                        if (Number.isFinite(info?.price) && info.price > 0) {
-                            usdPrices[symbol] = info.price;
-                        }
-                    }
+                for (const [key, info] of activeCustom) {
+                    info.price = crypto.prices[info.id] || null;
+                    info.isEstimated = false;
+                    if (info.price) nextPrices[key] = info.price;
                 }
+                usdPrices = nextPrices;
+                const incomplete = crypto.missingIds.length > 0 || FIAT_SYMBOLS.some(symbol => !nextPrices[symbol]);
+                const stale = crypto.staleIds.length > 0 || fiat?.source === 'stale-cache';
+                apiStatus.preset = PRESET_CRYPTO_SYMBOLS.every(symbol => !!nextPrices[symbol]);
+                apiStatus.exchangerate = !!fiat;
+                updateApiStatusDisplay({
+                    message: incomplete ? '部分价格暂不可用' : stale ? '正在使用缓存价格' : '汇率已加载',
+                    color: incomplete || stale ? '#9a6700' : '#6e6e73'
+                });
+                if (document.getElementById(`amount${lastInputField}`)?.value.trim()) convert(lastInputField);
+                if (!window.rateRefreshInterval) {
+                    window.rateRefreshInterval = setInterval(() => {
+                        if (!document.hidden) loadRates({ forceRefresh: true, reason: 'interval' });
+                    }, 5 * 60 * 1000);
+                }
+            })().catch(error => {
+                console.error('汇率加载失败', error);
+                updateApiStatusDisplay({ message: '汇率加载失败，请稍后重试', color: '#b3261e' });
+            }).finally(() => { loadRatesInFlight = null; });
+            return loadRatesInFlight;
+        }
 
-	                console.log('汇率加载成功:', usdPrices);
-	                
-	                const parts = [];
-		                if (cryptoSource === 'realtime') parts.push('预设币种（CoinPaprika 实时）');
-		                else if (cryptoSource === 'cache') parts.push(`预设币种（CoinPaprika 缓存 ${formatAge(cryptoTs)}）`);
-		                else if (cryptoSource === 'stale-cache') parts.push(`预设币种（CoinPaprika 旧缓存 ${formatAge(cryptoTs)}）`);
-		                else parts.push(`预设币种（未知来源 ${cryptoSource || 'unknown'}）`);
-	                
-		                if (fiatSource === 'realtime') parts.push('ExchangeRate 实时');
-		                else if (fiatSource === 'cache') parts.push(`ExchangeRate 缓存（${formatAge(fiatTs)}）`);
-		                else parts.push(`ExchangeRate 旧缓存（${formatAge(fiatTs)}）`);
-		                
-		                const allRealtime = (cryptoSource === 'realtime') && (fiatSource === 'realtime');
-		                const detailMessage = `汇率已加载（${parts.join(' + ')}）`;
-		                console.log(detailMessage);
-		                updateApiStatusDisplay({
-		                    message: '汇率已加载',
-		                    color: allRealtime ? '#1d1d1f' : '#6e6e73'
-		                });
-	                
-	                // 设置定期刷新汇率状态（每5分钟检查一次）
-	                if (!window.rateRefreshInterval) {
-	                    window.rateRefreshInterval = setInterval(async () => {
-	                        try {
-	                            await loadRates({ forceRefresh: true, reason: 'interval' });
-	                        } catch (error) {
-	                            console.log('定期刷新失败，将在下次尝试');
-	                        }
-	                    }, 5 * 60 * 1000); // 5分钟
-	                }
-		            } catch (error) {
-		                console.error('汇率加载失败:', error);
-		                
-		                // 根据错误类型显示不同的提示信息
-		                let errorMessage = '';
-	                if (error?.status === 429 || apiStatus.rateLimited) {
-	                    errorMessage = '汇率服务触发访问频率限制，正在使用缓存或请稍后再试';
-	                } else if (!apiStatus.preset && !apiStatus.exchangerate) {
-	                    errorMessage = '汇率服务暂时不可用（预设币价与法币汇率均失败）';
-	                } else if (!apiStatus.preset) {
-	                    errorMessage = '预设币种价格服务暂时不可用（CoinPaprika）';
-	                } else if (!apiStatus.exchangerate) {
-	                    errorMessage = 'ExchangeRate 法币汇率服务暂时不可用';
-	                } else {
-	                    errorMessage = '汇率加载失败，请稍后再试';
-	                }
-	                
-	                console.error(errorMessage);
-	                updateApiStatusDisplay({ message: '汇率加载失败', color: '#b3261e' });
-	                
-	                // 清空汇率，表示服务不可用
-	                usdPrices = {};
-	            }
-	            })().finally(() => {
-	                loadRatesInFlight = null;
-	            });
-	            
-	            return loadRatesInFlight;
-	        }
-	        
-	        // 检测 localStorage 是否可用
+        // 检测 localStorage 是否可用
 	        function checkLocalStorage() {
 	            try {
                 const testKey = '__localStorage_test__';
@@ -1862,13 +1787,15 @@ window.addEventListener('resize', () => {
             }
             state.lastInputField = lastInputField; // 保存最后输入的栏位
             state.customTokens = customTokens ? Array.from(customTokens.entries()) : []; // 保存自定义代币数据
-            localStorage.setItem('valueConverterState', JSON.stringify(state));
+            memoryCache.set('valueConverterState', JSON.stringify(state));
+            try { localStorage.setItem('valueConverterState', JSON.stringify(state)); } catch { /* 本次会话仍可保存 */ }
             console.log('✅ 状态已保存:', state);
         }
         
         // 从本地存储恢复状态
         function restoreState() {
-            const savedState = localStorage.getItem('valueConverterState');
+            let savedState = memoryCache.get('valueConverterState');
+            try { savedState = savedState || localStorage.getItem('valueConverterState'); } catch { /* 使用内存状态 */ }
             console.log('🔍 尝试恢复状态，localStorage 内容:', savedState);
             if (savedState) {
                 try {
@@ -1885,7 +1812,15 @@ window.addEventListener('resize', () => {
 
                     // 恢复自定义代币数据
                     if (state.customTokens && Array.isArray(state.customTokens)) {
-                        customTokens = new Map(state.customTokens);
+                        customTokens = new Map();
+                        for (const [oldKey, info] of state.customTokens) {
+                            if (!info || typeof info.id !== 'string' || !info.id) continue;
+                            const key = `CG:${info.id}`;
+                            customTokens.set(key, { ...info, image: normalizeTokenLogo(info.image), price: null, isEstimated: false });
+                            for (let i = 1; i <= FIELD_COUNT; i++) {
+                                if (state[`customToken${i}`]?.tokenKey === oldKey) state[`customToken${i}`].tokenKey = key;
+                            }
+                        }
                     }
 
                     for (let i = 1; i <= 6; i++) {
@@ -1924,7 +1859,7 @@ window.addEventListener('resize', () => {
                                 customOption.setAttribute('data-token-name', tokenInfo.tokenName || '');
                                 customOption.setAttribute('data-token-symbol', tokenInfo.tokenSymbol || '');
                                 customOption.setAttribute('data-display-text', tokenInfo.displayText || '');
-                                customOption.setAttribute('data-token-logo', tokenInfo.tokenLogo || '');
+                                customOption.setAttribute('data-token-logo', normalizeTokenLogo(tokenInfo.tokenLogo));
                             }
                         }
                     }
@@ -2019,7 +1954,8 @@ window.addEventListener('resize', () => {
 	                    if (rate != null) {
 	                        result = amount * rate;
 	                    } else {
-	                        result = 0;
+	                        document.getElementById(`amount${i}`).value = '';
+                        continue;
 	                    }
 	                    
 	                    document.getElementById(`amount${i}`).value = formatNumberForDisplay(result);
@@ -2045,7 +1981,7 @@ window.addEventListener('resize', () => {
 	            const customOption = selectElement.querySelector('option[value="CUSTOM"]');
 	            if (selectedValue === 'CUSTOM' && customOption) {
 	                const displayText = customOption.getAttribute('data-display-text');
-	                const logoUrl = customOption.getAttribute('data-token-logo');
+	                const logoUrl = normalizeTokenLogo(customOption.getAttribute('data-token-logo'));
 	                
 	                if (displayText && logoUrl) {
 	                    // UI 使用图片 Logo
@@ -2723,40 +2659,23 @@ window.addEventListener('resize', () => {
 	            updateCustomDropdownTrigger(selectElement);
 	        }
         
-        // 基于市值排名估算价格的函数
-        function getEstimatedPrice(coin) {
-            // 如果没有市值排名，给一个默认的小价格
-            if (!coin.market_cap_rank) {
-                return 0.001; // 默认 $0.001
-            }
-            
-            const rank = coin.market_cap_rank;
-            
-            // 基于市值排名的粗略价格估算
-            if (rank <= 10) return 50; // 前10名，大概$50
-            if (rank <= 50) return 5; // 前50名，大概$5
-            if (rank <= 100) return 1; // 前100名，大概$1
-            if (rank <= 500) return 0.1; // 前500名，大概$0.1
-            if (rank <= 1000) return 0.01; // 前1000名，大概$0.01
-            return 0.001; // 其他，大概$0.001
-        }
         
         // 本地常见代币数据库
         function getLocalTokenResults(query) {
             const commonTokens = [
-                { id: 'dogecoin', name: 'Dogecoin', symbol: 'doge', large: 'https://assets.coingecko.com/coins/images/5/large/dogecoin.png', market_cap_rank: 8 },
-                { id: 'cardano', name: 'Cardano', symbol: 'ada', large: 'https://assets.coingecko.com/coins/images/975/large/cardano.png', market_cap_rank: 9 },
-                { id: 'polkadot', name: 'Polkadot', symbol: 'dot', large: 'https://assets.coingecko.com/coins/images/12171/large/polkadot.png', market_cap_rank: 12 },
-                { id: 'chainlink', name: 'Chainlink', symbol: 'link', large: 'https://assets.coingecko.com/coins/images/877/large/chainlink-new-logo.png', market_cap_rank: 15 },
-                { id: 'polygon', name: 'Polygon', symbol: 'matic', large: 'https://assets.coingecko.com/coins/images/4713/large/matic-token-icon.png', market_cap_rank: 16 },
-                { id: 'avalanche-2', name: 'Avalanche', symbol: 'avax', large: 'https://assets.coingecko.com/coins/images/12559/large/coin-round-red.png', market_cap_rank: 17 },
-                { id: 'shiba-inu', name: 'Shiba Inu', symbol: 'shib', large: 'https://assets.coingecko.com/coins/images/11939/large/shiba.png', market_cap_rank: 18 },
-                { id: 'uniswap', name: 'Uniswap', symbol: 'uni', large: 'https://assets.coingecko.com/coins/images/12504/large/uniswap-uni.png', market_cap_rank: 20 },
-                { id: 'litecoin', name: 'Litecoin', symbol: 'ltc', large: 'https://assets.coingecko.com/coins/images/2/large/litecoin.png', market_cap_rank: 21 },
-                { id: 'near', name: 'NEAR Protocol', symbol: 'near', large: 'https://assets.coingecko.com/coins/images/10365/large/near_icon.png', market_cap_rank: 25 },
-                { id: 'aptos', name: 'Aptos', symbol: 'apt', large: 'https://assets.coingecko.com/coins/images/26455/large/aptos_round.png', market_cap_rank: 30 },
-                { id: 'arbitrum', name: 'Arbitrum', symbol: 'arb', large: 'https://assets.coingecko.com/coins/images/16547/large/photo_2023-03-29_21.47.00.jpeg', market_cap_rank: 35 },
-                { id: 'optimism', name: 'Optimism', symbol: 'op', large: 'https://assets.coingecko.com/coins/images/25244/large/Optimism.png', market_cap_rank: 40 }
+                { id: 'dogecoin', name: 'Dogecoin', symbol: 'doge', large: 'https://coin-images.coingecko.com/coins/images/5/large/dogecoin.png', market_cap_rank: 8 },
+                { id: 'cardano', name: 'Cardano', symbol: 'ada', large: 'https://coin-images.coingecko.com/coins/images/975/large/cardano.png', market_cap_rank: 9 },
+                { id: 'polkadot', name: 'Polkadot', symbol: 'dot', large: 'https://coin-images.coingecko.com/coins/images/12171/large/polkadot.png', market_cap_rank: 12 },
+                { id: 'chainlink', name: 'Chainlink', symbol: 'link', large: 'https://coin-images.coingecko.com/coins/images/877/large/chainlink-new-logo.png', market_cap_rank: 15 },
+                { id: 'polygon', name: 'Polygon', symbol: 'matic', large: 'https://coin-images.coingecko.com/coins/images/4713/large/matic-token-icon.png', market_cap_rank: 16 },
+                { id: 'avalanche-2', name: 'Avalanche', symbol: 'avax', large: 'https://coin-images.coingecko.com/coins/images/12559/large/coin-round-red.png', market_cap_rank: 17 },
+                { id: 'shiba-inu', name: 'Shiba Inu', symbol: 'shib', large: 'https://coin-images.coingecko.com/coins/images/11939/large/shiba.png', market_cap_rank: 18 },
+                { id: 'uniswap', name: 'Uniswap', symbol: 'uni', large: 'https://coin-images.coingecko.com/coins/images/12504/large/uniswap-uni.png', market_cap_rank: 20 },
+                { id: 'litecoin', name: 'Litecoin', symbol: 'ltc', large: 'https://coin-images.coingecko.com/coins/images/2/large/litecoin.png', market_cap_rank: 21 },
+                { id: 'near', name: 'NEAR Protocol', symbol: 'near', large: 'https://coin-images.coingecko.com/coins/images/10365/large/near_icon.png', market_cap_rank: 25 },
+                { id: 'aptos', name: 'Aptos', symbol: 'apt', large: 'https://coin-images.coingecko.com/coins/images/26455/large/aptos_round.png', market_cap_rank: 30 },
+                { id: 'arbitrum', name: 'Arbitrum', symbol: 'arb', large: 'https://coin-images.coingecko.com/coins/images/16547/large/photo_2023-03-29_21.47.00.jpeg', market_cap_rank: 35 },
+                { id: 'optimism', name: 'Optimism', symbol: 'op', large: 'https://coin-images.coingecko.com/coins/images/25244/large/Optimism.png', market_cap_rank: 40 }
             ];
             
             const lowerQuery = query.toLowerCase();
@@ -2770,6 +2689,8 @@ window.addEventListener('resize', () => {
         
         // 打开自定义代币弹窗
         function openCustomTokenModal() {
+            invalidateTokenSearch();
+            tokenSelectionVersion++;
             const modal = document.getElementById('customTokenModal');
             const searchInput = document.getElementById('tokenSearchInput');
             const currentSelect = currentSelectId ? document.getElementById(currentSelectId) : null;
@@ -2790,6 +2711,8 @@ window.addEventListener('resize', () => {
         
         // 关闭自定义代币弹窗
         function closeCustomTokenModal() {
+            invalidateTokenSearch();
+            tokenSelectionVersion++;
             const modal = document.getElementById('customTokenModal');
             modal.style.display = 'none';
             modal.setAttribute('aria-hidden', 'true');
@@ -2837,247 +2760,107 @@ window.addEventListener('resize', () => {
         });
         
         // 搜索代币
-	        async function searchTokens() {
-	            const query = document.getElementById('tokenSearchInput').value.trim();
-	            if (!query) {
-	                return;
-	            }
-	            
-	            const queryKey = query.toLowerCase();
-	            const cached = tokenSearchSessionCache.get(queryKey);
-	            if (cached && nowMs() - cached.ts < 60 * 1000) {
-	                displaySearchResults(cached.coins || []);
-	                return;
-	            }
-	            
-	            const loadingIndicator = document.getElementById('loadingIndicator');
-	            const searchResults = document.getElementById('searchResults');
-            
-            // 显示加载动画
-            loadingIndicator.style.display = 'block';
-            searchResults.innerHTML = '';
-            
-	            try {
-	                // 使用CoinGecko API搜索代币
-	                let searchUrl = `https://api.coingecko.com/api/v3/search?query=${encodeURIComponent(query)}`;
-	                console.log('搜索URL:', searchUrl);
-	                
-	                let response;
-	                try {
-	                    response = await fetchJsonWithTimeout(searchUrl, {
-	                        method: 'GET',
-	                        headers: {
-	                            'Accept': 'application/json'
-	                        }
-	                    }, 8000);
-	                    
-	                    apiStatus.coingecko = true;
-	                } catch (corsError) {
-	                    console.log('搜索API直接访问失败，使用本地数据库:', corsError);
-	                    apiStatus.coingecko = false;
-	                    // 使用本地的常见代币数据库作为备用
-	                    const localResults = getLocalTokenResults(query);
-	                    response = {
-	                        ok: true,
-                        json: async () => ({ coins: localResults })
-                    };
+	        let tokenSearchVersion = 0;
+        let tokenSelectionVersion = 0;
+
+        function invalidateTokenSearch() {
+            tokenSearchVersion++;
+            clearTimeout(searchTimeout);
+            document.getElementById('loadingIndicator').style.display = 'none';
+        }
+
+        async function searchTokens() {
+            const query = document.getElementById('tokenSearchInput').value.trim();
+            const version = ++tokenSearchVersion;
+            if (!query) return;
+            const loading = document.getElementById('loadingIndicator');
+            const results = document.getElementById('searchResults');
+            const isCurrent = () => version === tokenSearchVersion && currentSelectId &&
+                document.getElementById('tokenSearchInput').value.trim() === query;
+            loading.style.display = 'block';
+            results.replaceChildren();
+            const key = query.toLowerCase();
+            try {
+                let cached = tokenSearchSessionCache.get(key);
+                if (!cached || nowMs() - cached.ts > 5 * 60 * 1000) {
+                    const data = await fetchCoinGeckoJson('search', { query: key });
+                    if (!Array.isArray(data?.coins)) throw new Error('搜索数据无效');
+                    cached = { ts: nowMs(), coins: data.coins.filter(coin => coin && typeof coin.id === 'string' && typeof coin.symbol === 'string' && typeof coin.name === 'string') };
+                    tokenSearchSessionCache.set(key, cached);
+                    if (tokenSearchSessionCache.size > 50) tokenSearchSessionCache.delete(tokenSearchSessionCache.keys().next().value);
                 }
-                
-                if (!response.ok) {
-                    throw new Error('搜索请求失败');
+                if (isCurrent()) displaySearchResults(cached.coins);
+            } catch (error) {
+                if (isCurrent()) {
+                    const fallback = tokenSearchSessionCache.get(key)?.coins || getLocalTokenResults(query);
+                    displaySearchResults(fallback);
+                    const note = document.createElement('div');
+                    note.className = 'no-results';
+                    note.textContent = fallback.length ? '搜索暂不可用，显示已缓存或常见代币；选择时仍需获取价格。' :
+                        error.status === 429 ? '搜索过于频繁，请稍后重试' : '搜索暂不可用，请稍后重试';
+                    results.prepend(note);
                 }
-	                
-	                const data = await response.json();
-	                loadingIndicator.style.display = 'none';
-	                const coins = data.coins || [];
-	                tokenSearchSessionCache.set(queryKey, { ts: nowMs(), coins });
-	                displaySearchResults(coins);
-	                
-	            } catch (error) {
-	                console.error('搜索代币时出错:', error);
-	                apiStatus.coingecko = false;
-	                loadingIndicator.style.display = 'none';
-	                searchResults.innerHTML = '<div class="no-results">搜索失败，请稍后重试</div>';
-	            }
-	        }
-        
-        // 显示搜索结果
+            } finally { if (isCurrent()) loading.style.display = 'none'; }
+        }
+
         function displaySearchResults(coins) {
-            const searchResults = document.getElementById('searchResults');
-            
-            if (coins.length === 0) {
-                searchResults.innerHTML = '<div class="no-results">未找到相关代币</div>';
-                return;
+            const results = document.getElementById('searchResults');
+            results.replaceChildren();
+            if (!coins.length) {
+                const empty = document.createElement('div');
+                empty.className = 'no-results'; empty.textContent = '未找到相关代币';
+                results.append(empty); return;
             }
-            
-            searchResults.innerHTML = '';
-            
-            // 限制显示前10个结果
-            coins.slice(0, 10).forEach(coin => {
-                const tokenDiv = document.createElement('div');
-                tokenDiv.className = 'token-result';
-                tokenDiv.onclick = () => selectCustomToken(coin);
-                
-                tokenDiv.innerHTML = `
-                    <img src="${coin.large || coin.thumb}" alt="${coin.name}" class="token-logo" onerror="this.style.display='none'">
-                    <div class="token-content">
-                        <div class="token-name-row">
-                            <div class="token-name">${coin.name}</div>
-                        </div>
-                        <div class="token-bottom-row">
-                            <div class="token-symbol">${coin.symbol}</div>
-                            <div class="token-price">
-                                市值排名: ${coin.market_cap_rank || 'N/A'}
-                            </div>
-                        </div>
-                    </div>
-                `;
-                
-                searchResults.appendChild(tokenDiv);
-            });
-        }
-        
-        // 选择自定义代币
-	        async function selectCustomToken(coin) {
-	            const selectId = currentSelectId; // 先保存，避免 closeCustomTokenModal() 把 currentSelectId 清空
-	            try {
-	                console.log('选择的代币:', coin);
-	                
-	                const tokenPriceCacheKey = `${CACHE_KEYS.coingeckoTokenPrice}:${coin.id}`;
-	                const cachedPrice = readCache(tokenPriceCacheKey, 2 * 60 * 1000); // 2分钟
-	                
-	                let price = 0;
-	                let isEstimated = false;
-	                
-	                if (cachedPrice?.data?.price) {
-	                    price = cachedPrice.data.price;
-	                    isEstimated = !!cachedPrice.data.isEstimated;
-	                    console.log(`使用缓存价格（${formatAge(cachedPrice.ts)}）:`, price);
-	                } else {
-	                    // 获取代币详细信息和价格（CoinGecko）
-	                    const priceUrl = `https://api.coingecko.com/api/v3/simple/price?ids=${coin.id}&vs_currencies=usd`;
-	                    console.log('请求价格URL:', priceUrl);
-	                    
-	                    let response;
-	                    try {
-	                        response = await fetchJsonWithTimeout(priceUrl, {
-	                            method: 'GET',
-	                            headers: { 'Accept': 'application/json' }
-	                        }, 8000);
-	                        
-	                        apiStatus.coingecko = true;
-	                    } catch (corsError) {
-	                        console.log('直接访问失败，尝试使用备用方案:', corsError);
-	                        apiStatus.coingecko = false;
-	                        
-	                        // 如果直接访问失败，使用一个备用的价格估算（基于市值排名）
-	                        const estimatedPrice = getEstimatedPrice(coin);
-	                        console.log('使用估算价格:', estimatedPrice);
-	                        response = {
-	                            ok: true,
-	                            status: 200,
-	                            statusText: 'OK',
-	                            json: async () => ({ [coin.id]: { usd: estimatedPrice } })
-	                        };
-	                        isEstimated = true;
-	                        console.log('⚠️ 注意：正在使用基于市值排名的估算价格，可能不够准确');
-	                    }
-	                    
-	                    if (!response.ok) {
-	                        console.error('价格API请求失败:', response.status, response.statusText);
-	                        throw new Error(`获取代币价格失败: ${response.status} ${response.statusText}`);
-	                    }
-	                    
-	                    const priceData = await response.json();
-	                    console.log('价格数据:', priceData);
-	                    
-	                    price = priceData[coin.id]?.usd || 0;
-	                    console.log('解析出的价格:', price);
-	                    
-	                    writeCache(tokenPriceCacheKey, { price, isEstimated });
-	                }
-	                
-	                if (price === 0) {
-	                    console.warn('价格为0，可能数据有误');
-	                }
-                
-                // 存储自定义代币信息
-                const tokenKey = coin.symbol.toUpperCase();
-                const logoUrl = coin.large || coin.thumb || coin.image;
-	                customTokens.set(tokenKey, {
-	                    id: coin.id,
-	                    name: coin.name,
-	                    symbol: coin.symbol,
-	                    image: logoUrl,
-	                    price: price,
-	                    isEstimated: isEstimated || price === getEstimatedPrice(coin) // 标记是否为估算价格
-	                });
-                
-                // 不添加到下拉菜单，只在当前会话中使用
-                
-                // 设置触发搜索的下拉菜单使用自定义代币
-	                if (selectId) {
-	                    const currentSelect = document.getElementById(selectId);
-	                    if (currentSelect) {
-                        // 保持CUSTOM选项的原始文本"🔍 自定义代币"，但存储代币信息
-                        const customOption = currentSelect.querySelector('option[value="CUSTOM"]');
-                        if (customOption) {
-                            // 更新代币信息（覆盖之前的选择）
-                            customOption.setAttribute('data-token-key', tokenKey);
-                            customOption.setAttribute('data-token-name', coin.name);
-                            customOption.setAttribute('data-token-symbol', coin.symbol.toUpperCase());
-                            customOption.setAttribute('data-token-logo', logoUrl);
-                            
-                            // 设置外部显示的文本（只显示代币符号，Logo将通过CSS显示）
-                            customOption.setAttribute('data-display-text', coin.symbol.toUpperCase());
-                        }
-                        currentSelect.value = 'CUSTOM';
-                        
-                        // 记住这个选择作为"之前的值"
-                        currentSelect.setAttribute('data-previous-value', 'CUSTOM');
-                        
-                        // 立即更新外部显示
-                        updateSelectDisplay(currentSelect);
-                    }
-	                }
-	                
-	                // 重算汇率矩阵以包含新的自定义代币
-	                // 默认不强制刷新基础汇率（预设币价/ExchangeRate），避免短时间内重复请求
-	                await loadRates({ forceRefresh: false, reason: 'customTokenSelected' });
-	                
-	                // 关闭弹窗
-	                closeCustomTokenModal();
-	                
-	                // 重新计算转换
-	                if (selectId) {
-	                    const selectIndex = parseInt(selectId.replace('currency', ''));
-	                    convert(selectIndex);
-	                    saveState();
-	                }
-	                
-	            } catch (error) {
-	                console.error('选择代币时出错:', error);
-                console.error('错误详情:', error.message);
-                console.error('错误堆栈:', error.stack);
-                
-	                // 提供更详细的错误信息
-	                let errorMessage = '获取代币信息失败';
-	                if (apiStatus.rateLimited || error.message.includes('429')) {
-	                    errorMessage = 'API调用已达限制，请等待几分钟后重试';
-	                } else if (!apiStatus.coingecko) {
-	                    errorMessage = 'CoinGecko 服务暂时不可用，自定义代币功能可能受影响';
-	                } else if (error.message.includes('Failed to fetch')) {
-	                    errorMessage += '：网络连接问题，请检查网络或稍后重试';
-	                } else if (error.message.includes('403') || error.message.includes('401')) {
-	                    errorMessage += '：API访问受限';
-                } else {
-                    errorMessage += `：${error.message}`;
-                }
-                
-                alert(errorMessage);
+            for (const coin of coins.slice(0, 10)) {
+                const item = document.createElement('div'); item.className = 'token-result';
+                item.setAttribute('role', 'button'); item.tabIndex = 0;
+                item.onclick = () => selectCustomToken(coin);
+                item.onkeydown = event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); selectCustomToken(coin); } };
+                const image = document.createElement('img'); image.className = 'token-logo'; image.alt = '';
+                const logo = normalizeTokenLogo(coin.large || coin.thumb || coin.image);
+                if (logo) image.src = logo; else image.hidden = true;
+                image.onerror = () => { image.hidden = true; };
+                const content = document.createElement('div'); content.className = 'token-content';
+                const name = document.createElement('div'); name.className = 'token-name'; name.textContent = coin.name;
+                const bottom = document.createElement('div'); bottom.className = 'token-bottom-row';
+                const symbol = document.createElement('div'); symbol.className = 'token-symbol'; symbol.textContent = coin.symbol;
+                const rank = document.createElement('div'); rank.className = 'token-price'; rank.textContent = `市值排名: ${coin.market_cap_rank || 'N/A'}`;
+                bottom.append(symbol, rank); content.append(name, bottom); item.append(image, content); results.append(item);
             }
         }
-        
+
+        async function selectCustomToken(coin) {
+            const selectId = currentSelectId;
+            if (!selectId) return;
+            const version = ++tokenSelectionVersion;
+            const isCurrent = () => version === tokenSelectionVersion && currentSelectId === selectId;
+            showToast('正在获取代币价格');
+            try {
+                const result = await getCoinGeckoPrices([coin.id]);
+                if (!isCurrent()) return;
+                const price = result.prices[coin.id];
+                if (!Number.isFinite(price) || price <= 0) throw result.error || new Error('该代币暂无可用价格');
+                const key = `CG:${coin.id}`;
+                const logo = normalizeTokenLogo(coin.large || coin.thumb || coin.image);
+                customTokens.set(key, { id: coin.id, name: coin.name, symbol: coin.symbol, image: logo, price, isEstimated: false });
+                const select = document.getElementById(selectId);
+                const option = select.querySelector('option[value="CUSTOM"]');
+                for (const [attribute, value] of Object.entries({
+                    'data-token-key': key, 'data-token-name': coin.name, 'data-token-symbol': coin.symbol.toUpperCase(),
+                    'data-token-logo': logo, 'data-display-text': coin.symbol.toUpperCase()
+                })) option.setAttribute(attribute, value);
+                select.value = 'CUSTOM'; select.setAttribute('data-previous-value', 'CUSTOM');
+                usdPrices[key] = price;
+                updateSelectDisplay(select);
+                const index = Number(selectId.replace('currency', ''));
+                closeCustomTokenModal();
+                convert(index); saveState();
+                if (result.staleIds.length) showToast('实时价格暂不可用，使用最近缓存价格');
+            } catch (error) {
+                if (isCurrent()) showToast(error.status === 429 ? '请求过于频繁，请稍后再试' : '获取价格失败，请稍后重试');
+            }
+        }
+
         // 搜索防抖
         let searchTimeout;
         
@@ -3104,6 +2887,8 @@ window.addEventListener('resize', () => {
                 
                 input.addEventListener('input', function(e) {
                     const query = e.target.value.trim();
+                    invalidateTokenSearch();
+                    tokenSelectionVersion++;
                     
                     // 清除之前的搜索定时器
                     if (searchTimeout) {

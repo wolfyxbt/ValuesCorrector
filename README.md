@@ -7,7 +7,7 @@
 ## 功能
 
 - **多资产实时换算**：6 个栏位联动，任意一栏输入，其余栏位即时换算
-  - 加密货币：BTC / ETH / SOL / BNB / OKB，行情来自 CoinPaprika，另支持搜索任意自定义代币（CoinGecko）
+  - 加密货币：BTC / ETH / SOL / BNB / OKB，与自定义代币统一使用 CoinGecko，按唯一 ID 批量查询价格
   - 法币：USD / CNY / TWD / JPY / KRW / SGD / AED / HKD / MYR，汇率来自 ExchangeRate-API
   - 实物：猪脚饭、KFC、iPhone、法拉利、房产等趣味标的
 - **算式输入**：输入框支持 `+ - × ÷` 和括号（如 `1+2*3`），点 `=` 或按回车直接得出结果
@@ -29,11 +29,12 @@
 
 ### 核心设计
 
-- **集中资产配置**：所有可换算资产定义在 `app.js` 的 `ASSET_CONFIG` 数组中，下拉选项、logo 映射、汇率换算均由此派生。新增法币或实物只需加一行；新增加密货币还需在 `COINPAPRIKA_TICKER_URLS` 补充行情接口地址。
+- **集中资产配置**：所有可换算资产定义在 `app.js` 的 `ASSET_CONFIG` 数组中，下拉选项、logo 映射、汇率换算均由此派生。新增法币或实物只需加一行；新增加密货币还需在 `COINGECKO_COIN_IDS` 补充 CoinGecko ID。
 - **USD 单价表**：不维护 N×N 汇率矩阵，而是维护每种资产相对 USD 的单价 `usdPrices`，任意换算即 `usdPrices[from] / usdPrices[to]`。
 - **安全求值**：算式输入用白名单 tokenizer + 调度场算法解析，不使用 `eval`。
-- **同源 logo**：币种与站点 logo 均存放在仓库内（`assets/logos/`、`favicon/`），分享图 canvas 绘制无跨域污染问题。
-- **本地缓存**：行情短时缓存于 localStorage，减少 API 调用；换算状态自动保存、下次打开恢复。
+- **Logo 与分享图**：预设币种与站点 Logo 存放在仓库内；自定义代币使用 CoinGecko 新版图片源，并兼容旧地址。分享图通过 CORS 安全加载 Logo，5 秒超时或加载失败时退回文字，不影响导出。
+- **本地缓存**：币价缓存 60 秒，失败时最多使用 15 分钟内的真实报价并提示；没有有效价格的栏位留空，不按市值排名估价。搜索防抖、请求去重、限流退避和图片会话缓存减少重复请求。旧自定义币种记录恢复后重新获取报价。
+- **运行方式**：仍为 GitHub Pages 纯前端，无需后端或私密 API Key。CoinGecko 负责币种价格和搜索图片；法币汇率继续使用 ExchangeRate-API。
 
 ## 本地运行
 
@@ -43,6 +44,15 @@
 python3 -m http.server 8000
 # 打开 http://localhost:8000
 ```
+
+## 验证
+
+```bash
+node --test tests/api.test.cjs
+node --check app.js
+```
+
+覆盖币价批量请求、缓存过期、限流、同名代币隔离、旧记录恢复、搜索竞态和 Logo 加载失败回退。
 
 ## 作者
 
