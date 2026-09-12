@@ -29,13 +29,15 @@
             { symbol: 'HKD', category: 'fiat', text: 'HKD', logoType: 'emoji', logo: '🇭🇰' },
             { symbol: 'MYR', category: 'fiat', text: 'MYR', logoType: 'emoji', logo: '🇲🇾' },
             // 实物（priceAmount 为以 priceCurrency 计价的单价）
+            { symbol: 'IPHONE_DUO', category: 'product', text: 'iPhone Duo', logoType: 'emoji', logo: '📱', priceAmount: 2000, priceCurrency: 'USD' },
+            { symbol: 'IPHONE18_PRO', category: 'product', text: 'iPhone 18 Pro', logoType: 'emoji', logo: '📱', priceAmount: 1199, priceCurrency: 'USD' },
+            { symbol: 'IPHONE18_PRO_MAX', category: 'product', text: 'iPhone 18 Pro Max', logoType: 'emoji', logo: '📱', priceAmount: 1299, priceCurrency: 'USD' },
             { symbol: 'PATEK', category: 'product', text: '嗯哼的百达斐丽', logoType: 'image', logo: 'assets/logos/enheng-patek.png', emoji: '⌚', priceAmount: 1200000, priceCurrency: 'CNY' },
             { symbol: 'XIAOXIAO_HOME', category: 'product', text: '小侠的新房', logoType: 'image', logo: 'assets/logos/xiaoxia-home.png', emoji: '🏠', priceAmount: 74540000, priceCurrency: 'CNY' },
             { symbol: 'FERRARI_SF90', category: 'product', text: '0xSun 的法拉利', logoType: 'image', logo: 'assets/logos/0xsun-ferrari.png', emoji: '🏎️', priceAmount: 8500000, priceCurrency: 'CNY' },
             { symbol: 'ZHUJIAO', category: 'product', text: '猪脚饭', logoType: 'emoji', logo: '🍚', priceAmount: 20, priceCurrency: 'CNY' },
             { symbol: 'KFC', category: 'product', text: 'KFC', logoType: 'emoji', logo: '🍗', priceAmount: 50, priceCurrency: 'CNY' },
             { symbol: 'IN11', category: 'product', text: 'in11 嫩模', logoType: 'emoji', logo: '💃', priceAmount: 3000, priceCurrency: 'CNY' },
-            { symbol: 'IPHONE17', category: 'product', text: 'iPhone17', logoType: 'emoji', logo: '📱', priceAmount: 799, priceCurrency: 'USD' },
             { symbol: 'MACBOOK', category: 'product', text: 'MacBook Air', logoType: 'emoji', logo: '💻', priceAmount: 999, priceCurrency: 'USD' },
         ];
 
@@ -1871,6 +1873,14 @@ window.addEventListener('resize', () => {
             if (savedState) {
                 try {
                     const state = JSON.parse(savedState);
+                    // 已移除的 iPhone17 按原单价 799 USD 恢复成美元，保留旧金额的价值。
+                    for (let i = 1; i <= FIELD_COUNT; i++) {
+                        if (state[`currency${i}`] !== 'IPHONE17') continue;
+                        const amount = parseAmountInputToNumber(state[`amount${i}`] || '');
+                        state[`currency${i}`] = 'USD';
+                        state[`amount${i}`] = Number.isFinite(amount * 799)
+                            ? formatNumberForDisplay(amount * 799) : '';
+                    }
                     console.log('📦 解析后的状态:', state);
 
                     // 恢复自定义代币数据
