@@ -66,7 +66,7 @@
         const SELECT_GROUPS = [
             { label: '加密货币', category: 'crypto', appendCustom: true },
             { label: '法币', category: 'fiat', appendCustomFiat: true },
-            { label: '实物', category: 'product' },
+            { label: '实物', category: 'product', appendCustomProduct: true },
         ];
 
         // 原生 <option> 文本：emoji 型用其 emoji（即 logo），图片型用单独的 emoji 字段
@@ -108,6 +108,11 @@
                     customFiat.value = 'CUSTOM_FIAT';
                     customFiat.textContent = '🔍 自定义法币';
                     optgroup.appendChild(customFiat);
+                }
+                if (group.appendCustomProduct) {
+                    const option = document.createElement('option');
+                    option.value = 'CUSTOM_PRODUCT'; option.textContent = '＋ 自定义实物';
+                    optgroup.appendChild(option);
                 }
                 select.appendChild(optgroup);
             }
@@ -1514,6 +1519,7 @@ window.addEventListener('resize', () => {
                 for (const asset of PRODUCT_ASSETS) {
                     if (nextPrices[asset.priceCurrency]) nextPrices[asset.symbol] = asset.priceAmount * nextPrices[asset.priceCurrency];
                 }
+                for (const product of customProducts.values()) nextPrices[product.id] = product.price;
                 for (const [key, info] of activeCustom) {
                     info.price = crypto.prices[info.id] || null;
                     info.isEstimated = false;
@@ -1613,6 +1619,7 @@ window.addEventListener('resize', () => {
 		            }
 
 	            // 然后恢复状态
+	            restoreCustomProducts();
 	            restoreState();
 
             // 在页面关闭前保存状态
@@ -2154,6 +2161,11 @@ window.addEventListener('resize', () => {
                 document.getElementById(`currency${i}`).addEventListener('change', function() {
                     console.log('Currency change event triggered for currency' + i);
                     
+                    if (this.value === 'CUSTOM_PRODUCT') {
+                        this.value = this.getAttribute('data-previous-value') || DEFAULT_CURRENCIES[i - 1];
+                        openCustomProductModal(this.id);
+                        return;
+                    }
                     if (this.value === 'CUSTOM_FIAT') {
                         this.value = this.getAttribute('data-previous-value') || DEFAULT_CURRENCIES[i - 1];
                         openCustomFiatModal(this.id);
@@ -2327,7 +2339,7 @@ window.addEventListener('resize', () => {
 	            // 菜单 portal 在 body 下，通过保存的引用同步选中态。
 	            dropdown._menu?.querySelectorAll('.dropdown-item').forEach((item) => {
 	                const v = item.getAttribute('data-value');
-	                const selected = v === selectElement.value || (v === 'CUSTOM_FIAT' && selectElement.value.startsWith('FIAT:'));
+	                const selected = v === selectElement.value || (v === 'CUSTOM_FIAT' && selectElement.value.startsWith('FIAT:')) || (v === 'CUSTOM_PRODUCT' && selectElement.value.startsWith('PRODUCT:'));
 	                item.setAttribute('aria-selected', selected ? 'true' : 'false');
 	            });
 	        }
@@ -2463,7 +2475,7 @@ window.addEventListener('resize', () => {
 	                    const opts = Array.from(child.querySelectorAll('option'));
 	                    for (const opt of opts) {
 	                        const value = opt.value;
-	                        if (value === 'TEMP_CUSTOM_PLACEHOLDER' || value.startsWith('FIAT:')) continue;
+	                        if (value === 'TEMP_CUSTOM_PLACEHOLDER' || value.startsWith('FIAT:') || value.startsWith('PRODUCT:')) continue;
 		                        const item = document.createElement('button');
                                 item.type = 'button';
 		                        item.className = 'dropdown-item';
@@ -2475,10 +2487,10 @@ window.addEventListener('resize', () => {
 	                        let displayText = (opt.textContent || value).trim();
 	                        let logoType = 'none';
 	                        let logo = '';
-	                        if (value === 'CUSTOM' || value === 'CUSTOM_FIAT') {
-	                            displayText = value === 'CUSTOM_FIAT' ? '自定义法币' : '自定义代币';
+	                        if (value === 'CUSTOM' || value === 'CUSTOM_FIAT' || value === 'CUSTOM_PRODUCT') {
+	                            displayText = value === 'CUSTOM_PRODUCT' ? '自定义实物' : value === 'CUSTOM_FIAT' ? '自定义法币' : '自定义代币';
 	                            logoType = 'emoji';
-	                            logo = '🔍';
+	                            logo = value === 'CUSTOM_PRODUCT' ? '＋' : '🔍';
 	                        } else if (currencyLogos?.[value]) {
 	                            const mapped = currencyLogos[value];
 	                            logoType = mapped.type;
@@ -2499,6 +2511,10 @@ window.addEventListener('resize', () => {
 		                            trigger.setAttribute('aria-expanded', 'false');
                                     if (value === 'CUSTOM_FIAT') {
                                         openCustomFiatModal(selectElement.id);
+                                        return;
+                                    }
+                                    if (value === 'CUSTOM_PRODUCT') {
+                                        openCustomProductModal(selectElement.id);
                                         return;
                                     }
                                     if (value === 'CUSTOM' && selectElement.value !== 'CUSTOM') {

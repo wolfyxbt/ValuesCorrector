@@ -7,6 +7,7 @@ function setup(fetch) {
   let time = Date.now();
   const ctx = vm.createContext({ fetch, URL, URLSearchParams, AbortController, setTimeout, clearTimeout,
     apiStatus: {}, console: { log() {}, error() {}, warn() {} }, Date: { now: () => time }, localStorage: {}, document: { getElementById() { return null; }, addEventListener() {} } });
+  vm.runInContext(fs.readFileSync(require('node:path').join(__dirname, '../products.js'), 'utf8'), ctx);
   vm.runInContext(fs.readFileSync(require('node:path').join(__dirname, '../fiat.js'), 'utf8'), ctx);
   vm.runInContext(source.slice(0, source.indexOf('// PWA 添加到主屏幕功能')), ctx);
   return { run: code => vm.runInContext(code, ctx), ctx, tick: ms => { time += ms; } };
@@ -203,4 +204,56 @@ test('install guide selects mobile instructions from device identity, not viewpo
   ctx.navigator={userAgent:'Macintosh',platform:'MacIntel',maxTouchPoints:5};assert.equal(run('getInstallGuide().platform'),'iPhone / iPad');
   ctx.navigator={userAgent:'Android',platform:'Linux',maxTouchPoints:5};assert.equal(run('getInstallGuide().platform'),'Android');
   ctx.navigator={userAgent:'Macintosh',platform:'MacIntel',maxTouchPoints:0};assert.equal(run('getInstallGuide().platform'),'电脑浏览器');
+});
+
+test('custom products validate names, prices and local image data',()=>{
+  const {ctx,run}=setup();ctx.item={id:'PRODUCT:test',name:'  咖啡  ',price:5,logo:'data:image/webp;base64,AAAA'};
+  assert.equal(run('validateCustomProduct(item).name'),'咖啡');
+  for(const price of [0,-1,Infinity,NaN,'5']){ctx.item.price=price;assert.equal(run('validateCustomProduct(item)'),null);}
+  ctx.item.price=5;ctx.item.name=' ';assert.equal(run('validateCustomProduct(item)'),null);
+  ctx.item.name='名字'.repeat(16);assert.equal(run('validateCustomProduct(item)'),null);
+  ctx.item.name='<img src=x>';ctx.item.logo='https://example.com/logo.png';
+  assert.equal(run('validateCustomProduct(item).name'),'<img src=x>');assert.equal(run('validateCustomProduct(item).logo'),'');
+  ctx.item.id='USD';assert.equal(run('validateCustomProduct(item)'),null);
+});
+
+test('product catalog survives reload and a storage failure cannot replace saved products',()=>{
+  const {ctx,run}=setup();let saved;
+  ctx.localStorage={getItem:()=>saved,setItem:(key,value)=>{saved=value;}};
+  run(`syncCustomProducts=()=>{};persistCustomProducts(new Map([['PRODUCT:a',{id:'PRODUCT:a',name:'咖啡',price:5,logo:''}]]));customProducts=new Map();restoreCustomProducts()`);
+  assert.equal(run(`customProducts.get('PRODUCT:a').price`),5);
+  ctx.localStorage.setItem=()=>{throw Error('quota');};
+  assert.throws(()=>run(`persistCustomProducts(new Map([['PRODUCT:b',{id:'PRODUCT:b',name:'水',price:2,logo:''}]]))`));
+  assert.equal(run(`customProducts.has('PRODUCT:a')`),true);assert.equal(run(`customProducts.has('PRODUCT:b')`),false);
+});
+
+test('API refresh preserves custom fixed prices even when external prices fail',async()=>{
+  const {ctx,run}=setup(async()=>reply({}));
+  ctx.customTokens=new Map();ctx.window={};ctx.setInterval=()=>1;ctx.convert=()=>{};ctx.updateApiStatusDisplay=()=>{};
+  ctx.document.getElementById=id=>id.startsWith('amount')?{value:''}:{value:'PRODUCT:coffee'};
+  vm.runInContext(source.slice(source.indexOf('async function loadRates({'),source.indexOf('// 检测 localStorage 是否可用')),ctx);
+  run(`customProducts.set('PRODUCT:coffee',{id:'PRODUCT:coffee',name:'咖啡',price:10,logo:''});getCoinGeckoPrices=async()=>({prices:{},staleIds:[],missingIds:['bitcoin']});getFiatRates=async()=>{throw Error('offline')}`);
+  await run('loadRates()');assert.equal(run(`getConversionRate('USD','PRODUCT:coffee')`),.1);
+  assert.equal(run(`usdPrices['PRODUCT:coffee']`),10);
+});
+
+test('choosing a saved product preserves the entered source and exposes its logo to sharing',()=>{
+  const {ctx,run}=setup();const nodes={};let sourceIndex;
+  for(let i=1;i<=6;i++){nodes['amount'+i]={value:i===2?'2':''};nodes['currency'+i]={value:'USD',setAttribute(){}};}
+  ctx.document.getElementById=id=>nodes[id];ctx.updateSelectDisplay=()=>{};ctx.saveState=()=>{};ctx.convert=i=>{sourceIndex=i;};
+  run(`customProducts.set('PRODUCT:coffee',{id:'PRODUCT:coffee',name:'咖啡',price:10,logo:''});currencyLogos['PRODUCT:coffee']={text:'咖啡',type:'image',logo:customProductLogo({logo:''})};closeCustomProductModal=()=>{productSelectId=null;};productSelectId='currency2';chooseCustomProduct('PRODUCT:coffee')`);
+  assert.equal(nodes.currency2.value,'PRODUCT:coffee');assert.equal(sourceIndex,1);
+  vm.runInContext(source.slice(source.indexOf('function getShareRows()'),source.indexOf('function formatShareTimestamp()')),ctx);
+  assert.equal(run('getShareRows()[0].label'),'咖啡');assert.equal(run('getShareRows()[0].logoType'),'image');
+});
+
+test('late product images cannot change a closed editor or replace a newer image',async()=>{
+  const {ctx,run}=setup();const pending={};const preview={src:''};const status={textContent:''};const remove={hidden:true};
+  ctx.document.getElementById=id=>id==='productLogoPreview'?preview:id==='productStatus'?status:remove;
+  ctx.pending=pending;run(`prepareProductLogo=file=>new Promise(resolve=>pending[file.name]=resolve);productSelectId='currency1'`);
+  ctx.event={target:{files:[{name:'old'}]}};const old=run('onProductLogoChange(event)');
+  ctx.event={target:{files:[{name:'new'}]}};const newer=run('onProductLogoChange(event)');
+  pending.new('new-image');await newer;pending.old('old-image');await old;assert.equal(preview.src,'new-image');
+  ctx.event={target:{files:[{name:'closed'}]}};const closed=run('onProductLogoChange(event)');run(`productSelectId=null;productImageVersion++`);
+  pending.closed('closed-image');await closed;assert.equal(preview.src,'new-image');
 });
