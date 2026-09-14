@@ -324,3 +324,21 @@ test('system emoji input accepts complete emoji sequences without a fixed palett
   for (const invalid of ['hello','😀😀','1','🇺','<img>']) assert.equal(run(`normalizeProductEmoji(${JSON.stringify(invalid)})`),null);
   assert.equal(run(`normalizeProductEmoji('  ')`),'');
 });
+
+test('dropdowns match trigger edges and stay above or below without overlapping',()=>{
+  const {ctx,run}=setup();
+  const scroll={style:{}};
+  const menu={style:{},attrs:{},querySelector:()=>scroll,setAttribute(k,v){this.attrs[k]=v;},get offsetHeight(){return Math.min(700,parseFloat(scroll.style.maxHeight))+2;}};
+  let rect={left:45.5,top:100,bottom:148,width:220.25};
+  ctx.window={innerWidth:390,innerHeight:844};
+  ctx.dd={_menu:menu,querySelector:()=>({getBoundingClientRect:()=>rect})};
+  vm.runInContext(source.slice(source.indexOf('function positionDropdownMenu('),source.indexOf('function buildCustomDropdown(')),ctx);
+  run('positionDropdownMenu(dd)');
+  assert.equal(menu.style.width,'220.25px');assert.equal(menu.style.left,'45.5px');assert.equal(menu.style.top,'152px');assert.equal(menu.attrs['data-side'],'bottom');
+  rect={left:45.5,top:730,bottom:778,width:220.25};run('positionDropdownMenu(dd)');
+  assert.equal(menu.attrs['data-side'],'top');assert.equal(parseFloat(menu.style.top)+menu.offsetHeight,726);
+  ctx.window.visualViewport={offsetLeft:20,offsetTop:50,width:350,height:260};
+  rect={left:45.5,top:190,bottom:238,width:220.25};run('positionDropdownMenu(dd)');
+  assert.equal(menu.style.left,'45.5px');assert.equal(menu.style.width,'220.25px');
+  assert.ok(parseFloat(menu.style.top)>=62);assert.ok(parseFloat(menu.style.top)+menu.offsetHeight<=298);
+});

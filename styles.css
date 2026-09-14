@@ -2093,3 +2093,13 @@
         #productCurrency { appearance: auto; background-image: none; padding-right: 8px; color: var(--text); }
 
         #productEmojiHint { margin-bottom: 20px; }
+
+        /* Keep anchored edges stable during pressing and opening. */
+        .dropdown-trigger:active { transform: none; }
+        .dropdown-menu { box-sizing: border-box; animation: dropdownFadeIn 120ms ease-out; }
+        .dropdown-menu-scroll { box-sizing: border-box; }
+        @keyframes dropdownFadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .product-currency-dropdown .dropdown-trigger { height: 46px; min-height: 46px; padding: 12px; font-size: 16px; background: var(--control-bg); }
+        .product-currency-dropdown .dropdown-logo { display: none; }
+        .product-currency-menu .dropdown-item-text { white-space: normal; overflow-wrap: anywhere; }
+        @media (prefers-reduced-motion: reduce) { .dropdown-menu { animation: none; } }

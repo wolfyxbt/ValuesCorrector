@@ -1274,9 +1274,10 @@
         });
 
         // 滚动/缩放：重定位已打开的下拉菜单
-        window.addEventListener('scroll', () => {
+        window.addEventListener('scroll', (event) => {
+            if (event.target instanceof Element && event.target.closest('.dropdown-menu')) return;
             document.querySelectorAll('.dropdown.open').forEach((dd) => positionDropdownMenu(dd));
-        }, { passive: true });
+        }, { passive: true, capture: true });
 
 window.addEventListener('resize', () => {
 	            document.querySelectorAll('.dropdown.open').forEach((dd) => positionDropdownMenu(dd));
@@ -2284,6 +2285,9 @@ window.addEventListener('resize', () => {
 	        // ===== 自定义下拉（替代系统 select）=====
 	        function getSelectDisplayInfo(selectElement) {
 	            const value = selectElement.value;
+                if (selectElement.id === 'productCurrency') {
+                    return { type: 'none', logo: '', text: selectElement.selectedOptions[0]?.textContent || value };
+                }
 	            if (value === 'CUSTOM') {
 	                const customOption = selectElement.querySelector('option[value="CUSTOM"]');
 	                const displayText = customOption?.getAttribute('data-display-text') || '自定义代币';
@@ -2314,7 +2318,7 @@ window.addEventListener('resize', () => {
 		            textBox.textContent = text;
                     if (trigger) {
                         const fieldNumber = selectElement.id.replace('currency', '');
-                        trigger.setAttribute('aria-label', `${text}，选择第 ${fieldNumber} 栏单位`);
+                        trigger.setAttribute('aria-label', selectElement.id === 'productCurrency' ? `${text}，价格单位` : `${text}，选择第 ${fieldNumber} 栏单位`);
                     }
 		            logoBox.innerHTML = '';
 		            logoBox.classList.toggle('is-emoji', type === 'emoji');
@@ -2369,65 +2373,44 @@ window.addEventListener('resize', () => {
             const scroll = menu?.querySelector('.dropdown-menu-scroll');
             if (!trigger || !menu || !scroll) return;
 
-            const wasHidden = menu.style.display === '' || menu.style.display === 'none';
-            if (wasHidden) menu.style.display = 'block';
+            menu.style.display = 'block';
             menu.style.visibility = 'hidden';
-
             const vv = window.visualViewport;
             const viewportLeft = vv?.offsetLeft || 0;
             const viewportTop = vv?.offsetTop || 0;
             const viewportWidth = vv?.width || window.innerWidth;
             const viewportHeight = vv?.height || window.innerHeight;
-            const viewportRight = viewportLeft + viewportWidth;
-            const viewportBottom = viewportTop + viewportHeight;
             const margin = 12;
-            const gap = 8;
-
-            const rawRect = trigger.getBoundingClientRect();
-            const triggerRect = {
-                left: rawRect.left + viewportLeft,
-                right: rawRect.right + viewportLeft,
-                top: rawRect.top + viewportTop,
-                bottom: rawRect.bottom + viewportTop,
-                width: rawRect.width,
-            };
-
-            const width = Math.min(
-                Math.max(triggerRect.width, 300),
-                viewportWidth - margin * 2
-            );
-            menu.style.width = `${Math.floor(width)}px`;
-            scroll.style.maxHeight = `${Math.floor(Math.min(520, viewportHeight - margin * 2))}px`;
-
-            const measuredHeight = menu.getBoundingClientRect().height;
-            const belowSpace = viewportBottom - margin - triggerRect.bottom - gap;
-            const aboveSpace = triggerRect.top - (viewportTop + margin) - gap;
+            const gap = 4;
+            // Fixed positioning and getBoundingClientRect use the same coordinate space.
+            const rect = trigger.getBoundingClientRect();
+            const width = Math.min(rect.width, Math.max(0, viewportWidth - margin * 2));
+            menu.style.width = `${width}px`;
+            scroll.style.maxHeight = `${Math.max(0, Math.min(520, viewportHeight - margin * 2 - 2))}px`;
+            const measuredHeight = menu.offsetHeight;
+            const belowSpace = viewportTop + viewportHeight - margin - rect.bottom - gap;
+            const aboveSpace = rect.top - viewportTop - margin - gap;
             const placeBelow = belowSpace >= Math.min(measuredHeight, 280) || belowSpace >= aboveSpace;
-            const availableHeight = Math.max(160, placeBelow ? belowSpace : aboveSpace);
-            const menuHeight = Math.min(measuredHeight, availableHeight);
-            scroll.style.maxHeight = `${Math.floor(menuHeight)}px`;
-
-            const left = Math.max(
-                viewportLeft + margin,
-                Math.min(triggerRect.left, viewportRight - margin - width)
-            );
-            const top = placeBelow
-                ? triggerRect.bottom + gap
-                : triggerRect.top - gap - menuHeight;
-
-            const originX = Math.max(24, Math.min(triggerRect.left + triggerRect.width / 2 - left, width - 24));
-            menu.style.setProperty('--origin-x', `${Math.floor(originX)}px`);
-            menu.style.setProperty('--origin-y', placeBelow ? '0%' : '100%');
+            const availableHeight = Math.max(0, placeBelow ? belowSpace : aboveSpace);
+            scroll.style.maxHeight = `${Math.max(0, Math.min(520, availableHeight - 2))}px`;
+            const menuHeight = menu.offsetHeight;
+            const left = Math.max(viewportLeft + margin, Math.min(rect.left, viewportLeft + viewportWidth - margin - width));
+            const top = placeBelow ? rect.bottom + gap : rect.top - gap - menuHeight;
             menu.setAttribute('data-side', placeBelow ? 'bottom' : 'top');
-            menu.style.left = `${Math.floor(left)}px`;
-            menu.style.top = `${Math.floor(top)}px`;
+            menu.style.left = `${left}px`;
+            menu.style.top = `${top}px`;
             menu.style.visibility = '';
         }
 
 	        function buildCustomDropdown(selectElement) {
 	            const wrapper = selectElement.parentElement;
 	            if (!wrapper) return;
-	            if (wrapper.querySelector('.dropdown')) return;
+	            if (wrapper.querySelector('.dropdown')) {
+                wrapper.querySelector('.dropdown')._refresh?.();
+                updateCustomDropdownTrigger(selectElement);
+                return;
+            }
+            const isPriceCurrency = selectElement.id === 'productCurrency';
 
 		            // 隐藏原生 select，但保留其事件/状态/存储逻辑
 		            selectElement.classList.add('native-select-hidden');
@@ -2436,7 +2419,7 @@ window.addEventListener('resize', () => {
                     selectElement.hidden = true;
 
 		            const dropdown = document.createElement('div');
-		            dropdown.className = 'dropdown';
+		            dropdown.className = isPriceCurrency ? 'dropdown product-currency-dropdown' : 'dropdown';
 
 	            const trigger = document.createElement('button');
 		            trigger.type = 'button';
@@ -2445,6 +2428,7 @@ window.addEventListener('resize', () => {
 		            trigger.setAttribute('aria-expanded', 'false');
                     const menuId = `${selectElement.id}-menu`;
                     trigger.setAttribute('aria-controls', menuId);
+                    trigger.id = `${selectElement.id}-trigger`;
 
 	            trigger.innerHTML = `
 	                <span class="dropdown-trigger-left">
@@ -2457,10 +2441,10 @@ window.addEventListener('resize', () => {
 	            `;
 
 		            const menu = document.createElement('div');
-		            menu.className = 'dropdown-menu';
+		            menu.className = isPriceCurrency ? 'dropdown-menu product-currency-menu' : 'dropdown-menu';
                     menu.id = menuId;
 		            menu.setAttribute('role', 'listbox');
-                    menu.setAttribute('aria-label', `${selectElement.getAttribute('aria-label')}选项`);
+                    menu.setAttribute('aria-label', isPriceCurrency ? '价格单位选项' : `${selectElement.getAttribute('aria-label')}选项`);
 	            // 关键：menu 使用 fixed 定位时，如果在 transform 容器内会发生偏移
 	            // 将 menu portal 到 body，保证 fixed 相对视口定位
 	            const scroll = document.createElement('div');
@@ -2470,17 +2454,21 @@ window.addEventListener('resize', () => {
 	            dropdown._menu = menu;
 
 	            // 根据 optgroup/option 构建菜单
+            dropdown._refresh = () => {
+                scroll.replaceChildren();
 	            const children = Array.from(selectElement.children);
 	            for (const child of children) {
-	                if (child.tagName === 'OPTGROUP') {
+	                if (child.tagName === 'OPTGROUP' || child.tagName === 'OPTION') {
+                        if (child.tagName === 'OPTGROUP') {
 	                    const groupLabel = child.getAttribute('label') || '';
 		                    const groupTitle = document.createElement('div');
 		                    groupTitle.className = 'dropdown-group';
                             groupTitle.setAttribute('role', 'presentation');
 		                    groupTitle.textContent = groupLabel;
 	                    scroll.appendChild(groupTitle);
+                        }
 
-	                    const opts = Array.from(child.querySelectorAll('option'));
+	                    const opts = child.tagName === 'OPTION' ? [child] : Array.from(child.querySelectorAll('option'));
 	                    for (const opt of opts) {
 	                        const value = opt.value;
 	                        if (value === 'TEMP_CUSTOM_PLACEHOLDER' || value.startsWith('FIAT:') || value.startsWith('PRODUCT:')) continue;
@@ -2499,7 +2487,7 @@ window.addEventListener('resize', () => {
 	                            displayText = value === 'CUSTOM_PRODUCT' ? '自定义实物' : value === 'CUSTOM_FIAT' ? '自定义法币' : '自定义代币';
 	                            logoType = 'emoji';
 	                            logo = value === 'CUSTOM_PRODUCT' ? '＋' : '🔍';
-	                        } else if (currencyLogos?.[value]) {
+	                        } else if (!isPriceCurrency && currencyLogos?.[value]) {
 	                            const mapped = currencyLogos[value];
 	                            logoType = mapped.type;
 	                            logo = mapped.logo;
@@ -2512,7 +2500,10 @@ window.addEventListener('resize', () => {
 		                            return `<span class="dropdown-logo is-emoji"><span class="dropdown-logo-emoji">•</span></span>`;
 		                        })();
 
-	                        item.innerHTML = `${logoHtml}<span class="dropdown-item-text">${displayText}</span>`;
+	                        if (isPriceCurrency) {
+                                const label = document.createElement('span'); label.className = 'dropdown-item-text'; label.textContent = displayText;
+                                item.appendChild(label);
+                            } else item.innerHTML = `${logoHtml}<span class="dropdown-item-text">${displayText}</span>`;
 
 		                        item.addEventListener('click', () => {
 		                            closeAllDropdowns();
@@ -2539,6 +2530,10 @@ window.addEventListener('resize', () => {
 	                }
 	            }
 
+                if (dropdown.classList.contains('open')) positionDropdownMenu(dropdown);
+            };
+            dropdown._refresh();
+
                     const setDropdownOpen = (open, focusSelected = false) => {
                         closeAllDropdowns(open ? dropdown : null);
                         dropdown.classList.toggle('open', open);
@@ -2561,6 +2556,9 @@ window.addEventListener('resize', () => {
 		            });
 
                     trigger.addEventListener('keydown', (e) => {
+                        if (e.key === 'Escape' && dropdown.classList.contains('open')) {
+                            e.preventDefault(); e.stopPropagation(); setDropdownOpen(false); return;
+                        }
                         if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
                             e.preventDefault();
                             setDropdownOpen(true, true);
@@ -2571,8 +2569,11 @@ window.addEventListener('resize', () => {
                         const items = Array.from(menu.querySelectorAll('.dropdown-item'));
                         const currentIndex = items.indexOf(document.activeElement);
 
+                        if (e.key === 'Tab') {
+                            setDropdownOpen(false); trigger.focus({ preventScroll: true }); return;
+                        }
                         if (e.key === 'Escape') {
-                            e.preventDefault();
+                            e.preventDefault(); e.stopPropagation();
                             setDropdownOpen(false);
                             trigger.focus({ preventScroll: true });
                             return;

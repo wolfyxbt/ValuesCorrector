@@ -56,6 +56,7 @@ function updateProductCurrencyOptions(selected) {
         select.appendChild(option);
     }
     select.value = currency;
+    buildCustomDropdown(select);
 }
 
 function syncCustomProducts() {
@@ -181,6 +182,7 @@ function openCustomProductModal(selectId) {
 }
 
 function closeCustomProductModal() {
+    closeAllDropdowns();
     productImageVersion++; productSelectId = null; productImageBusy = false;
     const modal = document.getElementById('customProductModal');
     modal.style.display = 'none'; modal.setAttribute('aria-hidden', 'true');
