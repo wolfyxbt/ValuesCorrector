@@ -2424,7 +2424,7 @@ window.addEventListener('resize', () => {
 	            const trigger = document.createElement('button');
 		            trigger.type = 'button';
 		            trigger.className = 'dropdown-trigger';
-		            trigger.setAttribute('aria-haspopup', 'listbox');
+		            trigger.setAttribute('aria-haspopup', isPriceCurrency ? 'dialog' : 'listbox');
 		            trigger.setAttribute('aria-expanded', 'false');
                     const menuId = `${selectElement.id}-menu`;
                     trigger.setAttribute('aria-controls', menuId);
@@ -2443,7 +2443,7 @@ window.addEventListener('resize', () => {
 		            const menu = document.createElement('div');
 		            menu.className = isPriceCurrency ? 'dropdown-menu product-currency-menu' : 'dropdown-menu';
                     menu.id = menuId;
-		            menu.setAttribute('role', 'listbox');
+		            menu.setAttribute('role', isPriceCurrency ? 'dialog' : 'listbox');
                     menu.setAttribute('aria-label', isPriceCurrency ? '价格单位选项' : `${selectElement.getAttribute('aria-label')}选项`);
 	            // 关键：menu 使用 fixed 定位时，如果在 transform 容器内会发生偏移
 	            // 将 menu portal 到 body，保证 fixed 相对视口定位
@@ -2453,9 +2453,36 @@ window.addEventListener('resize', () => {
 	            document.body.appendChild(menu);
 	            dropdown._menu = menu;
 
-	            // 根据 optgroup/option 构建菜单
+	            const optionHost = isPriceCurrency ? document.createElement('div') : scroll;
+            let priceSearch = null, priceEmpty = null;
+            const filterPriceOptions = () => {
+                if (!priceSearch) return;
+                let count = 0;
+                for (const item of optionHost.querySelectorAll('.dropdown-item')) {
+                    item.hidden = !matchesProductCurrency(item.dataset.value, item.textContent, priceSearch.value);
+                    if (!item.hidden) count++;
+                }
+                priceEmpty.hidden = count > 0;
+                scroll.scrollTop = 0;
+                if (dropdown.classList.contains('open')) positionDropdownMenu(dropdown);
+            };
+            if (isPriceCurrency) {
+                const header = document.createElement('div'); header.className = 'price-currency-search-header';
+                priceSearch = document.createElement('input'); priceSearch.type = 'search';
+                priceSearch.className = 'price-currency-search'; priceSearch.placeholder = '搜索币种';
+                priceSearch.setAttribute('aria-label', '搜索价格单位'); priceSearch.autocomplete = 'off';
+                priceSearch.setAttribute('aria-controls', `${menuId}-options`);
+                header.appendChild(priceSearch);
+                optionHost.id = `${menuId}-options`; optionHost.setAttribute('role', 'listbox'); optionHost.setAttribute('aria-label', '价格单位搜索结果');
+                priceEmpty = document.createElement('p'); priceEmpty.className = 'price-currency-empty';
+                priceEmpty.setAttribute('role', 'status'); priceEmpty.textContent = '没有找到币种'; priceEmpty.hidden = true;
+                scroll.append(header, optionHost, priceEmpty);
+                priceSearch.addEventListener('input', filterPriceOptions);
+            }
+
+            // 根据 optgroup/option 构建菜单
             dropdown._refresh = () => {
-                scroll.replaceChildren();
+                optionHost.replaceChildren();
 	            const children = Array.from(selectElement.children);
 	            for (const child of children) {
 	                if (child.tagName === 'OPTGROUP' || child.tagName === 'OPTION') {
@@ -2465,7 +2492,7 @@ window.addEventListener('resize', () => {
 		                    groupTitle.className = 'dropdown-group';
                             groupTitle.setAttribute('role', 'presentation');
 		                    groupTitle.textContent = groupLabel;
-	                    scroll.appendChild(groupTitle);
+	                    optionHost.appendChild(groupTitle);
                         }
 
 	                    const opts = child.tagName === 'OPTION' ? [child] : Array.from(child.querySelectorAll('option'));
@@ -2525,11 +2552,12 @@ window.addEventListener('resize', () => {
                                     trigger.focus({ preventScroll: true });
 		                        });
 
-	                        scroll.appendChild(item);
+	                        optionHost.appendChild(item);
 	                    }
 	                }
 	            }
 
+                filterPriceOptions();
                 if (dropdown.classList.contains('open')) positionDropdownMenu(dropdown);
             };
             dropdown._refresh();
@@ -2540,7 +2568,9 @@ window.addEventListener('resize', () => {
                         trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
                         menu.style.display = open ? 'block' : 'none';
                         if (!open) return;
+                        if (priceSearch) { priceSearch.value = ''; filterPriceOptions(); }
                         positionDropdownMenu(dropdown);
+                        if (priceSearch && !focusSelected && !window.matchMedia('(any-pointer: coarse)').matches) priceSearch.focus({ preventScroll: true });
                         if (focusSelected) {
                             requestAnimationFrame(() => {
                                 const selected = menu.querySelector('.dropdown-item[aria-selected="true"]');
@@ -2566,7 +2596,7 @@ window.addEventListener('resize', () => {
                     });
 
                     menu.addEventListener('keydown', (e) => {
-                        const items = Array.from(menu.querySelectorAll('.dropdown-item'));
+                        const items = Array.from(menu.querySelectorAll('.dropdown-item')).filter(item => !item.hidden);
                         const currentIndex = items.indexOf(document.activeElement);
 
                         if (e.key === 'Tab') {
@@ -2579,6 +2609,7 @@ window.addEventListener('resize', () => {
                             return;
                         }
 
+                        if (e.target === priceSearch && !['ArrowDown', 'ArrowUp'].includes(e.key)) return;
                         let nextIndex = null;
                         if (e.key === 'ArrowDown') nextIndex = Math.min(items.length - 1, currentIndex + 1);
                         if (e.key === 'ArrowUp') nextIndex = Math.max(0, currentIndex - 1);

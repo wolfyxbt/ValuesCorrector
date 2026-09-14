@@ -2108,8 +2108,9 @@
         .product-currency-menu .dropdown-item-text { white-space: normal; overflow-wrap: anywhere; }
         @media (prefers-reduced-motion: reduce) { .dropdown-menu { animation: none; } }
 
-        .product-emoji-dropdown .dropdown-trigger { height: 44px; min-height: 44px; padding: 6px; font-size: 13px; background: var(--control-bg); gap: 4px; }
-        .product-emoji-dropdown .dropdown-chevron { width: 10px; flex-shrink: 0; }
+        .product-emoji-dropdown .dropdown-trigger { position: relative; justify-content: center; height: 44px; min-height: 44px; padding: 8px 24px; font-size: 14px; background: var(--control-bg); gap: 0; }
+        #productEmojiLabel { text-align: center; }
+        .product-emoji-dropdown .dropdown-chevron { position: absolute; right: 10px; width: 12px; flex-shrink: 0; }
         .emoji-picker-header { position: sticky; top: -7px; z-index: 1; padding: 8px 0; background: var(--surface); }
         .emoji-search { width: 100%; height: 42px; min-height: 42px; padding: 8px 12px; font-size: 16px; text-align: left; }
         .emoji-categories { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2px; margin-top: 8px; }
@@ -2126,3 +2127,8 @@
 
         #productPrice { appearance: textfield; -moz-appearance: textfield; }
         #productPrice::-webkit-inner-spin-button, #productPrice::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
+        .price-currency-search-header { position: sticky; top: -7px; z-index: 1; padding: 6px 0 8px; background: var(--surface); }
+        .price-currency-search { width: 100%; height: 42px; min-height: 42px; padding: 8px 10px; font-size: 16px; text-align: left; }
+        .price-currency-empty { padding: 8px; margin: 0; font-size: 13px; color: var(--muted); }
+        .product-currency-menu .dropdown-item[hidden], .price-currency-empty[hidden] { display: none; }

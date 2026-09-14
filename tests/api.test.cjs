@@ -385,3 +385,13 @@ test('clipboard button handles images, denial and stale clipboard reads',async()
   run("selectProductEmoji('☕')");resolve([{types:['image/png'],getType:async()=>({})}]);await pending;
   assert.equal(run('productDraftEmoji'),'☕');assert.equal(run('productDraftLogo'),'');
 });
+
+test('product currency search covers labels, aliases, English and codes before rates load',()=>{
+  const {run}=setup();
+  for(const query of ['人民币','人民币 CNY',' cny ','Chinese Yuan','人民幣']) {
+    assert.equal(run(`matchesProductCurrency('CNY','人民币 CNY',${JSON.stringify(query)})`),true,query);
+  }
+  assert.equal(run("matchesProductCurrency('MYR','马来西亚林吉特 MYR','马币')"),true);
+  assert.equal(run("matchesProductCurrency('USD','美元 USD','zzzz')"),false);
+  assert.equal(run("matchesProductCurrency('USD','美元 USD','')"),true);
+});

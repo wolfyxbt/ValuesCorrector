@@ -43,6 +43,12 @@ function customProductUsdPrice(product, prices = usdPrices) {
     return Number.isFinite(price) && price > 0 ? price : null;
 }
 
+function matchesProductCurrency(code, label, query) {
+    const needle = String(query || '').trim().toLocaleLowerCase();
+    const names = getFiatNames(code);
+    return `${code} ${label} ${names.name} ${names.englishName} ${FIAT_ALIASES[code] || ''}`.toLocaleLowerCase().includes(needle);
+}
+
 function updateProductCurrencyOptions(selected) {
     const select = document.getElementById('productCurrency');
     if (!select) return;
