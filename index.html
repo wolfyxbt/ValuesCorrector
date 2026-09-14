@@ -13,10 +13,10 @@
     <link rel="manifest" href="favicon/site.webmanifest">
     <link rel="icon" type="image/x-icon" href="favicon/favicon.ico">
     <link rel="shortcut icon" type="image/x-icon" href="favicon/favicon.ico">
-    <link rel="icon" type="image/svg+xml" sizes="any" href="favicon/favicon.svg?v=20260914-6">
+    <link rel="icon" type="image/svg+xml" sizes="any" href="favicon/favicon.svg?v=20260914-7">
     <meta name="theme-color" content="#080808">
     <!-- Apply the saved appearance before styles load to avoid a light flash. -->
-    <script src="theme.js?v=20260914-6"></script>
+    <script src="theme.js?v=20260914-7"></script>
 
     <!-- PWA Meta Tags -->
     <meta name="mobile-web-app-capable" content="yes">
@@ -34,7 +34,7 @@
       gtag('config', 'G-XEZ049M5R2');
     </script>
     
-	    <link rel="stylesheet" href="styles.css?v=20260914-6">
+	    <link rel="stylesheet" href="styles.css?v=20260914-7">
 </head>
 <body>
     <main class="container">
@@ -101,9 +101,9 @@
 	        </div>
 	    </footer>
 
-			    <script src="products.js?v=20260914-6"></script>
-                <script src="fiat.js?v=20260914-6"></script>
-                <script src="app.js?v=20260914-6"></script>
+			    <script src="products.js?v=20260914-7"></script>
+                <script src="fiat.js?v=20260914-7"></script>
+                <script src="app.js?v=20260914-7"></script>
     </main>
 
 	    <!-- Toast 提示 -->
@@ -165,26 +165,24 @@
                             <label class="product-text-button product-upload" for="productLogoFile">上传 Logo</label>
                             <input id="productLogoFile" class="product-file" type="file" accept="image/png,image/jpeg,image/webp" aria-label="上传实物 Logo" />
                             <button id="productLogoRemove" class="product-text-button" type="button" hidden>移除 Logo</button>
-                            <p class="product-hint">可上传图片，也可输入 Emoji。
-                                <br>PNG、JPG、WebP，最多 10 MB。</p>
+                            <p class="product-hint">PNG / JPG / WebP · 最大 10 MB</p>
                         </div>
                     </div>
                     <label class="product-label" for="productEmojiInput">Emoji 图标（可选）</label>
-                    <input id="productEmojiInput" class="product-input" type="text" placeholder="用系统表情键盘输入，或粘贴一个 Emoji" maxlength="64" autocomplete="off" spellcheck="false" aria-describedby="productEmojiHint" />
-                    <p id="productEmojiHint" class="product-hint">点击输入框后，Mac 按 Control + Command + 空格，Windows 按 Win + .；手机使用键盘上的表情按钮。</p>
+                    <input id="productEmojiInput" class="product-input" type="text" placeholder="输入或粘贴 Emoji" maxlength="64" autocomplete="off" spellcheck="false" aria-describedby="productEmojiHint" />
+                    <p id="productEmojiHint" class="product-hint">Mac：⌃⌘空格 · Windows：Win + .</p>
                     <label class="product-label" for="productName">名称</label>
-                    <input id="productName" class="product-input" type="text" maxlength="30" placeholder="例如：我的咖啡" required autocomplete="off" />
+                    <input id="productName" class="product-input" type="text" maxlength="30" placeholder="输入名称" required autocomplete="off" />
                     <div class="product-price-row">
                         <div>
                             <label class="product-label" for="productPrice">单价（每件）</label>
-                            <input id="productPrice" class="product-input" type="number" inputmode="decimal" step="any" min="0.000000000001" max="1000000000000000" placeholder="例如：3000" required />
+                            <input id="productPrice" class="product-input" type="number" inputmode="decimal" step="any" min="0.000000000001" max="1000000000000000" placeholder="输入金额" required />
                         </div>
                         <div>
                             <label class="product-label" for="productCurrency-trigger">价格单位</label>
                             <select id="productCurrency" class="product-input"><option value="USD">美元 USD</option></select>
                         </div>
                     </div>
-                    <p class="product-hint">例如：填写 3000，选择人民币 CNY，即 3000 元 / 件。单价按所选货币保存，换算随汇率更新；资料仅保存在当前浏览器。</p>
                     <p id="productStatus" class="product-status" role="status" aria-live="polite"></p>
                     <div class="product-form-actions">
                         <button id="productNew" class="share-btn" type="button" hidden>新建实物</button>
