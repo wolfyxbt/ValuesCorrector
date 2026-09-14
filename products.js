@@ -106,7 +106,7 @@ function updateProductLogoPreview() {
     document.getElementById('productLogoRemove').hidden = !productDraftLogo && !productDraftEmoji;
     document.getElementById('productEmojiInput').value = productDraftEmoji;
     const label = document.getElementById('productEmojiLabel');
-    if (label) label.textContent = productDraftEmoji ? `${productDraftEmoji} 更换 Emoji` : '选择 Emoji';
+    if (label) label.textContent = productDraftEmoji ? '更换 Emoji' : '选择 Emoji';
 }
 
 function selectProductEmoji(emoji) {
@@ -219,7 +219,20 @@ async function prepareProductLogo(file) {
 }
 
 async function onProductLogoChange(event) {
-    const file = event.target.files[0]; if (!file) return;
+    return setProductLogoFile(event.target.files[0]);
+}
+
+function onProductLogoPaste(event) {
+    if (!productSelectId) return;
+    const item = Array.from(event.clipboardData?.items || []).find(item => item.kind === 'file' && item.type.startsWith('image/'));
+    const file = item?.getAsFile();
+    if (!file) return;
+    event.preventDefault();
+    return setProductLogoFile(file);
+}
+
+async function setProductLogoFile(file) {
+    if (!file || !productSelectId) return;
     const version = ++productImageVersion; productImageBusy = true; productStatus('正在处理图片…');
     try {
         const logo = await prepareProductLogo(file);
@@ -254,6 +267,7 @@ function saveCustomProduct(event) {
 
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('productForm').addEventListener('submit', saveCustomProduct);
+    document.addEventListener('paste', onProductLogoPaste);
     document.getElementById('productLogoFile').addEventListener('change', onProductLogoChange);
     document.getElementById('productNew').addEventListener('click', () => resetProductForm());
     document.getElementById('productLogoRemove').addEventListener('click', () => selectProductEmoji(''));

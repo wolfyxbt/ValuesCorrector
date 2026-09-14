@@ -13,10 +13,10 @@
     <link rel="manifest" href="favicon/site.webmanifest">
     <link rel="icon" type="image/x-icon" href="favicon/favicon.ico">
     <link rel="shortcut icon" type="image/x-icon" href="favicon/favicon.ico">
-    <link rel="icon" type="image/svg+xml" sizes="any" href="favicon/favicon.svg?v=20260914-8">
+    <link rel="icon" type="image/svg+xml" sizes="any" href="favicon/favicon.svg?v=20260914-9">
     <meta name="theme-color" content="#080808">
     <!-- Apply the saved appearance before styles load to avoid a light flash. -->
-    <script src="theme.js?v=20260914-8"></script>
+    <script src="theme.js?v=20260914-9"></script>
 
     <!-- PWA Meta Tags -->
     <meta name="mobile-web-app-capable" content="yes">
@@ -34,7 +34,7 @@
       gtag('config', 'G-XEZ049M5R2');
     </script>
     
-	    <link rel="stylesheet" href="styles.css?v=20260914-8">
+	    <link rel="stylesheet" href="styles.css?v=20260914-9">
 </head>
 <body>
     <main class="container">
@@ -101,10 +101,10 @@
 	        </div>
 	    </footer>
 
-			    <script src="products.js?v=20260914-8"></script>
-                <script src="emoji-picker.js?v=20260914-8"></script>
-                <script src="fiat.js?v=20260914-8"></script>
-                <script src="app.js?v=20260914-8"></script>
+			    <script src="products.js?v=20260914-9"></script>
+                <script src="emoji-picker.js?v=20260914-9"></script>
+                <script src="fiat.js?v=20260914-9"></script>
+                <script src="app.js?v=20260914-9"></script>
     </main>
 
 	    <!-- Toast 提示 -->
@@ -159,24 +159,25 @@
             </div>
             <div class="modal-body">
                 <form id="productForm">
-                    <div class="product-logo-editor">
-                        <img id="productLogoPreview" alt="Logo 预览" width="64" height="64" />
+                    <div class="product-logo-heading"><span>Logo（可选）</span><button id="productLogoRemove" class="product-text-button" type="button" hidden>移除</button></div>
+                    <div class="product-logo-editor" role="group" aria-label="Logo：上传图片或选择 Emoji">
+                        <img id="productLogoPreview" alt="Logo 预览" width="48" height="48" />
                         <span id="productEmojiPreview" class="product-emoji" role="img" aria-label="Emoji Logo 预览" hidden></span>
-                        <div>
-                            <label class="product-text-button product-upload" for="productLogoFile">上传 Logo</label>
-                            <input id="productLogoFile" class="product-file" type="file" accept="image/png,image/jpeg,image/webp" aria-label="上传实物 Logo" />
-                            <button id="productLogoRemove" class="product-text-button" type="button" hidden>移除 Logo</button>
-                            <p class="product-hint">PNG / JPG / WebP · 最大 10 MB</p>
+                        <div class="product-logo-options">
+                            <div class="product-upload-wrap">
+                                <input id="productLogoFile" class="product-file" type="file" accept="image/png,image/jpeg,image/webp" aria-label="上传实物 Logo" />
+                                <label class="product-upload" for="productLogoFile">上传图片</label>
+                            </div>
+                            <input id="productEmojiInput" type="hidden" />
+                            <div id="productEmojiDropdown" class="dropdown product-emoji-dropdown">
+                                <button id="productEmojiTrigger" class="dropdown-trigger" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="productEmojiMenu">
+                                    <span id="productEmojiLabel">选择 Emoji</span>
+                                    <svg class="dropdown-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                </button>
+                            </div>
                         </div>
                     </div>
-                    <label class="product-label" for="productEmojiTrigger">Emoji 图标（可选）</label>
-                    <input id="productEmojiInput" type="hidden" />
-                    <div id="productEmojiDropdown" class="dropdown product-emoji-dropdown">
-                        <button id="productEmojiTrigger" class="dropdown-trigger" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="productEmojiMenu">
-                            <span id="productEmojiLabel">选择 Emoji</span>
-                            <svg class="dropdown-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        </button>
-                    </div>
+                    <p class="product-hint">也可直接粘贴图片</p>
                     <label class="product-label" for="productName">名称</label>
                     <input id="productName" class="product-input" type="text" maxlength="30" placeholder="输入名称" required autocomplete="off" />
                     <div class="product-price-row">

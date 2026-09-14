@@ -2059,13 +2059,16 @@
 
         .product-modal-content { max-width: 500px; animation: modalBackdropIn 180ms ease-out; }
         .product-modal-content .modal-body { text-align: left; }
-        .product-logo-editor { display: flex; gap: 16px; align-items: center; margin: 12px 0 24px; }
+        .product-logo-editor { display: flex; gap: 12px; align-items: center; margin: 8px 0 0; }
+        .product-logo-heading { display: flex; align-items: center; justify-content: space-between; min-height: 32px; margin-top: 8px; font-size: 0.85rem; }
+        .product-logo-options { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; flex: 1; min-width: 0; }
+        .product-upload-wrap, .product-emoji-dropdown { min-width: 0; }
         #productLogoPreview { flex-shrink: 0; border-radius: 50%; border: 1px solid var(--border); object-fit: contain; }
         .product-text-button { font: inherit; font-size: 0.85rem; border: 0; padding: 6px 8px; color: var(--text); background: transparent; cursor: pointer; border-radius: 8px; }
         .product-text-button:hover { background: var(--surface-muted); }
-        .product-upload { display: inline-block; border: 1px solid var(--border); background: var(--control-bg); }
+        .product-upload { display: flex; align-items: center; justify-content: center; height: 44px; box-sizing: border-box; border: 1px solid var(--border); border-radius: 12px; background: var(--control-bg); color: var(--text); font-size: 14px; cursor: pointer; white-space: nowrap; }
         .product-file { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
-        .product-logo-editor:focus-within .product-upload { outline: 2px solid var(--accent); outline-offset: 2px; }
+        .product-file:focus-visible + .product-upload { outline: 2px solid var(--accent); outline-offset: 2px; }
         .product-label { display: block; font-size: 0.85rem; margin: 18px 0 8px; }
         .product-input { width: 100%; height: 46px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--control-bg); color: var(--text); font-size: 16px; text-align: left; }
         .product-input:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -2084,7 +2087,7 @@
         .product-form-actions [hidden], #savedProductsSection[hidden], #productLogoRemove[hidden] { display: none; }
 
         .product-emoji { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; border-radius: 50%; background: var(--control-bg); border: 1px solid var(--border); }
-        #productEmojiPreview { width: 64px; height: 64px; font-size: 36px; }
+        #productEmojiPreview { width: 48px; height: 48px; font-size: 30px; }
         .saved-product-use .product-emoji { width: 36px; height: 36px; font-size: 23px; }
         #productLogoPreview[hidden], #productEmojiPreview[hidden] { display: none; }
 
@@ -2103,13 +2106,14 @@
         .product-currency-menu .dropdown-item-text { white-space: normal; overflow-wrap: anywhere; }
         @media (prefers-reduced-motion: reduce) { .dropdown-menu { animation: none; } }
 
-        .product-emoji-dropdown .dropdown-trigger { height: 46px; min-height: 46px; padding: 10px 12px; font-size: 16px; background: var(--control-bg); }
+        .product-emoji-dropdown .dropdown-trigger { height: 44px; min-height: 44px; padding: 8px; font-size: 14px; background: var(--control-bg); gap: 4px; }
+        .product-emoji-dropdown .dropdown-chevron { width: 14px; flex-shrink: 0; }
         .emoji-picker-header { position: sticky; top: -7px; z-index: 1; padding: 8px 0; background: var(--surface); }
         .emoji-search { width: 100%; height: 42px; min-height: 42px; padding: 8px 12px; font-size: 16px; text-align: left; }
-        .emoji-categories { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 2px; margin-top: 8px; }
+        .emoji-categories { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2px; margin-top: 8px; }
         .emoji-categories button, .emoji-choice { border: 0; background: transparent; color: var(--text); padding: 0; border-radius: 9px; cursor: pointer; }
         .emoji-categories button { height: 36px; font-size: 20px; }
-        .emoji-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(42px, 1fr)); gap: 3px; }
+        .emoji-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(36px, 1fr)); gap: 3px; }
         .emoji-choice { height: 44px; font-size: 28px; font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif; }
         .emoji-categories button:hover, .emoji-choice:hover, .emoji-categories button[aria-pressed="true"], .emoji-choice[aria-pressed="true"] { background: var(--accent-soft); }
         .emoji-categories button:focus-visible, .emoji-choice:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }

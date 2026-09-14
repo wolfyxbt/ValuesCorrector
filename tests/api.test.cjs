@@ -355,3 +355,20 @@ test('complete local emoji catalog remains selectable and supports Chinese and E
   assert.ok(run("filterEmojiCatalog(entries,'',9).some(e=>e[0]==='🇲🇾')"));
   assert.equal(run("filterEmojiCatalog(entries,'not-an-emoji-query-xyz',0).length"),0);
 });
+
+test('image paste is scoped to the product editor and shares upload validation and replacement', async()=>{
+  const {ctx,run}=setup();
+  const nodes={productLogoPreview:{},productEmojiPreview:{},productEmojiInput:{value:''},productLogoRemove:{},productLogoFile:{},productStatus:{}};
+  ctx.document.getElementById=id=>nodes[id];
+  let prevented=0, prepared=0;
+  ctx.prepareProductLogo=async file=>{prepared++;if(file.bad)throw Error('invalid image');return 'data:image/webp;base64,AAAA';};
+  const paste=file=>({clipboardData:{items:[{kind:'file',type:'image/png',getAsFile:()=>file}]},preventDefault(){prevented++;}});
+  ctx.event=paste({});await run('onProductLogoPaste(event)');assert.equal(prepared,0);assert.equal(prevented,0);
+  run("productSelectId='currency1';selectProductEmoji('☕')");
+  ctx.event={clipboardData:{items:[{kind:'string',type:'text/plain'}]},preventDefault(){prevented++;}};
+  await run('onProductLogoPaste(event)');assert.equal(prevented,0);assert.equal(run('productDraftEmoji'),'☕');
+  ctx.event=paste({});await run('onProductLogoPaste(event)');assert.equal(prevented,1);assert.equal(prepared,1);
+  assert.equal(run('productDraftEmoji'),'');assert.equal(run('productDraftLogo'),'data:image/webp;base64,AAAA');
+  ctx.event=paste({bad:true});await run('onProductLogoPaste(event)');assert.equal(nodes.productStatus.textContent,'invalid image');
+  assert.equal(run('productDraftLogo'),'data:image/webp;base64,AAAA');assert.equal(run('productImageBusy'),false);
+});
