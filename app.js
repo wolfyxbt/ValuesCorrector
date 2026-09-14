@@ -710,8 +710,11 @@
 	            } else if (logoType === 'emoji' && logo) {
 	                ctx.font = `400 ${Math.floor(size * 0.9)}px "PingFang SC"`;
 	                ctx.textAlign = 'center';
-	                ctx.textBaseline = 'middle';
-	                ctx.fillText(logo, x, y + 1);
+	                ctx.textBaseline = 'alphabetic';
+                    const metrics = ctx.measureText(logo);
+                    const ascent = metrics.actualBoundingBoxAscent ?? size * 0.72;
+                    const descent = metrics.actualBoundingBoxDescent ?? size * 0.18;
+                    ctx.fillText(logo, x, y + (ascent - descent) / 2);
 	            }
 	            ctx.restore();
 	        }
@@ -1003,7 +1006,8 @@
 					                if (prefix) {
 					                    ctx.fillStyle = TEXT;
 					                    ctx.font = '400 30px "PingFang SC"';
-					                    ctx.fillText(prefix, cursorX, textY);
+					                    // Align visible glyph centers, since the amount and label use different font sizes.
+                                ctx.fillText(prefix, cursorX, yMid + getTextCenterOffset(30, prefix));
 					                    cursorX += ctx.measureText(prefix).width + 14;
 					                }
 				                
@@ -1021,7 +1025,7 @@
 						                }
 					                const amountMaxW = Math.max(140, w - (cursorX - x) - reservedTail);
 					                const amountText = ellipsize(row.amount, amountMaxW);
-					                ctx.fillText(amountText, cursorX, textY);
+					                ctx.fillText(amountText, cursorX, showPrefix ? yMid + getTextCenterOffset(amountFontSize, amountText) : textY);
 				                cursorX += ctx.measureText(amountText).width + 14;
 
 					                // ticker：主体行换行到下方；副体行保持同一行
@@ -1054,7 +1058,7 @@
 					                    const ticker = ellipsize(tickerLabel, tickerMaxW);
 					                    if (shouldDrawLogo) {
 					                        const iconCx = cursorX + iconSize / 2;
-					                        const iconCy = textY - getTextCenterOffset(tickerFontSize, ticker);
+					                        const iconCy = yMid;
 					                        drawInlineLogo(ctx, {
 					                            x: iconCx,
 					                            y: iconCy,
@@ -1065,7 +1069,7 @@
 					                        });
 					                        cursorX = nextCursorX;
 					                    }
-					                    ctx.fillText(ticker, cursorX, textY);
+					                    ctx.fillText(ticker, cursorX, yMid + getTextCenterOffset(tickerFontSize, ticker));
 					                }
 					            }
 				            
