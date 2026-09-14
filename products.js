@@ -231,6 +231,33 @@ function onProductLogoPaste(event) {
     return setProductLogoFile(file);
 }
 
+async function pasteProductLogoFromClipboard() {
+    if (!productSelectId) return;
+    if (!navigator.clipboard?.read) {
+        productStatus('请按 ⌘V / Ctrl+V 粘贴，或上传图片。'); return;
+    }
+    const version = ++productImageVersion;
+    productImageBusy = true;
+    productStatus('正在读取剪贴板…');
+    try {
+        const items = await navigator.clipboard.read();
+        if (version !== productImageVersion || !productSelectId) return;
+        for (const item of items) {
+            const type = item.types.find(type => ['image/png', 'image/jpeg', 'image/webp'].includes(type));
+            if (!type) continue;
+            const file = await item.getType(type);
+            if (version !== productImageVersion || !productSelectId) return;
+            await setProductLogoFile(file);
+            return;
+        }
+        productStatus('剪贴板里没有图片，请先复制图片。');
+    } catch {
+        if (version === productImageVersion && productSelectId) productStatus('无法读取剪贴板，请按 ⌘V / Ctrl+V 粘贴，或上传图片。');
+    } finally {
+        if (version === productImageVersion) productImageBusy = false;
+    }
+}
+
 async function setProductLogoFile(file) {
     if (!file || !productSelectId) return;
     const version = ++productImageVersion; productImageBusy = true; productStatus('正在处理图片…');
@@ -268,6 +295,7 @@ function saveCustomProduct(event) {
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('productForm').addEventListener('submit', saveCustomProduct);
     document.addEventListener('paste', onProductLogoPaste);
+    document.getElementById('productLogoPaste').addEventListener('click', pasteProductLogoFromClipboard);
     document.getElementById('productLogoFile').addEventListener('change', onProductLogoChange);
     document.getElementById('productNew').addEventListener('click', () => resetProductForm());
     document.getElementById('productLogoRemove').addEventListener('click', () => selectProductEmoji(''));

@@ -372,3 +372,16 @@ test('image paste is scoped to the product editor and shares upload validation a
   ctx.event=paste({bad:true});await run('onProductLogoPaste(event)');assert.equal(nodes.productStatus.textContent,'invalid image');
   assert.equal(run('productDraftLogo'),'data:image/webp;base64,AAAA');assert.equal(run('productImageBusy'),false);
 });
+
+test('clipboard button handles images, denial and stale clipboard reads',async()=>{
+  const {ctx,run}=setup();const nodes={productLogoPreview:{},productEmojiPreview:{},productEmojiInput:{value:''},productLogoRemove:{},productLogoFile:{},productStatus:{}};
+  ctx.document.getElementById=id=>nodes[id];ctx.prepareProductLogo=async()=> 'data:image/webp;base64,AAAA';
+  ctx.navigator={clipboard:{read:async()=>[{types:['image/png'],getType:async()=>({})}]}};
+  run("productSelectId='currency1'");await run('pasteProductLogoFromClipboard()');
+  assert.equal(run('productDraftLogo'),'data:image/webp;base64,AAAA');assert.equal(run('productImageBusy'),false);
+  ctx.navigator.clipboard.read=async()=>[];await run('pasteProductLogoFromClipboard()');assert.match(nodes.productStatus.textContent,/没有图片/);
+  ctx.navigator.clipboard.read=async()=>{throw Error('denied');};await run('pasteProductLogoFromClipboard()');assert.match(nodes.productStatus.textContent,/Ctrl\+V/);assert.equal(run('productImageBusy'),false);
+  let resolve;ctx.navigator.clipboard.read=()=>new Promise(r=>{resolve=r;});const pending=run('pasteProductLogoFromClipboard()');
+  run("selectProductEmoji('☕')");resolve([{types:['image/png'],getType:async()=>({})}]);await pending;
+  assert.equal(run('productDraftEmoji'),'☕');assert.equal(run('productDraftLogo'),'');
+});

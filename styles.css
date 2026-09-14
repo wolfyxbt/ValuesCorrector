@@ -2061,12 +2061,14 @@
         .product-modal-content .modal-body { text-align: left; }
         .product-logo-editor { display: flex; gap: 12px; align-items: center; margin: 8px 0 0; }
         .product-logo-heading { display: flex; align-items: center; justify-content: space-between; min-height: 32px; margin-top: 8px; font-size: 0.85rem; }
-        .product-logo-options { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; flex: 1; min-width: 0; }
+        .product-logo-title { flex: 1; }
+        .product-logo-heading { gap: 10px; }
+        .product-logo-options { display: grid; grid-template-columns: max-content max-content minmax(0, 1fr); gap: 8px; flex: 1; min-width: 0; }
         .product-upload-wrap, .product-emoji-dropdown { min-width: 0; }
         #productLogoPreview { flex-shrink: 0; border-radius: 50%; border: 1px solid var(--border); object-fit: contain; }
         .product-text-button { font: inherit; font-size: 0.85rem; border: 0; padding: 6px 8px; color: var(--text); background: transparent; cursor: pointer; border-radius: 8px; }
         .product-text-button:hover { background: var(--surface-muted); }
-        .product-upload { display: flex; align-items: center; justify-content: center; height: 44px; box-sizing: border-box; border: 1px solid var(--border); border-radius: 12px; background: var(--control-bg); color: var(--text); font-size: 14px; cursor: pointer; white-space: nowrap; }
+        .product-upload { padding: 0 10px; display: flex; align-items: center; justify-content: center; height: 44px; box-sizing: border-box; border: 1px solid var(--border); border-radius: 12px; background: var(--control-bg); color: var(--text); font-size: 14px; cursor: pointer; white-space: nowrap; }
         .product-file { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
         .product-file:focus-visible + .product-upload { outline: 2px solid var(--accent); outline-offset: 2px; }
         .product-label { display: block; font-size: 0.85rem; margin: 18px 0 8px; }
@@ -2106,8 +2108,8 @@
         .product-currency-menu .dropdown-item-text { white-space: normal; overflow-wrap: anywhere; }
         @media (prefers-reduced-motion: reduce) { .dropdown-menu { animation: none; } }
 
-        .product-emoji-dropdown .dropdown-trigger { height: 44px; min-height: 44px; padding: 8px; font-size: 14px; background: var(--control-bg); gap: 4px; }
-        .product-emoji-dropdown .dropdown-chevron { width: 14px; flex-shrink: 0; }
+        .product-emoji-dropdown .dropdown-trigger { height: 44px; min-height: 44px; padding: 6px; font-size: 13px; background: var(--control-bg); gap: 4px; }
+        .product-emoji-dropdown .dropdown-chevron { width: 10px; flex-shrink: 0; }
         .emoji-picker-header { position: sticky; top: -7px; z-index: 1; padding: 8px 0; background: var(--surface); }
         .emoji-search { width: 100%; height: 42px; min-height: 42px; padding: 8px 12px; font-size: 16px; text-align: left; }
         .emoji-categories { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2px; margin-top: 8px; }
@@ -2121,3 +2123,6 @@
         .emoji-more { width: 100%; margin-top: 8px; padding: 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--control-bg); color: var(--text); cursor: pointer; }
         .emoji-more[hidden] { display: none; }
         @media (max-width: 380px) { .emoji-categories { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+
+        #productPrice { appearance: textfield; -moz-appearance: textfield; }
+        #productPrice::-webkit-inner-spin-button, #productPrice::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
