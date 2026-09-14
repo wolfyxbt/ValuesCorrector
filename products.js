@@ -1,10 +1,12 @@
 // Custom products stay on this device. Uploaded images never leave the browser.
 const PRODUCT_STORAGE_KEY = 'valuesCorrectorProducts';
 const PRODUCT_LIMIT = 20;
+const PRODUCT_EMOJIS = ['☕', '🍵', '🧋', '🍺', '🍎', '🍚', '🍔', '🍕', '🎂', '🛒', '👕', '👟', '👜', '💎', '📱', '💻', '🎮', '📷', '📚', '🎁', '🚗', '✈️', '🏠', '📦'];
 let customProducts = new Map();
 let productSelectId = null;
 let productEditId = null;
 let productDraftLogo = '';
+let productDraftEmoji = '';
 let productImageVersion = 0;
 let productImageBusy = false;
 let productReturnFocus = null;
@@ -14,7 +16,8 @@ function validateCustomProduct(value) {
     const name = typeof value.name === 'string' ? value.name.trim() : '';
     if (!name || Array.from(name).length > 30 || !Number.isFinite(value.price) || value.price <= 0 || value.price > 1e15) return null;
     const logo = typeof value.logo === 'string' && value.logo.length <= 200000 && /^data:image\/(png|webp);base64,[A-Za-z0-9+/=]+$/.test(value.logo) ? value.logo : '';
-    return { id: value.id, name, price: value.price, logo };
+    const emoji = PRODUCT_EMOJIS.includes(value.emoji) ? value.emoji : '';
+    return { id: value.id, name, price: value.price, logo: emoji ? '' : logo, emoji };
 }
 
 function customProductLogo(product) {
@@ -24,7 +27,7 @@ function customProductLogo(product) {
 
 function syncCustomProducts() {
     for (const product of customProducts.values()) {
-        currencyLogos[product.id] = { text: product.name, type: 'image', logo: customProductLogo(product) };
+        currencyLogos[product.id] = { text: product.name, type: product.emoji ? 'emoji' : 'image', logo: product.emoji || customProductLogo(product) };
         usdPrices[product.id] = product.price;
     }
     for (let i = 1; i <= FIELD_COUNT; i++) {
@@ -58,18 +61,40 @@ function persistCustomProducts(next) {
 
 function productStatus(message) { document.getElementById('productStatus').textContent = message; }
 
+function updateProductLogoPreview() {
+    const image = document.getElementById('productLogoPreview');
+    const emoji = document.getElementById('productEmojiPreview');
+    image.hidden = !!productDraftEmoji;
+    image.src = customProductLogo({ logo: productDraftLogo });
+    emoji.hidden = !productDraftEmoji;
+    emoji.textContent = productDraftEmoji;
+    document.getElementById('productLogoRemove').hidden = !productDraftLogo && !productDraftEmoji;
+    for (const button of document.getElementById('productEmojiChoices').children) {
+        button.setAttribute('aria-pressed', String(button.textContent === productDraftEmoji));
+    }
+}
+
+function selectProductEmoji(emoji) {
+    if (emoji && !PRODUCT_EMOJIS.includes(emoji)) return;
+    // A pending image upload must not overwrite a later emoji selection.
+    productImageVersion++; productImageBusy = false;
+    productDraftLogo = ''; productDraftEmoji = emoji;
+    document.getElementById('productLogoFile').value = '';
+    updateProductLogoPreview(); productStatus('');
+}
+
 function resetProductForm(product = null) {
     productImageVersion++;
     productImageBusy = false;
     productEditId = product?.id || null;
     productDraftLogo = product?.logo || '';
+    productDraftEmoji = product?.emoji || '';
     document.getElementById('productName').value = product?.name || '';
     document.getElementById('productPrice').value = product ? String(product.price) : '';
     document.getElementById('productLogoFile').value = '';
-    document.getElementById('productLogoPreview').src = customProductLogo({ logo: productDraftLogo });
+    updateProductLogoPreview();
     document.getElementById('productSave').textContent = product ? '保存修改并使用' : '保存并使用';
     document.getElementById('productNew').hidden = !product;
-    document.getElementById('productLogoRemove').hidden = !productDraftLogo;
     productStatus('');
 }
 
@@ -89,7 +114,9 @@ function renderCustomProductList() {
         const row = document.createElement('div'); row.className = 'saved-product';
         const use = document.createElement('button'); use.type = 'button'; use.className = 'saved-product-use';
         use.setAttribute('aria-label', `使用${product.name}`);
-        const img = document.createElement('img'); img.src = customProductLogo(product); img.alt = '';
+        const img = document.createElement(product.emoji ? 'span' : 'img');
+        if (product.emoji) { img.className = 'product-emoji'; img.textContent = product.emoji; img.setAttribute('aria-hidden', 'true'); }
+        else { img.src = customProductLogo(product); img.alt = ''; }
         const text = document.createElement('span');
         const name = document.createElement('strong'); name.textContent = product.name;
         const price = document.createElement('small'); price.textContent = `${product.price.toLocaleString('zh-CN', { maximumFractionDigits: 12 })} USD / 件`;
@@ -159,9 +186,8 @@ async function onProductLogoChange(event) {
     try {
         const logo = await prepareProductLogo(file);
         if (version !== productImageVersion || !productSelectId) return;
-        productDraftLogo = logo;
-        document.getElementById('productLogoPreview').src = logo;
-        document.getElementById('productLogoRemove').hidden = false;
+        productDraftLogo = logo; productDraftEmoji = '';
+        updateProductLogoPreview();
         productStatus('');
     } catch (error) {
         if (version === productImageVersion && productSelectId) productStatus(error.message);
@@ -175,7 +201,7 @@ function saveCustomProduct(event) {
     const item = validateCustomProduct({
         id: productEditId || `PRODUCT:${crypto.randomUUID()}`,
         name: document.getElementById('productName').value,
-        price: Number(document.getElementById('productPrice').value), logo: productDraftLogo
+        price: Number(document.getElementById('productPrice').value), logo: productDraftLogo, emoji: productDraftEmoji
     });
     if (!item) { productStatus('请填写 1–30 字的名称，以及大于 0 的有效美元单价。'); return; }
     if (!productEditId && customProducts.size >= PRODUCT_LIMIT) { productStatus('最多保存 20 个自定义实物，请编辑已有实物。'); return; }
@@ -190,12 +216,16 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('productForm').addEventListener('submit', saveCustomProduct);
     document.getElementById('productLogoFile').addEventListener('change', onProductLogoChange);
     document.getElementById('productNew').addEventListener('click', () => resetProductForm());
-    document.getElementById('productLogoRemove').addEventListener('click', () => {
-        productImageVersion++; productImageBusy = false; productDraftLogo = '';
-        document.getElementById('productLogoFile').value = '';
-        document.getElementById('productLogoPreview').src = customProductLogo({ logo: '' });
-        document.getElementById('productLogoRemove').hidden = true; productStatus('');
-    });
+    document.getElementById('productLogoRemove').addEventListener('click', () => selectProductEmoji(''));
+    const choices = document.getElementById('productEmojiChoices');
+    for (const emoji of PRODUCT_EMOJIS) {
+        const button = document.createElement('button');
+        button.type = 'button'; button.className = 'product-emoji-choice'; button.textContent = emoji;
+        button.setAttribute('aria-label', `使用 ${emoji} 作为 Logo`);
+        button.setAttribute('aria-pressed', 'false');
+        button.addEventListener('click', () => selectProductEmoji(emoji));
+        choices.appendChild(button);
+    }
     const modal = document.getElementById('customProductModal');
     modal.querySelector('.close').addEventListener('click', closeCustomProductModal);
     modal.addEventListener('click', event => { if (event.target === modal) closeCustomProductModal(); });

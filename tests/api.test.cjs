@@ -249,11 +249,41 @@ test('choosing a saved product preserves the entered source and exposes its logo
 
 test('late product images cannot change a closed editor or replace a newer image',async()=>{
   const {ctx,run}=setup();const pending={};const preview={src:''};const status={textContent:''};const remove={hidden:true};
-  ctx.document.getElementById=id=>id==='productLogoPreview'?preview:id==='productStatus'?status:remove;
+  ctx.document.getElementById=id=>id==='productLogoPreview'?preview:id==='productEmojiChoices'?{children:[]}:id==='productStatus'?status:remove;
   ctx.pending=pending;run(`prepareProductLogo=file=>new Promise(resolve=>pending[file.name]=resolve);productSelectId='currency1'`);
   ctx.event={target:{files:[{name:'old'}]}};const old=run('onProductLogoChange(event)');
   ctx.event={target:{files:[{name:'new'}]}};const newer=run('onProductLogoChange(event)');
   pending.new('new-image');await newer;pending.old('old-image');await old;assert.equal(preview.src,'new-image');
   ctx.event={target:{files:[{name:'closed'}]}};const closed=run('onProductLogoChange(event)');run(`productSelectId=null;productImageVersion++`);
   pending.closed('closed-image');await closed;assert.equal(preview.src,'new-image');
+});
+
+
+test('emoji products restore their logo and expose it to the share renderer',()=>{
+  const {ctx,run}=setup();let saved;
+  ctx.localStorage={getItem:()=>saved,setItem:(key,value)=>{saved=value;}};
+  ctx.document.getElementById=()=>null;
+  run(`persistCustomProducts(new Map([['PRODUCT:emoji',validateCustomProduct({id:'PRODUCT:emoji',name:'咖啡',price:5,emoji:'☕',logo:'data:image/webp;base64,AAAA'})]]));customProducts=new Map();restoreCustomProducts()`);
+  assert.equal(run(`customProducts.get('PRODUCT:emoji').emoji`),'☕');
+  assert.equal(run(`customProducts.get('PRODUCT:emoji').logo`),'');
+  assert.equal(run(`currencyLogos['PRODUCT:emoji'].type`),'emoji');
+  assert.equal(run(`validateCustomProduct({id:'PRODUCT:old',name:'旧图片',price:5,logo:'data:image/webp;base64,AAAA'}).logo`),'data:image/webp;base64,AAAA');
+  const nodes={};for(let i=1;i<=6;i++){nodes['amount'+i]={value:i===1?'2':''};nodes['currency'+i]={value:'PRODUCT:emoji'};}
+  ctx.document.getElementById=id=>nodes[id];
+  vm.runInContext(source.slice(source.indexOf('function getShareRows()'),source.indexOf('function formatShareTimestamp()')),ctx);
+  assert.equal(run('getShareRows()[0].logoType'),'emoji');assert.equal(run('getShareRows()[0].logo'),'☕');
+});
+
+test('emoji selection cancels pending images and a later upload can replace the emoji',async()=>{
+  const {ctx,run}=setup();let resolve;
+  const nodes={productLogoPreview:{},productEmojiPreview:{},productEmojiChoices:{children:[]},productLogoRemove:{},productLogoFile:{},productStatus:{}};
+  ctx.document.getElementById=id=>nodes[id];ctx.prepareProductLogo=()=>new Promise(r=>{resolve=r;});
+  run(`productSelectId='currency1'`);
+  ctx.event={target:{files:[{}]}};const pending=run('onProductLogoChange(event)');
+  run(`selectProductEmoji('☕')`);resolve('old-image');await pending;
+  assert.equal(run('productDraftEmoji'),'☕');assert.equal(run('productDraftLogo'),'');assert.equal(run('productImageBusy'),false);
+  assert.equal(nodes.productLogoPreview.hidden,true);assert.equal(nodes.productEmojiPreview.textContent,'☕');
+  const next=run('onProductLogoChange(event)');resolve('new-image');await next;
+  assert.equal(run('productDraftEmoji'),'');assert.equal(nodes.productLogoPreview.src,'new-image');
+  run(`selectProductEmoji('')`);assert.equal(nodes.productLogoRemove.hidden,true);
 });

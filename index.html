@@ -15,7 +15,7 @@
     <link rel="shortcut icon" type="image/x-icon" href="favicon/favicon.ico">
     <meta name="theme-color" content="#080808">
     <!-- Apply the saved appearance before styles load to avoid a light flash. -->
-    <script src="theme.js?v=20260913-12"></script>
+    <script src="theme.js?v=20260914-1"></script>
 
     <!-- PWA Meta Tags -->
     <meta name="mobile-web-app-capable" content="yes">
@@ -33,7 +33,7 @@
       gtag('config', 'G-XEZ049M5R2');
     </script>
     
-	    <link rel="stylesheet" href="styles.css?v=20260913-12">
+	    <link rel="stylesheet" href="styles.css?v=20260914-1">
 </head>
 <body>
     <main class="container">
@@ -100,9 +100,9 @@
 	        </div>
 	    </footer>
 
-			    <script src="products.js?v=20260913-12"></script>
-                <script src="fiat.js?v=20260913-12"></script>
-                <script src="app.js?v=20260913-12"></script>
+			    <script src="products.js?v=20260914-1"></script>
+                <script src="fiat.js?v=20260914-1"></script>
+                <script src="app.js?v=20260914-1"></script>
     </main>
 
 	    <!-- Toast 提示 -->
@@ -159,13 +159,19 @@
                 <form id="productForm">
                     <div class="product-logo-editor">
                         <img id="productLogoPreview" alt="Logo 预览" width="64" height="64" />
+                        <span id="productEmojiPreview" class="product-emoji" role="img" aria-label="Emoji Logo 预览" hidden></span>
                         <div>
                             <label class="product-text-button product-upload" for="productLogoFile">上传 Logo</label>
                             <input id="productLogoFile" class="product-file" type="file" accept="image/png,image/jpeg,image/webp" aria-label="上传实物 Logo" />
                             <button id="productLogoRemove" class="product-text-button" type="button" hidden>移除 Logo</button>
-                            <p class="product-hint">PNG、JPG、WebP，最多 10 MB；可不上传。</p>
+                            <p class="product-hint">可上传图片，也可选择下方 Emoji。
+                                <br>PNG、JPG、WebP，最多 10 MB。</p>
                         </div>
                     </div>
+                    <fieldset class="product-emoji-picker">
+                        <legend>选择 Emoji</legend>
+                        <div id="productEmojiChoices"></div>
+                    </fieldset>
                     <label class="product-label" for="productName">名称</label>
                     <input id="productName" class="product-input" type="text" maxlength="30" placeholder="例如：我的咖啡" required autocomplete="off" />
                     <label class="product-label" for="productPrice">单价（美元 / 件）</label>
