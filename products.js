@@ -16,8 +16,10 @@ function validateCustomProduct(value) {
     const name = typeof value.name === 'string' ? value.name.trim() : '';
     if (!name || Array.from(name).length > 30 || !Number.isFinite(value.price) || value.price <= 0 || value.price > 1e15) return null;
     const logo = typeof value.logo === 'string' && value.logo.length <= 200000 && /^data:image\/(png|webp);base64,[A-Za-z0-9+/=]+$/.test(value.logo) ? value.logo : '';
+    const currency = value.currency === undefined ? 'USD' : value.currency;
+    if (typeof currency !== 'string' || !/^[A-Z]{3}$/.test(currency)) return null;
     const emoji = PRODUCT_EMOJIS.includes(value.emoji) ? value.emoji : '';
-    return { id: value.id, name, price: value.price, logo: emoji ? '' : logo, emoji };
+    return { id: value.id, name, price: value.price, currency, logo: emoji ? '' : logo, emoji };
 }
 
 function customProductLogo(product) {
@@ -25,10 +27,33 @@ function customProductLogo(product) {
     return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256"><circle cx="128" cy="128" r="128" fill="#334155"/><path d="m64 91 64-32 64 32v74l-64 32-64-32zm0 0 64 33 64-33m-64 33v73" fill="none" stroke="#fff" stroke-width="12" stroke-linejoin="round"/></svg>');
 }
 
+function customProductUsdPrice(product, prices = usdPrices) {
+    const currency = product.currency || 'USD';
+    const rate = currency === 'USD' ? 1 : prices[`FIAT:${currency}`];
+    const price = product.price * rate;
+    return Number.isFinite(price) && price > 0 ? price : null;
+}
+
+function updateProductCurrencyOptions(selected) {
+    const select = document.getElementById('productCurrency');
+    if (!select) return;
+    const currency = selected || select.value || 'USD';
+    const codes = new Set(['USD', 'CNY', ...ASSET_CONFIG.filter(a => a.category === 'fiat').map(a => a.symbol), ...fiatCatalog.map(a => a.code), currency]);
+    select.replaceChildren();
+    for (const code of codes) {
+        const option = document.createElement('option'); option.value = code;
+        const name = code === 'CNY' ? '人民币' : getFiatNames(code).name;
+        option.textContent = `${name} ${code}`;
+        select.appendChild(option);
+    }
+    select.value = currency;
+}
+
 function syncCustomProducts() {
     for (const product of customProducts.values()) {
         currencyLogos[product.id] = { text: product.name, type: product.emoji ? 'emoji' : 'image', logo: product.emoji || customProductLogo(product) };
-        usdPrices[product.id] = product.price;
+        const price = customProductUsdPrice(product);
+        if (price) usdPrices[product.id] = price; else delete usdPrices[product.id];
     }
     for (let i = 1; i <= FIELD_COUNT; i++) {
         const select = document.getElementById(`currency${i}`);
@@ -91,6 +116,7 @@ function resetProductForm(product = null) {
     productDraftEmoji = product?.emoji || '';
     document.getElementById('productName').value = product?.name || '';
     document.getElementById('productPrice').value = product ? String(product.price) : '';
+    updateProductCurrencyOptions(product?.currency || 'USD');
     document.getElementById('productLogoFile').value = '';
     updateProductLogoPreview();
     document.getElementById('productSave').textContent = product ? '保存修改并使用' : '保存并使用';
@@ -119,7 +145,7 @@ function renderCustomProductList() {
         else { img.src = customProductLogo(product); img.alt = ''; }
         const text = document.createElement('span');
         const name = document.createElement('strong'); name.textContent = product.name;
-        const price = document.createElement('small'); price.textContent = `${product.price.toLocaleString('zh-CN', { maximumFractionDigits: 12 })} USD / 件`;
+        const price = document.createElement('small'); price.textContent = `${product.price.toLocaleString('zh-CN', { maximumFractionDigits: 12 })} ${product.currency || 'USD'} / 件`;
         text.append(name, price); use.append(img, text); use.onclick = () => chooseCustomProduct(product.id);
         const edit = document.createElement('button'); edit.type = 'button'; edit.className = 'product-text-button'; edit.textContent = '编辑';
         edit.setAttribute('aria-label', `编辑${product.name}`); edit.onclick = () => {
@@ -201,9 +227,10 @@ function saveCustomProduct(event) {
     const item = validateCustomProduct({
         id: productEditId || `PRODUCT:${crypto.randomUUID()}`,
         name: document.getElementById('productName').value,
-        price: Number(document.getElementById('productPrice').value), logo: productDraftLogo, emoji: productDraftEmoji
+        price: Number(document.getElementById('productPrice').value), currency: document.getElementById('productCurrency').value, logo: productDraftLogo, emoji: productDraftEmoji
     });
-    if (!item) { productStatus('请填写 1–30 字的名称，以及大于 0 的有效美元单价。'); return; }
+    if (!item) { productStatus('请填写 1–30 字的名称，以及大于 0 的有效单价。'); return; }
+    if (!customProductUsdPrice(item)) { productStatus('该币种汇率暂不可用，请等汇率加载后重试。'); return; }
     if (!productEditId && customProducts.size >= PRODUCT_LIMIT) { productStatus('最多保存 20 个自定义实物，请编辑已有实物。'); return; }
     const next = new Map(customProducts); next.set(item.id, item);
     try { persistCustomProducts(next); }

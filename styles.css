@@ -2093,3 +2093,7 @@
         .product-emoji-choice:hover, .product-emoji-choice[aria-pressed="true"] { background: var(--primary-bg); border-color: var(--accent); }
         .product-emoji-choice:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
         #productLogoPreview[hidden], #productEmojiPreview[hidden] { display: none; }
+
+        .product-price-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+        .product-price-row > div { min-width: 0; }
+        #productCurrency { appearance: auto; background-image: none; padding-right: 8px; color: var(--text); }

@@ -287,3 +287,29 @@ test('emoji selection cancels pending images and a later upload can replace the 
   assert.equal(run('productDraftEmoji'),'');assert.equal(nodes.productLogoPreview.src,'new-image');
   run(`selectProductEmoji('')`);assert.equal(nodes.productLogoRemove.hidden,true);
 });
+
+test('product price currency persists and legacy products remain denominated in USD',()=>{
+  const {ctx,run}=setup();let saved;
+  ctx.localStorage={getItem:()=>saved,setItem:(key,value)=>{saved=value;}};
+  run(`usdPrices={'FIAT:CNY':1/7.5};persistCustomProducts(new Map([['PRODUCT:cny',validateCustomProduct({id:'PRODUCT:cny',name:'人民币实物',price:3000,currency:'CNY',emoji:'🏠'})]]));customProducts=new Map();restoreCustomProducts()`);
+  assert.equal(run(`customProducts.get('PRODUCT:cny').price`),3000);
+  assert.equal(run(`customProducts.get('PRODUCT:cny').currency`),'CNY');
+  assert.equal(run(`usdPrices['PRODUCT:cny']`),400);
+  assert.equal(run(`validateCustomProduct({id:'PRODUCT:old',name:'旧实物',price:10}).currency`),'USD');
+  assert.equal(run(`customProductUsdPrice({price:10})`),10);
+  assert.equal(run(`validateCustomProduct({id:'PRODUCT:bad',name:'无效单位',price:10,currency:'invalid'})`),null);
+});
+
+test('non-USD product prices track fiat rates and become unavailable if their rate disappears',async()=>{
+  const {ctx,run}=setup();ctx.customTokens=new Map();ctx.window={};ctx.setInterval=()=>1;ctx.convert=()=>{};ctx.updateApiStatusDisplay=()=>{};
+  ctx.document.getElementById=id=>id.startsWith('amount')?{value:''}:{value:'PRODUCT:cny'};
+  vm.runInContext(source.slice(source.indexOf('async function loadRates({'),source.indexOf('// 检测 localStorage 是否可用')),ctx);
+  run(`customProducts.set('PRODUCT:cny',{id:'PRODUCT:cny',name:'人民币实物',price:3000,currency:'CNY'});getCoinGeckoPrices=async()=>({prices:{},staleIds:[],missingIds:[]});getFiatRates=async()=>({fiatData:{rates:{CNY:7.5}},source:'realtime'})`);
+  await run('loadRates()');assert.equal(run(`usdPrices['PRODUCT:cny']`),400);
+  assert.equal(run(`getConversionRate('PRODUCT:cny','CNY')`),3000);
+  run(`getFiatRates=async()=>({fiatData:{rates:{CNY:6}},source:'realtime'})`);
+  await run('loadRates()');assert.equal(run(`usdPrices['PRODUCT:cny']`),500);
+  assert.equal(run(`customProducts.get('PRODUCT:cny').price`),3000);
+  run(`getFiatRates=async()=>{throw Error('offline')}`);
+  await run('loadRates()');assert.equal(run(`usdPrices['PRODUCT:cny']`),undefined);
+});

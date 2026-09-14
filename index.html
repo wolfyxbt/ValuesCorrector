@@ -15,7 +15,7 @@
     <link rel="shortcut icon" type="image/x-icon" href="favicon/favicon.ico">
     <meta name="theme-color" content="#080808">
     <!-- Apply the saved appearance before styles load to avoid a light flash. -->
-    <script src="theme.js?v=20260914-1"></script>
+    <script src="theme.js?v=20260914-2"></script>
 
     <!-- PWA Meta Tags -->
     <meta name="mobile-web-app-capable" content="yes">
@@ -33,7 +33,7 @@
       gtag('config', 'G-XEZ049M5R2');
     </script>
     
-	    <link rel="stylesheet" href="styles.css?v=20260914-1">
+	    <link rel="stylesheet" href="styles.css?v=20260914-2">
 </head>
 <body>
     <main class="container">
@@ -100,9 +100,9 @@
 	        </div>
 	    </footer>
 
-			    <script src="products.js?v=20260914-1"></script>
-                <script src="fiat.js?v=20260914-1"></script>
-                <script src="app.js?v=20260914-1"></script>
+			    <script src="products.js?v=20260914-2"></script>
+                <script src="fiat.js?v=20260914-2"></script>
+                <script src="app.js?v=20260914-2"></script>
     </main>
 
 	    <!-- Toast 提示 -->
@@ -174,9 +174,17 @@
                     </fieldset>
                     <label class="product-label" for="productName">名称</label>
                     <input id="productName" class="product-input" type="text" maxlength="30" placeholder="例如：我的咖啡" required autocomplete="off" />
-                    <label class="product-label" for="productPrice">单价（美元 / 件）</label>
-                    <input id="productPrice" class="product-input" type="number" inputmode="decimal" step="any" min="0.000000000001" max="1000000000000000" placeholder="例如：5" required />
-                    <p class="product-hint">使用你填写的固定单价，名称和图片仅保存在当前浏览器。</p>
+                    <div class="product-price-row">
+                        <div>
+                            <label class="product-label" for="productPrice">单价（每件）</label>
+                            <input id="productPrice" class="product-input" type="number" inputmode="decimal" step="any" min="0.000000000001" max="1000000000000000" placeholder="例如：3000" required />
+                        </div>
+                        <div>
+                            <label class="product-label" for="productCurrency">价格单位</label>
+                            <select id="productCurrency" class="product-input" required><option value="USD">美元 USD</option></select>
+                        </div>
+                    </div>
+                    <p class="product-hint">例如：填写 3000，选择人民币 CNY，即 3000 元 / 件。单价按所选货币保存，换算随汇率更新；资料仅保存在当前浏览器。</p>
                     <p id="productStatus" class="product-status" role="status" aria-live="polite"></p>
                     <div class="product-form-actions">
                         <button id="productNew" class="share-btn" type="button" hidden>新建实物</button>

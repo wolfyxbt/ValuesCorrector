@@ -1519,15 +1519,19 @@ window.addEventListener('resize', () => {
                 for (const asset of PRODUCT_ASSETS) {
                     if (nextPrices[asset.priceCurrency]) nextPrices[asset.symbol] = asset.priceAmount * nextPrices[asset.priceCurrency];
                 }
-                for (const product of customProducts.values()) nextPrices[product.id] = product.price;
+                for (const product of customProducts.values()) {
+                    const price = customProductUsdPrice(product, nextPrices);
+                    if (price) nextPrices[product.id] = price;
+                }
                 for (const [key, info] of activeCustom) {
                     info.price = crypto.prices[info.id] || null;
                     info.isEstimated = false;
                     if (info.price) nextPrices[key] = info.price;
                 }
                 usdPrices = nextPrices;
+                if (productSelectId) updateProductCurrencyOptions();
                 const missingCustomFiat = Array.from({ length: FIELD_COUNT }, (_, i) => document.getElementById(`currency${i + 1}`)?.value)
-                    .some(key => key?.startsWith('FIAT:') && !nextPrices[key]);
+                    .some(key => (key?.startsWith('FIAT:') || key?.startsWith('PRODUCT:')) && !nextPrices[key]);
                 const incomplete = crypto.missingIds.length > 0 || missingCustomFiat || FIAT_SYMBOLS.some(symbol => !nextPrices[symbol]);
                 const stale = crypto.staleIds.length > 0 || fiat?.source === 'stale-cache';
                 apiStatus.preset = PRESET_CRYPTO_SYMBOLS.every(symbol => !!nextPrices[symbol]);
