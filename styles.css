@@ -2092,7 +2092,6 @@
         .product-price-row > div { min-width: 0; }
         #productCurrency { appearance: auto; background-image: none; padding-right: 8px; color: var(--text); }
 
-        #productEmojiHint { margin-bottom: 20px; }
 
         /* Keep anchored edges stable during pressing and opening. */
         .dropdown-trigger:active { transform: none; }
@@ -2103,3 +2102,18 @@
         .product-currency-dropdown .dropdown-logo { display: none; }
         .product-currency-menu .dropdown-item-text { white-space: normal; overflow-wrap: anywhere; }
         @media (prefers-reduced-motion: reduce) { .dropdown-menu { animation: none; } }
+
+        .product-emoji-dropdown .dropdown-trigger { height: 46px; min-height: 46px; padding: 10px 12px; font-size: 16px; background: var(--control-bg); }
+        .emoji-picker-header { position: sticky; top: -7px; z-index: 1; padding: 8px 0; background: var(--surface); }
+        .emoji-search { width: 100%; height: 42px; min-height: 42px; padding: 8px 12px; font-size: 16px; text-align: left; }
+        .emoji-categories { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 2px; margin-top: 8px; }
+        .emoji-categories button, .emoji-choice { border: 0; background: transparent; color: var(--text); padding: 0; border-radius: 9px; cursor: pointer; }
+        .emoji-categories button { height: 36px; font-size: 20px; }
+        .emoji-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(42px, 1fr)); gap: 3px; }
+        .emoji-choice { height: 44px; font-size: 28px; font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif; }
+        .emoji-categories button:hover, .emoji-choice:hover, .emoji-categories button[aria-pressed="true"], .emoji-choice[aria-pressed="true"] { background: var(--accent-soft); }
+        .emoji-categories button:focus-visible, .emoji-choice:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+        .emoji-picker-status { padding: 8px 4px; font-size: 12px; color: var(--muted); }
+        .emoji-more { width: 100%; margin-top: 8px; padding: 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--control-bg); color: var(--text); cursor: pointer; }
+        .emoji-more[hidden] { display: none; }
+        @media (max-width: 380px) { .emoji-categories { grid-template-columns: repeat(5, minmax(0, 1fr)); } }

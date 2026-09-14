@@ -342,3 +342,16 @@ test('dropdowns match trigger edges and stay above or below without overlapping'
   assert.equal(menu.style.left,'45.5px');assert.equal(menu.style.width,'220.25px');
   assert.ok(parseFloat(menu.style.top)>=62);assert.ok(parseFloat(menu.style.top)+menu.offsetHeight<=298);
 });
+
+test('complete local emoji catalog remains selectable and supports Chinese and English search',()=>{
+  const {ctx,run}=setup();
+  vm.runInContext(fs.readFileSync(require('node:path').join(__dirname,'../emoji-picker.js'),'utf8'),ctx);
+  const entries=require('../assets/emoji/catalog.json').entries;ctx.entries=entries;
+  assert.ok(entries.length>3900);
+  const rejected=run('entries.filter(([emoji])=>normalizeProductEmoji(emoji)===null).map(e=>e[0])');
+  assert.equal(rejected.length,0,JSON.stringify(rejected));
+  assert.equal(new Set(entries.map(e=>e[0])).size,entries.length);
+  for(const query of ['狐狸','fox']){ctx.query=query;assert.ok(run("filterEmojiCatalog(entries,query,0).some(e=>e[0]==='🦊')"));}
+  assert.ok(run("filterEmojiCatalog(entries,'',9).some(e=>e[0]==='🇲🇾')"));
+  assert.equal(run("filterEmojiCatalog(entries,'not-an-emoji-query-xyz',0).length"),0);
+});

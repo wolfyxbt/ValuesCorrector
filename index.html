@@ -13,10 +13,10 @@
     <link rel="manifest" href="favicon/site.webmanifest">
     <link rel="icon" type="image/x-icon" href="favicon/favicon.ico">
     <link rel="shortcut icon" type="image/x-icon" href="favicon/favicon.ico">
-    <link rel="icon" type="image/svg+xml" sizes="any" href="favicon/favicon.svg?v=20260914-7">
+    <link rel="icon" type="image/svg+xml" sizes="any" href="favicon/favicon.svg?v=20260914-8">
     <meta name="theme-color" content="#080808">
     <!-- Apply the saved appearance before styles load to avoid a light flash. -->
-    <script src="theme.js?v=20260914-7"></script>
+    <script src="theme.js?v=20260914-8"></script>
 
     <!-- PWA Meta Tags -->
     <meta name="mobile-web-app-capable" content="yes">
@@ -34,7 +34,7 @@
       gtag('config', 'G-XEZ049M5R2');
     </script>
     
-	    <link rel="stylesheet" href="styles.css?v=20260914-7">
+	    <link rel="stylesheet" href="styles.css?v=20260914-8">
 </head>
 <body>
     <main class="container">
@@ -101,9 +101,10 @@
 	        </div>
 	    </footer>
 
-			    <script src="products.js?v=20260914-7"></script>
-                <script src="fiat.js?v=20260914-7"></script>
-                <script src="app.js?v=20260914-7"></script>
+			    <script src="products.js?v=20260914-8"></script>
+                <script src="emoji-picker.js?v=20260914-8"></script>
+                <script src="fiat.js?v=20260914-8"></script>
+                <script src="app.js?v=20260914-8"></script>
     </main>
 
 	    <!-- Toast 提示 -->
@@ -168,9 +169,14 @@
                             <p class="product-hint">PNG / JPG / WebP · 最大 10 MB</p>
                         </div>
                     </div>
-                    <label class="product-label" for="productEmojiInput">Emoji 图标（可选）</label>
-                    <input id="productEmojiInput" class="product-input" type="text" placeholder="输入或粘贴 Emoji" maxlength="64" autocomplete="off" spellcheck="false" aria-describedby="productEmojiHint" />
-                    <p id="productEmojiHint" class="product-hint">Mac：⌃⌘空格 · Windows：Win + .</p>
+                    <label class="product-label" for="productEmojiTrigger">Emoji 图标（可选）</label>
+                    <input id="productEmojiInput" type="hidden" />
+                    <div id="productEmojiDropdown" class="dropdown product-emoji-dropdown">
+                        <button id="productEmojiTrigger" class="dropdown-trigger" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="productEmojiMenu">
+                            <span id="productEmojiLabel">选择 Emoji</span>
+                            <svg class="dropdown-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </button>
+                    </div>
                     <label class="product-label" for="productName">名称</label>
                     <input id="productName" class="product-input" type="text" maxlength="30" placeholder="输入名称" required autocomplete="off" />
                     <div class="product-price-row">

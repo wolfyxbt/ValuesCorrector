@@ -16,7 +16,7 @@ function normalizeProductEmoji(value) {
     const emoji = value.trim();
     if (!emoji) return '';
     if (emoji.length > 64) return null;
-    const pattern = /^(?:\p{Regional_Indicator}{2}|[#*0-9]\uFE0F?\u20E3|\p{Extended_Pictographic}[\uFE0E\uFE0F]?\p{Emoji_Modifier}?(?:[\u{E0020}-\u{E007E}]+\u{E007F})?(?:\u200D\p{Extended_Pictographic}[\uFE0E\uFE0F]?\p{Emoji_Modifier}?)*)$/u;
+    const pattern = /^(?:\p{Emoji_Modifier}|\p{Regional_Indicator}{2}|[#*0-9]\uFE0F?\u20E3|\p{Extended_Pictographic}[\uFE0E\uFE0F]?\p{Emoji_Modifier}?(?:[\u{E0020}-\u{E007E}]+\u{E007F})?(?:\u200D\p{Extended_Pictographic}[\uFE0E\uFE0F]?\p{Emoji_Modifier}?)*)$/u;
     return pattern.test(emoji) ? emoji : null;
 }
 
@@ -105,6 +105,8 @@ function updateProductLogoPreview() {
     emoji.textContent = productDraftEmoji;
     document.getElementById('productLogoRemove').hidden = !productDraftLogo && !productDraftEmoji;
     document.getElementById('productEmojiInput').value = productDraftEmoji;
+    const label = document.getElementById('productEmojiLabel');
+    if (label) label.textContent = productDraftEmoji ? `${productDraftEmoji} 更换 Emoji` : '选择 Emoji';
 }
 
 function selectProductEmoji(emoji) {
@@ -255,12 +257,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('productLogoFile').addEventListener('change', onProductLogoChange);
     document.getElementById('productNew').addEventListener('click', () => resetProductForm());
     document.getElementById('productLogoRemove').addEventListener('click', () => selectProductEmoji(''));
-    const emojiInput = document.getElementById('productEmojiInput');
-    emojiInput.addEventListener('focus', () => emojiInput.select());
-    emojiInput.addEventListener('input', event => {
-        if (!event.isComposing) selectProductEmoji(emojiInput.value);
-    });
-    emojiInput.addEventListener('compositionend', () => selectProductEmoji(emojiInput.value));
     const modal = document.getElementById('customProductModal');
     modal.querySelector('.close').addEventListener('click', closeCustomProductModal);
     modal.addEventListener('click', event => { if (event.target === modal) closeCustomProductModal(); });
