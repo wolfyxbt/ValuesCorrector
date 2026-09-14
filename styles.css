@@ -2086,14 +2086,10 @@
         .product-emoji { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; border-radius: 50%; background: var(--control-bg); border: 1px solid var(--border); }
         #productEmojiPreview { width: 64px; height: 64px; font-size: 36px; }
         .saved-product-use .product-emoji { width: 36px; height: 36px; font-size: 23px; }
-        .product-emoji-picker { border: 0; padding: 0; margin: 0 0 20px; min-width: 0; }
-        .product-emoji-picker legend { font-size: 0.85rem; color: var(--muted); margin-bottom: 10px; }
-        #productEmojiChoices { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
-        .product-emoji-choice { min-width: 0; height: 44px; padding: 0; border: 1px solid var(--border); border-radius: 12px; background: var(--control-bg); font-size: 24px; cursor: pointer; }
-        .product-emoji-choice:hover, .product-emoji-choice[aria-pressed="true"] { background: var(--primary-bg); border-color: var(--accent); }
-        .product-emoji-choice:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
         #productLogoPreview[hidden], #productEmojiPreview[hidden] { display: none; }
 
         .product-price-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
         .product-price-row > div { min-width: 0; }
         #productCurrency { appearance: auto; background-image: none; padding-right: 8px; color: var(--text); }
+
+        #productEmojiHint { margin-bottom: 20px; }

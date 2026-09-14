@@ -249,7 +249,7 @@ test('choosing a saved product preserves the entered source and exposes its logo
 
 test('late product images cannot change a closed editor or replace a newer image',async()=>{
   const {ctx,run}=setup();const pending={};const preview={src:''};const status={textContent:''};const remove={hidden:true};
-  ctx.document.getElementById=id=>id==='productLogoPreview'?preview:id==='productEmojiChoices'?{children:[]}:id==='productStatus'?status:remove;
+  ctx.document.getElementById=id=>id==='productLogoPreview'?preview:id==='productEmojiInput'?{value:''}:id==='productStatus'?status:remove;
   ctx.pending=pending;run(`prepareProductLogo=file=>new Promise(resolve=>pending[file.name]=resolve);productSelectId='currency1'`);
   ctx.event={target:{files:[{name:'old'}]}};const old=run('onProductLogoChange(event)');
   ctx.event={target:{files:[{name:'new'}]}};const newer=run('onProductLogoChange(event)');
@@ -276,7 +276,7 @@ test('emoji products restore their logo and expose it to the share renderer',()=
 
 test('emoji selection cancels pending images and a later upload can replace the emoji',async()=>{
   const {ctx,run}=setup();let resolve;
-  const nodes={productLogoPreview:{},productEmojiPreview:{},productEmojiChoices:{children:[]},productLogoRemove:{},productLogoFile:{},productStatus:{}};
+  const nodes={productLogoPreview:{},productEmojiPreview:{},productEmojiInput:{value:''},productLogoRemove:{},productLogoFile:{},productStatus:{}};
   ctx.document.getElementById=id=>nodes[id];ctx.prepareProductLogo=()=>new Promise(r=>{resolve=r;});
   run(`productSelectId='currency1'`);
   ctx.event={target:{files:[{}]}};const pending=run('onProductLogoChange(event)');
@@ -312,4 +312,15 @@ test('non-USD product prices track fiat rates and become unavailable if their ra
   assert.equal(run(`customProducts.get('PRODUCT:cny').price`),3000);
   run(`getFiatRates=async()=>{throw Error('offline')}`);
   await run('loadRates()');assert.equal(run(`usdPrices['PRODUCT:cny']`),undefined);
+});
+
+
+test('system emoji input accepts complete emoji sequences without a fixed palette',()=>{
+  const {run}=setup();
+  for (const emoji of ['🦊','👍🏽','👨‍👩‍👧‍👦','🇲🇾','1️⃣','❤️','🏳️‍🌈']) {
+    assert.equal(run(`normalizeProductEmoji(${JSON.stringify(emoji)})`),emoji);
+    assert.equal(run(`validateCustomProduct({id:'PRODUCT:test',name:'实物',price:5,emoji:${JSON.stringify(emoji)}}).emoji`),emoji);
+  }
+  for (const invalid of ['hello','😀😀','1','🇺','<img>']) assert.equal(run(`normalizeProductEmoji(${JSON.stringify(invalid)})`),null);
+  assert.equal(run(`normalizeProductEmoji('  ')`),'');
 });

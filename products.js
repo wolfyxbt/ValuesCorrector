@@ -1,7 +1,6 @@
 // Custom products stay on this device. Uploaded images never leave the browser.
 const PRODUCT_STORAGE_KEY = 'valuesCorrectorProducts';
 const PRODUCT_LIMIT = 20;
-const PRODUCT_EMOJIS = ['☕', '🍵', '🧋', '🍺', '🍎', '🍚', '🍔', '🍕', '🎂', '🛒', '👕', '👟', '👜', '💎', '📱', '💻', '🎮', '📷', '📚', '🎁', '🚗', '✈️', '🏠', '📦'];
 let customProducts = new Map();
 let productSelectId = null;
 let productEditId = null;
@@ -11,6 +10,16 @@ let productImageVersion = 0;
 let productImageBusy = false;
 let productReturnFocus = null;
 
+// Accept one complete emoji, including skin tones, flags and joined family symbols.
+function normalizeProductEmoji(value) {
+    if (typeof value !== 'string') return null;
+    const emoji = value.trim();
+    if (!emoji) return '';
+    if (emoji.length > 64) return null;
+    const pattern = /^(?:\p{Regional_Indicator}{2}|[#*0-9]\uFE0F?\u20E3|\p{Extended_Pictographic}[\uFE0E\uFE0F]?\p{Emoji_Modifier}?(?:[\u{E0020}-\u{E007E}]+\u{E007F})?(?:\u200D\p{Extended_Pictographic}[\uFE0E\uFE0F]?\p{Emoji_Modifier}?)*)$/u;
+    return pattern.test(emoji) ? emoji : null;
+}
+
 function validateCustomProduct(value) {
     if (!value || !/^PRODUCT:[a-zA-Z0-9-]{1,64}$/.test(value.id || '')) return null;
     const name = typeof value.name === 'string' ? value.name.trim() : '';
@@ -18,7 +27,7 @@ function validateCustomProduct(value) {
     const logo = typeof value.logo === 'string' && value.logo.length <= 200000 && /^data:image\/(png|webp);base64,[A-Za-z0-9+/=]+$/.test(value.logo) ? value.logo : '';
     const currency = value.currency === undefined ? 'USD' : value.currency;
     if (typeof currency !== 'string' || !/^[A-Z]{3}$/.test(currency)) return null;
-    const emoji = PRODUCT_EMOJIS.includes(value.emoji) ? value.emoji : '';
+    const emoji = normalizeProductEmoji(value.emoji || '') || '';
     return { id: value.id, name, price: value.price, currency, logo: emoji ? '' : logo, emoji };
 }
 
@@ -94,13 +103,12 @@ function updateProductLogoPreview() {
     emoji.hidden = !productDraftEmoji;
     emoji.textContent = productDraftEmoji;
     document.getElementById('productLogoRemove').hidden = !productDraftLogo && !productDraftEmoji;
-    for (const button of document.getElementById('productEmojiChoices').children) {
-        button.setAttribute('aria-pressed', String(button.textContent === productDraftEmoji));
-    }
+    document.getElementById('productEmojiInput').value = productDraftEmoji;
 }
 
 function selectProductEmoji(emoji) {
-    if (emoji && !PRODUCT_EMOJIS.includes(emoji)) return;
+    emoji = normalizeProductEmoji(emoji);
+    if (emoji === null) { productStatus('请输入一个 Emoji；组合表情、肤色和国旗也可以。'); return; }
     // A pending image upload must not overwrite a later emoji selection.
     productImageVersion++; productImageBusy = false;
     productDraftLogo = ''; productDraftEmoji = emoji;
@@ -223,6 +231,7 @@ async function onProductLogoChange(event) {
 function saveCustomProduct(event) {
     event.preventDefault();
     if (!productSelectId) return;
+    if (normalizeProductEmoji(document.getElementById('productEmojiInput').value) === null) { productStatus('请输入一个 Emoji，或清空后使用图片。'); return; }
     if (productImageBusy) { productStatus('图片还在处理中，请稍等。'); return; }
     const item = validateCustomProduct({
         id: productEditId || `PRODUCT:${crypto.randomUUID()}`,
@@ -244,15 +253,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('productLogoFile').addEventListener('change', onProductLogoChange);
     document.getElementById('productNew').addEventListener('click', () => resetProductForm());
     document.getElementById('productLogoRemove').addEventListener('click', () => selectProductEmoji(''));
-    const choices = document.getElementById('productEmojiChoices');
-    for (const emoji of PRODUCT_EMOJIS) {
-        const button = document.createElement('button');
-        button.type = 'button'; button.className = 'product-emoji-choice'; button.textContent = emoji;
-        button.setAttribute('aria-label', `使用 ${emoji} 作为 Logo`);
-        button.setAttribute('aria-pressed', 'false');
-        button.addEventListener('click', () => selectProductEmoji(emoji));
-        choices.appendChild(button);
-    }
+    const emojiInput = document.getElementById('productEmojiInput');
+    emojiInput.addEventListener('focus', () => emojiInput.select());
+    emojiInput.addEventListener('input', event => {
+        if (!event.isComposing) selectProductEmoji(emojiInput.value);
+    });
+    emojiInput.addEventListener('compositionend', () => selectProductEmoji(emojiInput.value));
     const modal = document.getElementById('customProductModal');
     modal.querySelector('.close').addEventListener('click', closeCustomProductModal);
     modal.addEventListener('click', event => { if (event.target === modal) closeCustomProductModal(); });
