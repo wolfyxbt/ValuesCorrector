@@ -94,7 +94,7 @@
 	        .dropdown-trigger:focus {
 	            outline: none;
 	            border-color: var(--accent);
-	            box-shadow: 0 0 0 3px var(--accent-soft);
+	            box-shadow: none;
 	        }
 
 		        .dropdown-trigger-left {
@@ -283,7 +283,7 @@
 	        select:focus {
 	            outline: none;
 	            border-color: var(--text);
-	            box-shadow: 0 0 0 3px var(--focus);
+	            box-shadow: none;
 	        }
         
 	        select option {
@@ -339,7 +339,7 @@
 	        input:focus {
 	            outline: none;
 	            border-color: var(--accent);
-	            box-shadow: 0 0 0 3px var(--accent-soft);
+	            box-shadow: none;
 	            background: var(--surface);
 	        }
         
@@ -511,7 +511,7 @@
 	        .share-btn:focus-visible {
 	            outline: none;
 	            border-color: var(--text);
-	            box-shadow: 0 0 0 3px var(--focus);
+	            box-shadow: none;
 	        }
         
 	        /* 移动端响应式设计 */
@@ -801,7 +801,7 @@
 	        .search-container input:focus {
 	            outline: none;
 	            border-color: var(--text);
-	            box-shadow: 0 0 0 3px var(--focus);
+	            box-shadow: none;
 	        }
         
         .search-results {
@@ -974,7 +974,7 @@
         /* 当前活跃输入框高亮（键盘输入的目标栏位）—— 与聚焦态一致的橙色 */
         .kb-active-input {
             border-color: var(--accent) !important;
-            box-shadow: 0 0 0 3px var(--accent-soft) !important;
+            box-shadow: none !important;
         }
 
         /* 键盘行 */
@@ -1365,7 +1365,7 @@
             outline: none;
             border-color: var(--accent);
             background: var(--material-strong);
-            box-shadow: 0 0 0 4px var(--accent-soft), inset 0 1px 0 var(--control-highlight);
+            box-shadow: none;
         }
 
         .dropdown-trigger:active,
@@ -1527,8 +1527,9 @@
         .share-actions button:focus-visible,
         .close:focus-visible,
         .kb-key:focus-visible {
-            outline: none;
-            box-shadow: 0 0 0 4px var(--focus);
+            outline: 2px solid var(--accent);
+            outline-offset: -2px;
+            box-shadow: none;
         }
 
         .mobile-keyboard {
@@ -2073,7 +2074,7 @@
         .product-file:focus-visible + .product-upload { outline: 2px solid var(--accent); outline-offset: 2px; }
         .product-label { display: block; font-size: 0.85rem; margin: 18px 0 8px; }
         .product-input { width: 100%; height: 46px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--control-bg); color: var(--text); font-size: 16px; text-align: left; }
-        .product-input:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+        .product-input:focus { outline: none; border-color: var(--accent); }
         .product-hint { margin: 8px 0 0; color: var(--muted); font-size: 0.75rem; line-height: 1.6; }
         .product-status { color: var(--warning); font-size: 0.82rem; line-height: 1.6; min-height: 1.6em; margin: 12px 0; }
         .product-form-actions { display: flex; gap: 8px; }
