@@ -1,17 +1,18 @@
 // ===== Service Worker — 网络优先策略 =====
 // 每次发版时更新此版本号，旧缓存会自动清除
-const CACHE_VERSION = 'v20260914-3';
+const CACHE_VERSION = 'v20260914-4';
 const CACHE_NAME = `values-corrector-${CACHE_VERSION}`;
 
 // 需要缓存的核心资源（用于离线回退）
 const CORE_ASSETS = [
     './',
     './index.html',
+    './favicon/favicon.svg?v=20260914-4',
     './app.js',
     './styles.css',
-    './theme.js?v=20260914-3',
-    './fiat.js?v=20260914-3',
-    './products.js?v=20260914-3',
+    './theme.js?v=20260914-4',
+    './fiat.js?v=20260914-4',
+    './products.js?v=20260914-4',
 ];
 
 // ---- install：预缓存核心资源 ----
